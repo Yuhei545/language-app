@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  color: #18302e;
+  background: #dfeae8;
+  font-family: "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+label,
+select,
+input[type="range"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+}

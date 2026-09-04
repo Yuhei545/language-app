@@ -1,0 +1,116 @@
+export type SttEngine = 'auto' | 'webspeech' | 'gemini'
+export type Interest = 'travel' | 'friends' | 'content'
+
+export type Settings = {
+  geminiApiKey: string
+  geminiModel: string
+  sttEngine: SttEngine
+  ttsVoice: { en: string | null; ko: string | null }
+  ttsRate: number
+  interests: Interest[]
+  parentName: { en: string; ko: string }
+}
+
+type SettingsListener = (settings: Settings) => void
+
+const STORAGE_KEY = 'lla.settings'
+const STT_ENGINES: SttEngine[] = ['auto', 'webspeech', 'gemini']
+const INTERESTS: Interest[] = ['travel', 'friends', 'content']
+const listeners = new Set<SettingsListener>()
+
+const DEFAULT_SETTINGS: Settings = {
+  geminiApiKey: '',
+  geminiModel: '',
+  sttEngine: 'auto',
+  ttsVoice: { en: null, ko: null },
+  ttsRate: 0.9,
+  interests: [],
+  parentName: { en: '', ko: '' },
+}
+
+function defaultSettings(): Settings {
+  return {
+    ...DEFAULT_SETTINGS,
+    ttsVoice: { ...DEFAULT_SETTINGS.ttsVoice },
+    interests: [...DEFAULT_SETTINGS.interests],
+    parentName: { ...DEFAULT_SETTINGS.parentName },
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return typeof value === 'string' || value === null
+}
+
+function isSettings(value: unknown): value is Settings {
+  if (!isRecord(value) || !isRecord(value.ttsVoice) || !isRecord(value.parentName)) {
+    return false
+  }
+
+  return (
+    typeof value.geminiApiKey === 'string'
+    && typeof value.geminiModel === 'string'
+    && typeof value.sttEngine === 'string'
+    && STT_ENGINES.includes(value.sttEngine as SttEngine)
+    && isNullableString(value.ttsVoice.en)
+    && isNullableString(value.ttsVoice.ko)
+    && typeof value.ttsRate === 'number'
+    && Number.isFinite(value.ttsRate)
+    && value.ttsRate >= 0.7
+    && value.ttsRate <= 1
+    && Array.isArray(value.interests)
+    && value.interests.every((interest) => typeof interest === 'string' && INTERESTS.includes(interest as Interest))
+    && typeof value.parentName.en === 'string'
+    && typeof value.parentName.ko === 'string'
+  )
+}
+
+export function getSettings(): Settings {
+  const saved = localStorage.getItem(STORAGE_KEY)
+
+  if (saved === null) {
+    return defaultSettings()
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(saved)
+
+    if (!isSettings(parsed)) {
+      console.error('lla.settings の保存内容が不正です。既定値を使用します。', parsed)
+      return defaultSettings()
+    }
+
+    return {
+      ...parsed,
+      ttsVoice: { ...parsed.ttsVoice },
+      interests: [...parsed.interests],
+      parentName: { ...parsed.parentName },
+    }
+  } catch (error) {
+    console.error('lla.settings のJSONを解析できません。既定値を使用します。', { saved, error })
+    return defaultSettings()
+  }
+}
+
+export function setSettings(partial: Partial<Settings>): Settings {
+  const current = getSettings()
+  const next: Settings = {
+    ...current,
+    ...partial,
+    ttsVoice: partial.ttsVoice ? { ...partial.ttsVoice } : current.ttsVoice,
+    interests: partial.interests ? [...partial.interests] : current.interests,
+    parentName: partial.parentName ? { ...partial.parentName } : current.parentName,
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  listeners.forEach((listener) => listener(next))
+  return next
+}
+
+export function subscribe(listener: SettingsListener): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
