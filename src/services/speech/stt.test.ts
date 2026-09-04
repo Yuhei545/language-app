@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createSpeechInput,
   isWebSpeechAvailable,
+  resetWebSpeechSessionState,
   type TranscribeAudio,
 } from './stt'
 
@@ -18,6 +19,16 @@ class FakeRecognition {
   abort() {}
 }
 
+/** stop() を呼ぶと、指定した種類のエラーを onerror で返す認識器。 */
+function makeFailingRecognitionClass(errorCode: string) {
+  return class FailingRecognition extends FakeRecognition {
+    override stop() {
+      const handler = this.onerror as ((event: { error: string }) => void) | null
+      handler?.({ error: errorCode })
+    }
+  }
+}
+
 const transcribe: TranscribeAudio = vi.fn(async () => 'transcribed')
 
 function stubNavigator(overrides: Partial<Navigator> = {}): void {
@@ -29,9 +40,14 @@ function stubNavigator(overrides: Partial<Navigator> = {}): void {
   })
 }
 
+beforeEach(() => {
+  resetWebSpeechSessionState()
+})
+
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  resetWebSpeechSessionState()
 })
 
 describe('isWebSpeechAvailable', () => {
@@ -77,5 +93,57 @@ describe('createSpeechInput', () => {
 
     expect(input.engine).toBe('gemini')
     expect(warn).toHaveBeenCalledOnce()
+  })
+})
+
+describe('Web Speechが実行中に壊れたときのフォールバック', () => {
+  it('通信エラーの後、autoは次回からgeminiを選ぶ', async () => {
+    stubNavigator()
+    vi.stubGlobal('window', { webkitSpeechRecognition: makeFailingRecognitionClass('network') })
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    const first = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    expect(first.engine).toBe('webspeech')
+
+    await first.start()
+    await expect(first.stop()).rejects.toThrow()
+
+    const second = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    expect(second.engine).toBe('gemini')
+  })
+
+  it('切り替えたことが分かる文言でエラーを返す', async () => {
+    stubNavigator()
+    vi.stubGlobal('window', { webkitSpeechRecognition: makeFailingRecognitionClass('network') })
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    const input = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    await input.start()
+
+    await expect(input.stop()).rejects.toThrow(/切り替えました/)
+  })
+
+  it('マイク未許可など利用者側の問題ではwebspeechを無効化しない', async () => {
+    stubNavigator()
+    vi.stubGlobal('window', { webkitSpeechRecognition: makeFailingRecognitionClass('not-allowed') })
+
+    const first = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    await first.start()
+    await expect(first.stop()).rejects.toThrow(/マイク/)
+
+    const second = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    expect(second.engine).toBe('webspeech')
+  })
+
+  it('声が拾えなかっただけならwebspeechを無効化しない', async () => {
+    stubNavigator()
+    vi.stubGlobal('window', { webkitSpeechRecognition: makeFailingRecognitionClass('no-speech') })
+
+    const first = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    await first.start()
+    await expect(first.stop()).rejects.toThrow()
+
+    const second = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    expect(second.engine).toBe('webspeech')
   })
 })

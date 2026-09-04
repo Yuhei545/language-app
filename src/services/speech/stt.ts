@@ -63,13 +63,42 @@ function getRecognitionConstructor(): RecognitionConstructor | undefined {
   return speechWindow.webkitSpeechRecognition ?? speechWindow.SpeechRecognition
 }
 
+/**
+ * Web Speech のエンジン自体が使えないことを示すエラー種別。
+ * ブラウザの音声認識サーバーに届かない場合(network)や、そのブラウザで
+ * 音声認識サービスが提供されていない場合(service-not-allowed)に起きる。
+ * マイク未許可や無音は利用者側の問題なので、ここには含めない。
+ */
+const WEB_SPEECH_ENGINE_FAILURES = new Set(['network', 'service-not-allowed'])
+
+let webSpeechDisabledForSession = false
+
+/** Web Speech をこのセッションで使わない状態にする。 */
+function disableWebSpeechForSession(reason: string): void {
+  if (webSpeechDisabledForSession) {
+    return
+  }
+  webSpeechDisabledForSession = true
+  console.warn(`Web Speech音声認識が使えないため、Gemini音声入力に切り替えます (${reason})`)
+}
+
+/** テスト用。セッションの無効化状態を戻す。 */
+export function resetWebSpeechSessionState(): void {
+  webSpeechDisabledForSession = false
+}
+
 function recognitionError(error: string): Error {
+  if (WEB_SPEECH_ENGINE_FAILURES.has(error)) {
+    disableWebSpeechForSession(error)
+    return new Error(
+      'ブラウザの音声認識に接続できないため、Gemini音声入力に切り替えました。もう一度話してください。',
+    )
+  }
+
   const messages: Record<string, string> = {
     'no-speech': '音声を検出できませんでした',
     'not-allowed': 'マイクの使用が許可されていません',
-    'service-not-allowed': 'マイクの使用が許可されていません',
     'audio-capture': 'マイクを利用できません',
-    network: '音声認識の通信に失敗しました',
     aborted: '音声認識が中断されました',
   }
   return new Error(messages[error] ?? `音声認識に失敗しました: ${error}`)
@@ -389,6 +418,9 @@ export function isIos(): boolean {
 }
 
 export function isWebSpeechAvailable(): boolean {
+  if (webSpeechDisabledForSession) {
+    return false
+  }
   return !isIos() && getRecognitionConstructor() !== undefined
 }
 
