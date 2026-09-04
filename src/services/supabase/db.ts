@@ -224,6 +224,24 @@ export async function listMessages(conversationId: string): Promise<MessageRow[]
   return data
 }
 
+export async function updateMessageShadowScore(
+  id: string,
+  shadowScore: number,
+): Promise<MessageRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('messages')
+    .update({ shadow_score: shadowScore })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 export async function createPrepEvent(row: PrepEventInsert): Promise<PrepEventRow> {
   const { data, error } = await getSupabaseClient()
     .from('prep_events')
