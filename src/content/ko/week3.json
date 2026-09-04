@@ -1,1 +1,17 @@
-[]
+[
+  { "text": "그리고", "emoji": "➕", "category": "glue", "hint_ja": "そして", "example": "커피 그리고 물 주세요." },
+  { "text": "하지만", "emoji": "↩️", "category": "glue", "hint_ja": "でも", "example": "좋아요. 하지만 비싸요." },
+  { "text": "왜냐하면", "emoji": "🧩", "category": "glue", "hint_ja": "なぜなら", "example": "지금 가요. 왜냐하면 늦었어요." },
+  { "text": "그래서", "emoji": "➡️", "category": "glue", "hint_ja": "だから", "example": "더워요. 그래서 물을 마셔요." },
+  { "text": "그다음에", "emoji": "⏭️", "category": "glue", "hint_ja": "それから", "example": "밥 먹고 그다음에 가요." },
+  { "text": "만약", "emoji": "🔀", "category": "glue", "hint_ja": "もし", "example": "만약 원하면 같이 가요." },
+  { "text": "도", "emoji": "➕", "category": "glue", "hint_ja": "〜も", "example": "저도 이 노래 좋아해요." },
+  { "text": "아니면", "emoji": "🔤", "category": "glue", "hint_ja": "または", "example": "커피 아니면 차?" },
+  { "text": "같이", "emoji": "🤝", "category": "glue", "hint_ja": "一緒に", "example": "친구랑 같이 가요." },
+  { "text": "없이", "emoji": "🚫", "category": "glue", "hint_ja": "〜なしで", "example": "설탕 없이 주세요." },
+  { "text": "위해", "emoji": "🎯", "category": "glue", "hint_ja": "〜のために", "example": "친구를 위해 샀어요." },
+  { "text": "에 대해", "emoji": "💭", "category": "glue", "hint_ja": "〜について", "example": "그거에 대해 말하고 싶어요." },
+  { "text": "아주", "emoji": "‼️", "category": "glue", "hint_ja": "とても", "example": "이거 아주 좋아요." },
+  { "text": "너무", "emoji": "🈵", "category": "glue", "hint_ja": "〜すぎる", "example": "너무 비싸요." },
+  { "text": "더", "emoji": "📈", "category": "glue", "hint_ja": "もっと", "example": "물 더 주세요." }
+]

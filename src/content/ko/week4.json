@@ -1,1 +1,18 @@
-[]
+[
+  { "text": "조금", "emoji": "🤏", "category": "glue", "hint_ja": "少し", "example": "조금 피곤해요." },
+  { "text": "아마", "emoji": "🤔", "category": "glue", "hint_ja": "たぶん", "example": "아마 내일 가요." },
+  { "text": "항상", "emoji": "♾️", "category": "glue", "hint_ja": "いつも", "example": "항상 커피를 마셔요." },
+  { "text": "가끔", "emoji": "🔁", "category": "glue", "hint_ja": "ときどき", "example": "가끔 드라마를 봐요." },
+  { "text": "전혀", "emoji": "🚷", "category": "glue", "hint_ja": "全然〜ない", "example": "전혀 몰라요." },
+  { "text": "지금", "emoji": "⏰", "category": "glue", "hint_ja": "今", "example": "지금 가고 싶어요." },
+  { "text": "전에", "emoji": "⏮️", "category": "glue", "hint_ja": "〜の前に", "example": "가기 전에 밥 먹어요." },
+  { "text": "후에", "emoji": "⏭️", "category": "glue", "hint_ja": "〜の後に", "example": "일 후에 전화할게요." },
+  { "text": "아직", "emoji": "⏳", "category": "glue", "hint_ja": "まだ", "example": "아직 잘 몰라요." },
+  { "text": "벌써", "emoji": "✔️", "category": "glue", "hint_ja": "もう", "example": "벌써 먹었어요." },
+  { "text": "다시", "emoji": "🔂", "category": "glue", "hint_ja": "また", "example": "다시 말해 주세요." },
+  { "text": "정말", "emoji": "😲", "category": "glue", "hint_ja": "本当に", "example": "정말 좋아요." },
+  { "text": "물론", "emoji": "👌", "category": "glue", "hint_ja": "もちろん", "example": "물론 좋아해요." },
+  { "text": "생각해요", "emoji": "💭", "category": "glue", "hint_ja": "〜だと思います", "example": "이게 더 좋다고 생각해요." },
+  { "text": "하고 싶어요", "emoji": "🎯", "category": "glue", "hint_ja": "〜したいです", "example": "더 말하고 싶어요." },
+  { "text": "할 수 있어요", "emoji": "💪", "category": "glue", "hint_ja": "〜できます", "example": "조금 이해할 수 있어요." }
+]

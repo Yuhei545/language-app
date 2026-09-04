@@ -1,1 +1,107 @@
-[]
+[
+  {
+    "text": "How do you say that?",
+    "emoji": "🗣️",
+    "category": "toolbox",
+    "hint_ja": "それは何と言いますか?",
+    "example": "How do you say that in English?"
+  },
+  {
+    "text": "I don't understand.",
+    "emoji": "🤷",
+    "category": "toolbox",
+    "hint_ja": "分かりません",
+    "example": "Sorry, I don't understand."
+  },
+  {
+    "text": "Say that again, please.",
+    "emoji": "🔁",
+    "category": "toolbox",
+    "hint_ja": "もう一度言ってください",
+    "example": "Say that again, please. I missed it."
+  },
+  {
+    "text": "Slower, please.",
+    "emoji": "🐢",
+    "category": "toolbox",
+    "hint_ja": "もっとゆっくりお願いします",
+    "example": "Slower, please. You speak fast."
+  },
+  {
+    "text": "What does that mean?",
+    "emoji": "❓",
+    "category": "toolbox",
+    "hint_ja": "それはどういう意味ですか?",
+    "example": "What does that mean? I never heard it."
+  },
+  {
+    "text": "Is this correct?",
+    "emoji": "✅",
+    "category": "toolbox",
+    "hint_ja": "これで合っていますか?",
+    "example": "Is this correct? I want to say it well."
+  },
+  {
+    "text": "Wait a moment.",
+    "emoji": "✋",
+    "category": "toolbox",
+    "hint_ja": "ちょっと待ってください",
+    "example": "Wait a moment. I am thinking."
+  },
+  {
+    "text": "Thank you.",
+    "emoji": "🙏",
+    "category": "toolbox",
+    "hint_ja": "ありがとう",
+    "example": "Thank you. You help me a lot."
+  },
+  {
+    "text": "Sorry.",
+    "emoji": "😅",
+    "category": "toolbox",
+    "hint_ja": "すみません",
+    "example": "Sorry, my English is slow."
+  },
+  {
+    "text": "Yes.",
+    "emoji": "⭕",
+    "category": "toolbox",
+    "hint_ja": "はい",
+    "example": "Yes, I understand now."
+  },
+  {
+    "text": "No.",
+    "emoji": "❌",
+    "category": "toolbox",
+    "hint_ja": "いいえ",
+    "example": "No, not that one."
+  },
+  {
+    "text": "One more time.",
+    "emoji": "🔂",
+    "category": "toolbox",
+    "hint_ja": "もう一回",
+    "example": "One more time, please."
+  },
+  {
+    "text": "What is this?",
+    "emoji": "👉",
+    "category": "toolbox",
+    "hint_ja": "これは何ですか?",
+    "example": "What is this? I don't know the word."
+  },
+  {
+    "text": "I know.",
+    "emoji": "💡",
+    "category": "toolbox",
+    "hint_ja": "分かります",
+    "example": "I know that word."
+  },
+  {
+    "text": "A little.",
+    "emoji": "🤏",
+    "category": "toolbox",
+    "hint_ja": "少しだけ",
+    "example": "I speak English a little."
+  }
+]

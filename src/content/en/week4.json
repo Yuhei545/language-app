@@ -1,1 +1,18 @@
-[]
+[
+  { "text": "a little", "emoji": "🤏", "category": "glue", "hint_ja": "少し", "example": "I am a little tired." },
+  { "text": "maybe", "emoji": "🤔", "category": "glue", "hint_ja": "たぶん", "example": "Maybe I go tomorrow." },
+  { "text": "always", "emoji": "♾️", "category": "glue", "hint_ja": "いつも", "example": "I always drink coffee." },
+  { "text": "sometimes", "emoji": "🔁", "category": "glue", "hint_ja": "ときどき", "example": "Sometimes I watch dramas." },
+  { "text": "never", "emoji": "🚷", "category": "glue", "hint_ja": "一度も〜ない", "example": "I never went there." },
+  { "text": "now", "emoji": "⏰", "category": "glue", "hint_ja": "今", "example": "I want to go now." },
+  { "text": "before", "emoji": "⏮️", "category": "glue", "hint_ja": "〜の前に", "example": "I eat before I go." },
+  { "text": "after", "emoji": "⏭️", "category": "glue", "hint_ja": "〜の後に", "example": "I call you after work." },
+  { "text": "still", "emoji": "⏳", "category": "glue", "hint_ja": "まだ", "example": "I still don't understand." },
+  { "text": "already", "emoji": "✔️", "category": "glue", "hint_ja": "もう", "example": "I already ate." },
+  { "text": "again", "emoji": "🔂", "category": "glue", "hint_ja": "また", "example": "Say it again, please." },
+  { "text": "really", "emoji": "😲", "category": "glue", "hint_ja": "本当に", "example": "That is really good." },
+  { "text": "of course", "emoji": "👌", "category": "glue", "hint_ja": "もちろん", "example": "Of course, I like it." },
+  { "text": "I think", "emoji": "💭", "category": "glue", "hint_ja": "〜だと思う", "example": "I think this is better." },
+  { "text": "I want to", "emoji": "🎯", "category": "glue", "hint_ja": "〜したい", "example": "I want to speak more." },
+  { "text": "can", "emoji": "💪", "category": "glue", "hint_ja": "〜できる", "example": "I can understand a little." }
+]

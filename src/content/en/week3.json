@@ -1,1 +1,17 @@
-[]
+[
+  { "text": "and", "emoji": "➕", "category": "glue", "hint_ja": "そして", "example": "I want coffee and water." },
+  { "text": "but", "emoji": "↩️", "category": "glue", "hint_ja": "でも", "example": "I like it, but it is expensive." },
+  { "text": "because", "emoji": "🧩", "category": "glue", "hint_ja": "なぜなら", "example": "I go now because I am late." },
+  { "text": "so", "emoji": "➡️", "category": "glue", "hint_ja": "だから", "example": "It is hot, so I drink water." },
+  { "text": "then", "emoji": "⏭️", "category": "glue", "hint_ja": "それから", "example": "I eat, then I go." },
+  { "text": "if", "emoji": "🔀", "category": "glue", "hint_ja": "もし", "example": "If you want, I come with you." },
+  { "text": "also", "emoji": "➕", "category": "glue", "hint_ja": "〜も", "example": "I also like this song." },
+  { "text": "or", "emoji": "🔤", "category": "glue", "hint_ja": "または", "example": "Coffee or tea?" },
+  { "text": "with", "emoji": "🤝", "category": "glue", "hint_ja": "〜と一緒に", "example": "I go with my friend." },
+  { "text": "without", "emoji": "🚫", "category": "glue", "hint_ja": "〜なしで", "example": "Coffee without sugar, please." },
+  { "text": "for", "emoji": "🎯", "category": "glue", "hint_ja": "〜のために", "example": "This is for you." },
+  { "text": "about", "emoji": "💭", "category": "glue", "hint_ja": "〜について", "example": "I want to talk about that." },
+  { "text": "very", "emoji": "‼️", "category": "glue", "hint_ja": "とても", "example": "This is very good." },
+  { "text": "too", "emoji": "🈵", "category": "glue", "hint_ja": "〜すぎる", "example": "It is too expensive." },
+  { "text": "more", "emoji": "📈", "category": "glue", "hint_ja": "もっと", "example": "I want more water." }
+]

@@ -1,1 +1,107 @@
-[]
+[
+  {
+    "text": "이거 어떻게 말해요?",
+    "emoji": "🗣️",
+    "category": "toolbox",
+    "hint_ja": "それは何と言いますか?",
+    "example": "이거 한국어로 어떻게 말해요?"
+  },
+  {
+    "text": "모르겠어요.",
+    "emoji": "🤷",
+    "category": "toolbox",
+    "hint_ja": "分かりません",
+    "example": "죄송해요, 모르겠어요."
+  },
+  {
+    "text": "다시 말해 주세요.",
+    "emoji": "🔁",
+    "category": "toolbox",
+    "hint_ja": "もう一度言ってください",
+    "example": "다시 말해 주세요. 못 들었어요."
+  },
+  {
+    "text": "천천히 말해 주세요.",
+    "emoji": "🐢",
+    "category": "toolbox",
+    "hint_ja": "ゆっくり話してください",
+    "example": "천천히 말해 주세요. 너무 빨라요."
+  },
+  {
+    "text": "무슨 뜻이에요?",
+    "emoji": "❓",
+    "category": "toolbox",
+    "hint_ja": "どういう意味ですか?",
+    "example": "그 말은 무슨 뜻이에요?"
+  },
+  {
+    "text": "이거 맞아요?",
+    "emoji": "✅",
+    "category": "toolbox",
+    "hint_ja": "これで合っていますか?",
+    "example": "이거 맞아요? 잘 말하고 싶어요."
+  },
+  {
+    "text": "잠깐만요.",
+    "emoji": "✋",
+    "category": "toolbox",
+    "hint_ja": "ちょっと待ってください",
+    "example": "잠깐만요. 생각하고 있어요."
+  },
+  {
+    "text": "고맙습니다.",
+    "emoji": "🙏",
+    "category": "toolbox",
+    "hint_ja": "ありがとうございます",
+    "example": "고맙습니다. 많이 도와줬어요."
+  },
+  {
+    "text": "죄송합니다.",
+    "emoji": "😅",
+    "category": "toolbox",
+    "hint_ja": "すみません",
+    "example": "죄송합니다, 한국어가 느려요."
+  },
+  {
+    "text": "네.",
+    "emoji": "⭕",
+    "category": "toolbox",
+    "hint_ja": "はい",
+    "example": "네, 이제 알겠어요."
+  },
+  {
+    "text": "아니요.",
+    "emoji": "❌",
+    "category": "toolbox",
+    "hint_ja": "いいえ",
+    "example": "아니요, 그거 아니에요."
+  },
+  {
+    "text": "한 번 더요.",
+    "emoji": "🔂",
+    "category": "toolbox",
+    "hint_ja": "もう一回",
+    "example": "한 번 더요, 부탁해요."
+  },
+  {
+    "text": "이게 뭐예요?",
+    "emoji": "👉",
+    "category": "toolbox",
+    "hint_ja": "これは何ですか?",
+    "example": "이게 뭐예요? 단어를 몰라요."
+  },
+  {
+    "text": "알겠어요.",
+    "emoji": "💡",
+    "category": "toolbox",
+    "hint_ja": "分かりました",
+    "example": "네, 알겠어요."
+  },
+  {
+    "text": "조금만.",
+    "emoji": "🤏",
+    "category": "toolbox",
+    "hint_ja": "少しだけ",
+    "example": "한국어 조금만 할 수 있어요."
+  }
+]
