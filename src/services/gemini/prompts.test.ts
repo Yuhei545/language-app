@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildParentSystemPrompt,
+  buildTranscribePrompt,
   buildVocabPrompt,
   type ParentPromptInput,
 } from './prompts'
@@ -68,5 +69,22 @@ describe('buildVocabPrompt', () => {
     expect(prompt).toContain('week 3')
     expect(prompt).toContain('Do not include any word already')
     expect(prompt).toContain('안녕, 친구')
+  })
+})
+
+describe('buildTranscribePrompt', () => {
+  it('韓国語はハングル限定で、ローマ字化と翻訳を禁止する', () => {
+    const prompt = buildTranscribePrompt('ko')
+    expect(prompt).toContain('Korean')
+    expect(prompt).toContain('Hangul only')
+    expect(prompt).toContain('no romanization')
+    expect(prompt).toContain('no translation')
+  })
+
+  it('英語は英字限定で、余計な説明を禁止する', () => {
+    const prompt = buildTranscribePrompt('en')
+    expect(prompt).toContain('English')
+    expect(prompt).toContain('English letters only')
+    expect(prompt).toContain('no commentary')
   })
 })

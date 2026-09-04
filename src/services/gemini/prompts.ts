@@ -91,3 +91,17 @@ Prefer short, natural phrases that can be spoken immediately in that situation.
 Do not duplicate the learner's known words or phrases: ${list(input.knownWords)}.
 Each item must include the phrase, one emoji, a short Japanese hint, and a natural example sentence.`
 }
+
+/**
+ * 文字起こし用プロンプト。書字体系を固定しないと、Flash 系モデルは
+ * ローマ字化・翻訳・解説を混ぜることがあり、単語カードの判定が壊れる。
+ */
+export function buildTranscribePrompt(lang: Lang): string {
+  const script: Record<Lang, string> = {
+    en: 'Write it in English letters only.',
+    ko: 'Write it in Hangul only.',
+  }
+
+  return `Transcribe this ${languageNames[lang]} speech exactly as spoken. ${script[lang]} `
+    + 'Output only the transcription: no translation, no romanization, no commentary, no quotation marks.'
+}

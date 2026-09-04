@@ -2,11 +2,7 @@ import type { TranscribeAudio } from '../speech/stt'
 import { getGeminiClient, getModelId } from './client'
 import { GeminiError, toGeminiError } from './errors'
 import type { Lang } from './persona'
-
-const languageNames: Record<Lang, string> = {
-  en: 'English',
-  ko: 'Korean',
-}
+import { buildTranscribePrompt } from './prompts'
 
 export const transcribeAudio = (async (
   audio: { base64: string; mimeType: string },
@@ -19,9 +15,7 @@ export const transcribeAudio = (async (
         role: 'user',
         parts: [
           { inlineData: { mimeType: audio.mimeType, data: audio.base64 } },
-          {
-            text: `Transcribe this ${languageNames[lang]} speech exactly. Output only the transcription, no explanation.`,
-          },
+          { text: buildTranscribePrompt(lang) },
         ],
       }],
     })

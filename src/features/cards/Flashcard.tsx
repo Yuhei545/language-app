@@ -86,6 +86,7 @@ export function Flashcard({
                 {attempt.matched ? 'その調子です' : 'もう一度声に出してみましょう'}
               </p>
               <p className="mt-1 text-xs opacity-75">声の近さ {Math.round(attempt.similarity * 100)}%</p>
+              <p className="mt-2 text-xs opacity-75">こう聞こえました：「{attempt.spokenText}」</p>
             </div>
           </div>
         )}

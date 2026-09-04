@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { transcribeAudio } from '../../services/gemini/transcribe'
 import { createSpeechInput, type SpeechInput } from '../../services/speech/stt'
-import { isMatch, similarity } from '../../services/speech/normalize'
+import { scorePronunciation } from './scoring'
 import { speak, unlockAudio } from '../../services/speech/tts'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
@@ -248,10 +248,15 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
         throw new Error('音声を聞き取れませんでした。もう一度ゆっくり声に出してみてください')
       }
 
+      const score = scorePronunciation(
+        spokenText,
+        { text: currentCard.text, example: currentCard.example ?? '' },
+        lang,
+      )
       setAttempt({
         spokenText,
-        matched: isMatch(spokenText, currentCard.text, lang),
-        similarity: similarity(spokenText, currentCard.text, lang),
+        matched: score.matched,
+        similarity: score.similarity,
       })
       setPhase('result')
     } catch (recordingError) {
