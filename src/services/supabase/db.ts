@@ -16,24 +16,13 @@ import type {
 } from './types'
 
 export async function getOrCreateProfile(userId: string): Promise<ProfileRow> {
-  const client = getSupabaseClient()
-  const { data: existing, error: selectError } = await client
+  // 「調べてから挿入」だと同時に2回呼ばれた時に両方が挿入して重複キーになる
+  // (React StrictMode の二重 effect、PC とスマホの同時ログイン)。
+  // upsert なら Postgres 側で ON CONFLICT が原子的に処理する。
+  // payload は user_id だけなので、既存行の interests や created_at は触らない。
+  const { data, error } = await getSupabaseClient()
     .from('profiles')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (selectError) {
-    throw selectError
-  }
-
-  if (existing) {
-    return existing
-  }
-
-  const { data, error } = await client
-    .from('profiles')
-    .insert({ user_id: userId })
+    .upsert({ user_id: userId }, { onConflict: 'user_id' })
     .select('*')
     .single()
 
