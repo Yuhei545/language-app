@@ -5,6 +5,7 @@ import { LoginPage } from './features/auth/LoginPage'
 import { CardsPage } from './features/cards/CardsPage'
 import { CurriculumPage } from './features/curriculum/CurriculumPage'
 import { HomePage } from './features/home/HomePage'
+import { PrepPage } from './features/prep/PrepPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { TalkPage } from './features/talk/TalkPage'
 
@@ -18,6 +19,7 @@ function App() {
           <Route path="/talk" element={<TalkPage />} />
           <Route path="/cards" element={<CardsPage />} />
           <Route path="/curriculum" element={<CurriculumPage />} />
+          <Route path="/prep" element={<PrepPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

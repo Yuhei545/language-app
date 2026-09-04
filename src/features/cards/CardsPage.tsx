@@ -7,7 +7,7 @@ import { useCardSession } from './useCardSession'
 export function CardsPage() {
   const { language } = useLanguage()
   const [searchParams] = useSearchParams()
-  const prepEventId = searchParams.get('prepEventId') || undefined
+  const prepEventId = searchParams.get('prep') || searchParams.get('prepEventId') || undefined
   const session = useCardSession(language, prepEventId)
 
   if (session.loading) {

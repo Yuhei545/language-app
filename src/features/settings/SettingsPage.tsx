@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
+import { listAvailableModels, type AvailableModel } from '../../services/gemini/models'
 import {
   getSettings,
   setSettings,
@@ -57,6 +58,9 @@ function VoiceSelect({
 export function SettingsPage() {
   const [settingsState, setSettingsState] = useState<Settings>(getSettings)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [models, setModels] = useState<AvailableModel[] | null>(null)
+  const [modelsLoading, setModelsLoading] = useState(false)
+  const [modelsError, setModelsError] = useState<string | null>(null)
 
   useEffect(() => subscribe(setSettingsState), [])
 
@@ -86,6 +90,31 @@ export function SettingsPage() {
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'))
   const koreanVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('ko'))
 
+  const loadModels = async () => {
+    setModelsLoading(true)
+    setModelsError(null)
+
+    try {
+      const availableModels = await listAvailableModels()
+      if (availableModels.length === 0) {
+        setModels(null)
+        setModelsError('生成に使えるモデルが見つかりませんでした。モデルIDは手入力できます。')
+        return
+      }
+
+      setModels(availableModels)
+    } catch (error) {
+      setModels(null)
+      setModelsError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setModelsLoading(false)
+    }
+  }
+
+  const selectedModelDescription = models?.find(
+    (model) => model.id === settingsState.geminiModel,
+  )?.description
+
   return (
     <section>
       <p className="text-sm font-bold text-teal-700">PREFERENCES</p>
@@ -106,21 +135,52 @@ export function SettingsPage() {
                 className="w-full rounded-xl border border-slate-300 px-3 py-3"
               />
             </label>
-            <label className="block">
-              <span className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
+            <div>
+              <label htmlFor="gemini-model" className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
                 モデル
                 {settingsState.geminiModel.trim() === '' ? (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">未設定</span>
                 ) : null}
-              </span>
-              <input
-                type="text"
-                value={settingsState.geminiModel}
-                onChange={(event) => update({ geminiModel: event.target.value })}
-                className="w-full rounded-xl border border-slate-300 px-3 py-3"
-                placeholder="例: gemini-2.5-flash"
-              />
-            </label>
+              </label>
+              <div className="flex items-stretch gap-2">
+                {models ? (
+                  <select
+                    id="gemini-model"
+                    value={settingsState.geminiModel}
+                    onChange={(event) => update({ geminiModel: event.target.value })}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-800"
+                  >
+                    <option value="">モデルを選択</option>
+                    {settingsState.geminiModel && !models.some((model) => model.id === settingsState.geminiModel) ? (
+                      <option value={settingsState.geminiModel}>{settingsState.geminiModel}（現在の設定）</option>
+                    ) : null}
+                    {models.map((model) => (
+                      <option key={model.id} value={model.id}>{model.displayName}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="gemini-model"
+                    type="text"
+                    value={settingsState.geminiModel}
+                    onChange={(event) => update({ geminiModel: event.target.value })}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-3"
+                    placeholder="例: gemini-2.5-flash"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => void loadModels()}
+                  disabled={modelsLoading}
+                  className="shrink-0 rounded-xl border border-teal-300 bg-teal-50 px-3 text-xs font-bold text-teal-800 disabled:opacity-50"
+                >
+                  {modelsLoading ? '取得中…' : 'モデル一覧を取得'}
+                </button>
+              </div>
+              {modelsLoading ? <p className="mt-2 text-xs font-bold text-teal-700" role="status">利用できるモデルを確認しています…</p> : null}
+              {modelsError ? <p className="mt-2 text-xs font-bold leading-5 text-red-700" role="alert">{modelsError}</p> : null}
+              {selectedModelDescription ? <p className="mt-2 text-xs leading-5 text-slate-500">{selectedModelDescription}</p> : null}
+            </div>
           </div>
         </fieldset>
 

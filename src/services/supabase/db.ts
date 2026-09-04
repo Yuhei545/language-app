@@ -196,6 +196,34 @@ export async function endConversation(id: string, turnCount: number): Promise<Co
   return data
 }
 
+export async function countConversationsToday(
+  userId: string,
+  lang: Language,
+  todayIso: string,
+): Promise<number> {
+  const todayStart = new Date(todayIso)
+  if (Number.isNaN(todayStart.getTime())) {
+    throw new Error(`今日の日付を解釈できません: ${todayIso}`)
+  }
+
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
+  const { count, error } = await getSupabaseClient()
+    .from('conversations')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .gte('started_at', todayStart.toISOString())
+    .lt('started_at', tomorrowStart.toISOString())
+
+  if (error) {
+    throw error
+  }
+
+  return count ?? 0
+}
+
 export async function addMessage(row: MessageInsert): Promise<MessageRow> {
   const { data, error } = await getSupabaseClient()
     .from('messages')
