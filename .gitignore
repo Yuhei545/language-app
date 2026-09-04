@@ -23,3 +23,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Playwright MCP の一時出力
+.playwright-mcp/
+*-screen.png
