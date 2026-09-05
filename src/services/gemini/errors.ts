@@ -66,6 +66,22 @@ export function toGeminiError(error: unknown): GeminiError {
     )
   }
 
+  if (status === 504 || /DEADLINE_EXCEEDED|deadline expired/i.test(message)) {
+    return new GeminiError(
+      'Gemini の応答が時間内に終わりませんでした。混雑しているか、生成に時間がかかっています。もう一度試してください',
+      error,
+      'network',
+    )
+  }
+
+  if (status === 503 || /UNAVAILABLE|overloaded/i.test(message)) {
+    return new GeminiError(
+      'Gemini が混雑しています。少し待ってからもう一度試してください',
+      error,
+      'network',
+    )
+  }
+
   if (status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(message)) {
     return new GeminiError(
       '無料枠の上限に達しました。しばらく待ってから試してください',

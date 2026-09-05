@@ -137,6 +137,9 @@ export function ScenePicker({
       >
         {busy ? '会話を作っています…' : 'このレッスンを作る'}
       </button>
+      {busy ? (
+        <p className="mt-2 text-center text-xs text-slate-500">行ごとの解説と応用も作るので、1〜2 分かかることがあります</p>
+      ) : null}
     </div>
   )
 }
