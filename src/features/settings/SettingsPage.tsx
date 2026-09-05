@@ -9,6 +9,7 @@ import {
   type SttEngine,
 } from '../../services/settings'
 import { MicTest } from './MicTest'
+import { VoiceSelect } from './VoiceSelect'
 
 const sttOptions: Array<{ value: SttEngine; label: string }> = [
   { value: 'auto', label: '自動' },
@@ -21,40 +22,6 @@ const interestOptions: Array<{ value: Interest; label: string }> = [
   { value: 'friends', label: '友人との会話' },
   { value: 'content', label: '動画・コンテンツ' },
 ]
-
-function VoiceSelect({
-  label,
-  voices,
-  value,
-  onChange,
-}: {
-  label: string
-  voices: SpeechSynthesisVoice[]
-  value: string | null
-  onChange: (voiceUri: string | null) => void
-}) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-bold text-slate-700">{label}</span>
-      {voices.length > 0 ? (
-        <select
-          value={value ?? ''}
-          onChange={(event) => onChange(event.target.value || null)}
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-800"
-        >
-          <option value="">端末の既定音声</option>
-          {voices.map((voice) => (
-            <option key={voice.voiceURI} value={voice.voiceURI}>
-              {voice.name}（{voice.lang}）
-            </option>
-          ))}
-        </select>
-      ) : (
-        <p className="rounded-xl bg-amber-50 px-3 py-3 text-sm font-medium text-amber-800">音声が見つかりません</p>
-      )}
-    </label>
-  )
-}
 
 export function SettingsPage() {
   const [settingsState, setSettingsState] = useState<Settings>(getSettings)
@@ -210,12 +177,16 @@ export function SettingsPage() {
           <div className="space-y-5">
             <VoiceSelect
               label="英語の音声"
+              lang="en"
+              rate={settingsState.ttsRate}
               voices={englishVoices}
               value={settingsState.ttsVoice.en}
               onChange={(voiceUri) => update({ ttsVoice: { ...settingsState.ttsVoice, en: voiceUri } })}
             />
             <VoiceSelect
               label="韓国語の音声"
+              lang="ko"
+              rate={settingsState.ttsRate}
               voices={koreanVoices}
               value={settingsState.ttsVoice.ko}
               onChange={(voiceUri) => update({ ttsVoice: { ...settingsState.ttsVoice, ko: voiceUri } })}
@@ -226,12 +197,18 @@ export function SettingsPage() {
               <div className="mt-4 space-y-4">
                 <VoiceSelect
                   label="英語の相手役"
+                  lang="en"
+                  rate={settingsState.ttsRate}
+                  previewPitch={settingsState.ttsVoiceB.en ? undefined : 0.9}
                   voices={englishVoices}
                   value={settingsState.ttsVoiceB.en}
                   onChange={(voiceUri) => update({ ttsVoiceB: { ...settingsState.ttsVoiceB, en: voiceUri } })}
                 />
                 <VoiceSelect
                   label="韓国語の相手役"
+                  lang="ko"
+                  rate={settingsState.ttsRate}
+                  previewPitch={settingsState.ttsVoiceB.ko ? undefined : 0.9}
                   voices={koreanVoices}
                   value={settingsState.ttsVoiceB.ko}
                   onChange={(voiceUri) => update({ ttsVoiceB: { ...settingsState.ttsVoiceB, ko: voiceUri } })}
