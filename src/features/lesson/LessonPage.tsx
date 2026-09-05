@@ -35,6 +35,7 @@ export function LessonPage() {
     [lesson.steps],
   )
   const matchedCount = lesson.recallResults.filter(({ matched }) => matched).length
+  const warnings = lesson.warnings ?? []
   const progress = lesson.steps.length === 0
     ? 0
     : Math.round((lesson.currentIndex / lesson.steps.length) * 100)
@@ -70,6 +71,19 @@ export function LessonPage() {
 
       <p className="text-sm font-bold text-indigo-700">AUDIO LESSON</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">音声レッスン</h1>
+
+      {warnings.length > 0 ? (
+        <div className="mt-4 space-y-2" aria-live="polite">
+          {warnings.map((warning) => (
+            <p
+              key={warning}
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900"
+            >
+              {warning}
+            </p>
+          ))}
+        </div>
+      ) : null}
 
       {lesson.status === 'loading' ? (
         <p className="mt-8 rounded-2xl bg-white px-5 py-8 text-center text-sm font-bold text-slate-500" role="status">

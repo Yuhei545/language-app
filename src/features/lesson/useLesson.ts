@@ -4,6 +4,7 @@ import { loadCore } from '../../content/coreSchema'
 import { transcribeAudio } from '../../services/gemini/transcribe'
 import {
   createSpeechInput,
+  hasVoiceFor,
   speak,
   stopSpeaking,
   type SpeechInput,
@@ -140,6 +141,7 @@ export function useLesson(lang: 'en' | 'ko') {
   const [paused, setPaused] = useState(false)
   const [recallResults, setRecallResults] = useState<LessonRecallResult[]>([])
   const [error, setError] = useState<unknown>(null)
+  const [warnings, setWarnings] = useState<string[]>([])
   const generationRef = useRef(0)
   const actionIndexRef = useRef(0)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -148,6 +150,8 @@ export function useLesson(lang: 'en' | 'ko') {
   const startedAtRef = useRef<number | null>(null)
   const lessonRunRef = useRef(0)
   const mountedRef = useRef(true)
+  const japaneseVoiceAvailableRef = useRef(true)
+  const consecutiveSpeechFailuresRef = useRef(0)
 
   const currentStep = steps[currentIndex] ?? null
 
@@ -210,6 +214,8 @@ export function useLesson(lang: 'en' | 'ko') {
     setPaused(false)
     setRecallResults([])
     setError(null)
+    setWarnings([])
+    consecutiveSpeechFailuresRef.current = 0
 
     const load = async () => {
       try {
@@ -347,11 +353,24 @@ export function useLesson(lang: 'en' | 'ko') {
         setCurrentAction(actionLabel(action))
 
         if (action.type === 'speak') {
-          await speak(action.text, {
-            lang: action.lang,
-            rate: action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
-            voiceURI: action.lang === 'ja' ? undefined : settingsRef.current.ttsVoice[lang],
-          })
+          if (action.lang === 'ja' && !japaneseVoiceAvailableRef.current) {
+            await wait(1_500)
+          } else {
+            try {
+              await speak(action.text, {
+                lang: action.lang,
+                rate: action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
+                voiceURI: action.lang === 'ja' ? undefined : settingsRef.current.ttsVoice[lang],
+              })
+              consecutiveSpeechFailuresRef.current = 0
+            } catch (speechError) {
+              consecutiveSpeechFailuresRef.current += 1
+              console.warn('読み上げに失敗したため次の行動へ進みます', speechError)
+              if (consecutiveSpeechFailuresRef.current >= 3) {
+                throw new Error('読み上げが連続して失敗しています')
+              }
+            }
+          }
         } else if (action.type === 'pause') {
           await runPause(action)
         } else {
@@ -411,8 +430,22 @@ export function useLesson(lang: 'en' | 'ko') {
     if (status !== 'ready' && status !== 'finished') {
       return
     }
+    if (steps.length === 0) {
+      return
+    }
 
     cancelActive()
+    const japaneseVoiceAvailable = hasVoiceFor('ja')
+    japaneseVoiceAvailableRef.current = japaneseVoiceAvailable
+    const nextWarnings: string[] = []
+    if (!japaneseVoiceAvailable) {
+      nextWarnings.push('日本語の読み上げ音声が見つかりません。問いは画面の文字で確認してください')
+    }
+    if (!hasVoiceFor(lang)) {
+      nextWarnings.push(`${lang === 'en' ? '英語' : '韓国語'}の読み上げ音声が見つかりません`)
+    }
+    setWarnings(nextWarnings)
+    consecutiveSpeechFailuresRef.current = 0
     lessonRunRef.current += 1
     actionIndexRef.current = 0
     setCurrentIndex(0)
@@ -422,8 +455,8 @@ export function useLesson(lang: 'en' | 'ko') {
     setError(null)
     setPaused(false)
     startedAtRef.current = Date.now()
-    setStatus(steps.length === 0 ? 'finished' : 'running')
-  }, [cancelActive, status, steps.length])
+    setStatus('running')
+  }, [cancelActive, lang, status, steps.length])
 
   const pause = useCallback(() => {
     if (status !== 'running' || paused) {
@@ -495,6 +528,7 @@ export function useLesson(lang: 'en' | 'ko') {
     skip,
     stop,
     recallResults,
+    warnings,
     error,
     clearError: () => setError(null),
   }

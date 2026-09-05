@@ -11,6 +11,8 @@ const browserLanguages: Record<TtsLanguage, string> = {
 let cachedVoices: SpeechSynthesisVoice[] = []
 let voiceListenerAttached = false
 let audioUnlocked = false
+let activeUtterance: SpeechSynthesisUtterance | null = null
+let finishActiveUtterance: (() => void) | null = null
 
 export function isTtsSupported(): boolean {
   return (
@@ -23,6 +25,7 @@ export function isTtsSupported(): boolean {
 export function stopSpeaking(): void {
   if (isTtsSupported()) {
     window.speechSynthesis.cancel()
+    finishActiveUtterance?.()
   }
 }
 
@@ -53,6 +56,11 @@ export function listVoices(lang: SpeechLanguage): SpeechSynthesisVoice[] {
   return cachedVoices.filter((voice) => voice.lang.toLowerCase().startsWith(lang))
 }
 
+export function hasVoiceFor(lang: TtsLanguage): boolean {
+  ensureVoiceCache()
+  return cachedVoices.some((voice) => voice.lang.toLowerCase().startsWith(lang))
+}
+
 export function speak(
   text: string,
   opts: { lang: TtsLanguage; rate?: number; voiceURI?: string | null },
@@ -62,11 +70,45 @@ export function speak(
   }
 
   ensureVoiceCache()
-  window.speechSynthesis.cancel()
+  stopSpeaking()
 
   return new Promise((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = browserLanguages[opts.lang]
+    const timeoutMs = Math.max(4_000, text.length * 250 + 2_000)
+    let settled = false
+    let watchdog: ReturnType<typeof setTimeout> | null = null
+
+    const finish = (error?: Error) => {
+      if (settled) {
+        return
+      }
+      settled = true
+      if (watchdog !== null) {
+        clearTimeout(watchdog)
+      }
+      if (activeUtterance === utterance) {
+        activeUtterance = null
+        finishActiveUtterance = null
+      }
+      if (error) {
+        reject(error)
+      } else {
+        resolve()
+      }
+    }
+
+    activeUtterance = utterance
+    finishActiveUtterance = () => finish()
+    watchdog = setTimeout(() => {
+      console.warn('読み上げの終了通知が来なかったため打ち切りました', {
+        text,
+        lang: opts.lang,
+        timeoutMs,
+      })
+      window.speechSynthesis.cancel()
+      finish()
+    }, timeoutMs)
 
     if (opts.rate !== undefined) {
       utterance.rate = opts.rate
@@ -79,14 +121,14 @@ export function speak(
       }
     }
 
-    utterance.onend = () => resolve()
+    utterance.onend = () => finish()
     utterance.onerror = (event) => {
       if (event.error === 'interrupted' || event.error === 'canceled') {
-        resolve()
+        finish()
         return
       }
 
-      reject(new Error(`読み上げに失敗しました: ${event.error}`))
+      finish(new Error(`読み上げに失敗しました: ${event.error}`))
     }
     window.speechSynthesis.speak(utterance)
   })
