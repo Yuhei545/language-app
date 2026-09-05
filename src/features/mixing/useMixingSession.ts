@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CoreFrame, CoreVocab, CoreWord } from '../../content/coreSchema'
 import { loadCore } from '../../content/coreSchema'
 import { checkMixingTurn } from '../../services/gemini/parent'
+import { scorePronunciation, type PronunciationScore } from '../cards/scoring'
 import { transcribeAudio } from '../../services/gemini/transcribe'
 import {
   createSpeechInput,
@@ -42,6 +43,10 @@ export type MixingFeedback = {
   ja: string
   learnerText: string
   durationMs: number
+  /** 配られた型と語をそのまま埋めた「ひとつの言い方」(模範)。表示と読み上げに使う。 */
+  modelText: string
+  /** 聞こえた文と模範の近さ。模範と同じ言い方だったかの目安(文法の採点ではない)。 */
+  match: PronunciationScore | null
 }
 
 export type FluencyResult = {
@@ -383,10 +388,21 @@ export function useMixingSession(lang: 'en' | 'ko') {
       progressRef.current.set(key, updated)
       historyRef.current = buildDealHistory(core, [...progressRef.current.values()])
 
+      let modelText = ''
+      try {
+        modelText = renderPattern(currentDeal.frame, currentDeal.words)
+      } catch (renderError) {
+        console.error('模範の文を組み立てられませんでした', renderError)
+      }
+      const match = modelText.length > 0
+        ? scorePronunciation(learnerText, { text: modelText, example: '' }, lang)
+        : null
       const nextFeedback: MixingFeedback = {
         ...checked,
         learnerText,
         durationMs,
+        modelText,
+        match,
       }
       setFeedback(nextFeedback)
       setFluency(null)

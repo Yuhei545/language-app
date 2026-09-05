@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLanguage } from '../../app/LanguageContext'
 import { Toast } from '../../components/Toast'
 import type { MixingLevel } from '../../services/settings'
-import { useMixingSession } from './useMixingSession'
+import { useMixingSession, type MixingFeedback } from './useMixingSession'
 
 const LEVELS: MixingLevel[] = [1, 2, 3]
 
@@ -14,6 +14,17 @@ function engineLabel(engine: 'webspeech' | 'gemini' | null): string {
     return 'Gemini'
   }
   return '開始後に表示'
+}
+
+/** 結果の見出し。文法の採点はせず、「通じたか」と「模範と同じ言い方だったか」だけを伝える。 */
+function verdictLabel(feedback: MixingFeedback): string {
+  if (!feedback.understood) {
+    return '伝わりませんでした。模範を聞いて、もう一度'
+  }
+  if (feedback.match?.matched) {
+    return '通じました。模範と同じ言い方です'
+  }
+  return '通じました。模範とは違う言い方でしたが、意味は届いています'
 }
 
 function seconds(milliseconds: number): string {
@@ -147,10 +158,39 @@ export function MixingPage() {
             <div className="mt-5 space-y-4">
               <div className={`rounded-3xl border p-5 ${session.feedback.understood ? 'border-teal-200 bg-teal-50' : 'border-sky-200 bg-sky-50'}`}>
                 <p className={`text-sm font-bold ${session.feedback.understood ? 'text-teal-800' : 'text-sky-800'}`}>
-                  {session.feedback.understood ? '通じました' : 'こう聞こえました'}
+                  {verdictLabel(session.feedback)}
                 </p>
-                <div className="mt-3 flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm">
-                  <p className="min-w-0 flex-1 text-lg font-bold leading-8 text-slate-900">
+
+                <p className="mt-4 text-[11px] font-bold tracking-wider text-slate-500">こう聞こえました</p>
+                <p className="mt-1 rounded-2xl bg-white/70 px-4 py-3 text-base font-bold leading-7 text-slate-800">
+                  {session.feedback.learnerText}
+                </p>
+
+                {session.feedback.modelText ? (
+                  <>
+                    <p className="mt-4 text-[11px] font-bold tracking-wider text-slate-500">ひとつの言い方(模範)</p>
+                    <div className="mt-1 flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm">
+                      <p className="min-w-0 flex-1 text-lg font-bold leading-8 text-slate-900">
+                        {session.feedback.modelText}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void session.hearOneWay()}
+                        disabled={session.isSpeaking || session.isStartingFluency}
+                        className="grid size-10 shrink-0 place-items-center rounded-full bg-violet-50 text-lg disabled:opacity-45"
+                        aria-label="模範を聞く"
+                      >
+                        🔊
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+
+                <p className="mt-4 text-[11px] font-bold tracking-wider text-slate-500">
+                  {session.feedback.understood ? '相手はこう受け取りました' : '相手の聞き返し'}
+                </p>
+                <div className="mt-1 flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm">
+                  <p className="min-w-0 flex-1 text-base font-bold leading-7 text-slate-900">
                     {session.feedback.recast}
                   </p>
                   <button
@@ -158,7 +198,7 @@ export function MixingPage() {
                     onClick={() => void session.hearRecast()}
                     disabled={session.isSpeaking || session.isStartingFluency}
                     className="grid size-10 shrink-0 place-items-center rounded-full bg-teal-50 text-lg disabled:opacity-45"
-                    aria-label="言い方を聞く"
+                    aria-label="相手の言葉を聞く"
                   >
                     🔊
                   </button>
@@ -199,24 +239,14 @@ export function MixingPage() {
                 </button>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => void session.hearOneWay()}
-                  disabled={session.isSpeaking || session.isStartingFluency}
-                  className="rounded-2xl border border-violet-200 bg-white px-3 py-3 text-sm font-bold text-violet-800 disabled:opacity-45"
-                >
-                  🔊 ひとつの言い方を聞く
-                </button>
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={session.isSpeaking || session.isStartingFluency}
-                  className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-700 disabled:opacity-45"
-                >
-                  次へ
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={session.isSpeaking || session.isStartingFluency}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-700 disabled:opacity-45"
+              >
+                次へ
+              </button>
               <p className="text-center text-[11px] text-slate-500">
                 音声入力：{engineLabel(session.sttEngine)}
               </p>
