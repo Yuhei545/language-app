@@ -15,7 +15,7 @@ export type DialogueIssue = { code: DialogueIssueCode; message: string }
 
 export type DialogueValidation =
   | { ok: true; dialogue: LessonDialogue; ratio: number }
-  | { ok: false; issues: DialogueIssue[]; ratio: number }
+  | { ok: false; issues: DialogueIssue[]; ratio: number; dialogue?: LessonDialogue }
 
 export const DIALOGUE_TURN_RANGE = { min: 6, max: 8 } as const
 export const NEW_EXPRESSION_RANGE = { min: 4, max: 6 } as const
@@ -178,7 +178,7 @@ export function validateDialogue(
   }
 
   if (issues.length > 0) {
-    return { ok: false, issues, ratio }
+    return { ok: false, issues, ratio, dialogue: parsed }
   }
   return { ok: true, dialogue: parsed, ratio }
 }
