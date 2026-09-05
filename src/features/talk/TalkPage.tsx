@@ -294,6 +294,15 @@ export function TalkPage() {
         >
           <span className="text-3xl" aria-hidden="true">{isRecording ? '■' : '●'}</span>
         </button>
+        {session.phase === 'transcribing' || session.phase === 'thinking' ? (
+          <button
+            type="button"
+            onClick={session.cancelTurn}
+            className="mt-3 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4"
+          >
+            やめる
+          </button>
+        ) : null}
         <p className="mt-2 text-[11px] text-slate-500">{isRecording ? 'タップして止める' : 'タップして話す'}</p>
       </div>
     </section>

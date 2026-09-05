@@ -126,6 +126,15 @@ export function MixingPage() {
                       ? '意味が通じたか確かめています…'
                       : '🎤 声で伝える'}
                 </button>
+                {session.status === 'checking' ? (
+                  <button
+                    type="button"
+                    onClick={session.cancelChecking}
+                    className="mt-3 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4"
+                  >
+                    やめる
+                  </button>
+                ) : null}
                 <p className="mt-2 text-[11px] text-slate-500">
                   {session.status === 'recording'
                     ? '聞いています。話し終えたらタップ'

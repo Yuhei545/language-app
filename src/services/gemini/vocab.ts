@@ -56,7 +56,10 @@ function parseVocabList(text: string | undefined): GeneratedVocab[] {
   })
 }
 
-async function generateVocab(prompt: string): Promise<GeneratedVocab[]> {
+async function generateVocab(
+  prompt: string,
+  opts?: { signal?: AbortSignal },
+): Promise<GeneratedVocab[]> {
   try {
     const response = await getGeminiClient().models.generateContent({
       model: getModelId(),
@@ -64,6 +67,7 @@ async function generateVocab(prompt: string): Promise<GeneratedVocab[]> {
       config: {
         responseMimeType: 'application/json',
         responseSchema: vocabListSchema,
+        abortSignal: opts?.signal,
       },
     })
 
@@ -83,14 +87,14 @@ export function generateWeeklyVocab(params: {
   knownWords: string[]
   interests: VocabPromptInput['interests']
   count?: number
-}): Promise<GeneratedVocab[]> {
-  return generateVocab(buildVocabPrompt(params))
+}, opts?: { signal?: AbortSignal }): Promise<GeneratedVocab[]> {
+  return generateVocab(buildVocabPrompt(params), opts)
 }
 
 export function generatePrepPhrases(params: {
   lang: Lang
   title: string
   knownWords: string[]
-}): Promise<GeneratedVocab[]> {
-  return generateVocab(buildPrepPrompt(params satisfies PrepPromptInput))
+}, opts?: { signal?: AbortSignal }): Promise<GeneratedVocab[]> {
+  return generateVocab(buildPrepPrompt(params satisfies PrepPromptInput), opts)
 }

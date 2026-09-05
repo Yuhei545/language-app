@@ -144,6 +144,7 @@ export function CardsPage() {
           onListen={session.playExample}
           onStartRecording={session.startRecording}
           onStopRecording={session.stopRecording}
+          onCancelTranscription={session.cancelTranscription}
           onShowHint={session.showHint}
           onGrade={session.gradeCard}
         />

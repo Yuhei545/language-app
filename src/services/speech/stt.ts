@@ -13,6 +13,7 @@ import {
 // 録音環境や端末差を見ながら実機で調整する値。
 const MIN_SPEECH_SECONDS = 0.3
 const MIN_PEAK_RMS = 0.01
+const RECORDING_STOP_TIMEOUT_MS = 3_000
 
 export type SttResult = { text: string; engine: 'webspeech' | 'gemini' }
 
@@ -26,6 +27,7 @@ export interface SpeechInput {
 export type TranscribeAudio = (
   audio: { base64: string; mimeType: string },
   lang: SpeechLanguage,
+  opts?: { signal?: AbortSignal },
 ) => Promise<string>
 
 type RecognitionAlternative = { transcript: string }
@@ -280,6 +282,7 @@ export class GeminiAudioInput implements SpeechInput {
   private timeoutId: ReturnType<typeof setTimeout> | null = null
   private cancelled = false
   private inputInfo: { label: string; settings: MediaTrackSettings } | null = null
+  private abortController: AbortController | null = null
 
   constructor(lang: SpeechLanguage, transcribe: TranscribeAudio) {
     this.lang = lang
@@ -304,6 +307,8 @@ export class GeminiAudioInput implements SpeechInput {
     this.cancelled = false
     this.chunks = []
     this.inputInfo = null
+    this.abortController?.abort()
+    this.abortController = new AbortController()
 
     try {
       const micDeviceId = getSettings().micDeviceId
@@ -326,6 +331,10 @@ export class GeminiAudioInput implements SpeechInput {
         } else {
           throw error
         }
+      }
+      if (this.cancelled) {
+        this.stopTracks()
+        throw new Error('録音をキャンセルしました')
       }
       const inputTrack = this.stream.getAudioTracks()[0]
       this.inputInfo = inputTrack
@@ -389,13 +398,14 @@ export class GeminiAudioInput implements SpeechInput {
       this.recorder.stop()
     }
 
-    this.processing = this.finishRecording(this.recordingDone)
+    this.processing = this.finishRecording(this.waitForRecordingDone(this.recordingDone))
     return this.processing
   }
 
   cancel(): void {
     this.cancelled = true
     this.clearTimeout()
+    this.abortController?.abort()
 
     if (this.recorder && (this.recorder.state === 'recording' || this.recorder.state === 'paused')) {
       this.recorder.stop()
@@ -459,8 +469,36 @@ export class GeminiAudioInput implements SpeechInput {
 
     const wav = encodeWav(trimmed, 16_000)
     const base64 = await blobToBase64(wav)
-    const text = await this.transcribe({ base64, mimeType: 'audio/wav' }, this.lang)
-    return { text, engine: this.engine }
+    const controller = this.abortController ?? new AbortController()
+    try {
+      const text = await this.transcribe(
+        { base64, mimeType: 'audio/wav' },
+        this.lang,
+        { signal: controller.signal },
+      )
+      return { text, engine: this.engine }
+    } finally {
+      if (this.abortController === controller) {
+        this.abortController = null
+      }
+    }
+  }
+
+  private waitForRecordingDone(recordingDone: Promise<Blob>): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        this.stopTracks()
+        reject(new Error('録音を終了できませんでした。もう一度お試しください'))
+      }, RECORDING_STOP_TIMEOUT_MS)
+
+      recordingDone.then((blob) => {
+        clearTimeout(timeoutId)
+        resolve(blob)
+      }).catch((error) => {
+        clearTimeout(timeoutId)
+        reject(error)
+      })
+    })
   }
 
   private clearTimeout(): void {

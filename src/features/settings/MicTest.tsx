@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { withTimeout } from '../../utils/withTimeout'
 import { getSettings, setSettings, subscribe } from '../../services/settings'
 import { downmixToMono, downsampleTo16k, peakRms } from '../../services/speech/wav'
 
@@ -92,7 +93,7 @@ export function MicTest() {
     }
     if (context && context.state !== 'closed') {
       try {
-        await context.close()
+        await withTimeout(context.close(), 1_500, 'AudioContext の終了がタイムアウトしました')
       } catch (closeError) {
         console.error('マイクテストの AudioContext を閉じられませんでした', closeError)
         if (showCloseError && mountedRef.current) {
@@ -120,7 +121,7 @@ export function MicTest() {
     recordingContextRef.current = null
     if (context && context.state !== 'closed') {
       try {
-        await context.close()
+        await withTimeout(context.close(), 1_500, 'AudioContext の終了がタイムアウトしました')
       } catch (closeError) {
         console.error('録音経路の AudioContext を閉じられませんでした', closeError)
       }
@@ -159,7 +160,7 @@ export function MicTest() {
       const context = new AudioContextClass()
       contextRef.current = context
       if (context.state === 'suspended') {
-        await context.resume()
+        await withTimeout(context.resume(), 2_000, '音声処理の開始がタイムアウトしました。ページを再読み込みしてください')
       }
       if (generationRef.current !== generation) {
         await releaseResources(false)
@@ -247,13 +248,14 @@ export function MicTest() {
 
   const stopTest = useCallback(async () => {
     generationRef.current += 1
-    await releaseResources(true)
+    // 後片付け(AudioContext の終了)が詰まっても、ボタンと表示は即座に戻す
     if (mountedRef.current) {
       setStarting(false)
       setRunning(false)
       setRms(0)
       setPeak(0)
     }
+    await releaseResources(true)
   }, [releaseResources])
 
   const measureRecording = useCallback(async () => {
@@ -286,7 +288,7 @@ export function MicTest() {
       const recorder = new MediaRecorder(stream)
       recorderRef.current = recorder
       const chunks: Blob[] = []
-      const audioBlob = await new Promise<Blob>((resolve, reject) => {
+      const audioBlob = await withTimeout(new Promise<Blob>((resolve, reject) => {
         recorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             chunks.push(event.data)
@@ -306,6 +308,10 @@ export function MicTest() {
             recorder.stop()
           }
         }, 3_000)
+      }), 6_000, '録音の終了通知が来ませんでした。ページを再読み込みしてもう一度お試しください', () => {
+        if (recorder.state !== 'inactive') {
+          recorder.stop()
+        }
       })
       if (audioBlob.size === 0) {
         throw new Error('録音データが空でした')
@@ -313,7 +319,11 @@ export function MicTest() {
 
       const context = new AudioContextClass()
       recordingContextRef.current = context
-      const audioBuffer = await context.decodeAudioData(await audioBlob.arrayBuffer())
+      const audioBuffer = await withTimeout(
+        context.decodeAudioData(await audioBlob.arrayBuffer()),
+        5_000,
+        '録音データの変換がタイムアウトしました',
+      )
       const channels = Array.from(
         { length: audioBuffer.numberOfChannels },
         (_, index) => audioBuffer.getChannelData(index),

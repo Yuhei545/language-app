@@ -81,6 +81,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
   const inputRef = useRef<SpeechInput | null>(null)
   const userIdRef = useRef<string | null>(null)
   const progressRef = useRef(new Map<string, VocabProgressRow>())
+  const processingGenerationRef = useRef(0)
 
   const currentCard = cards[currentIndex] ?? null
   const currentProgress = currentCard
@@ -100,6 +101,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
   useEffect(() => {
     let active = true
+    processingGenerationRef.current += 1
     inputRef.current?.cancel()
     inputRef.current = null
     setLoading(true)
@@ -219,6 +221,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     setError(null)
     setAttempt(null)
     setPhase('recording')
+    processingGenerationRef.current += 1
 
     try {
       const input = createSpeechInput({
@@ -244,9 +247,13 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     }
 
     setPhase('transcribing')
+    const generation = processingGenerationRef.current
 
     try {
       const result = await input.stop()
+      if (processingGenerationRef.current !== generation) {
+        return
+      }
       inputRef.current = null
       setSttEngine(result.engine)
       const spokenText = result.text.trim()
@@ -267,12 +274,28 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
       })
       setPhase('result')
     } catch (recordingError) {
+      if (processingGenerationRef.current !== generation) {
+        return
+      }
       inputRef.current?.cancel()
       inputRef.current = null
       captureError(recordingError)
       setPhase('presenting')
     }
   }, [captureError, currentCard, lang, phase])
+
+  const cancelTranscription = useCallback(() => {
+    if (phase !== 'transcribing') {
+      return
+    }
+
+    processingGenerationRef.current += 1
+    inputRef.current?.cancel()
+    inputRef.current = null
+    setError(null)
+    setAttempt(null)
+    setPhase('presenting')
+  }, [phase])
 
   const showHint = useCallback(async () => {
     const userId = userIdRef.current
@@ -393,6 +416,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     playExample,
     startRecording,
     stopRecording,
+    cancelTranscription,
     showHint,
     gradeCard,
     clearError: () => setError(null),

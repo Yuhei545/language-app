@@ -88,7 +88,7 @@ export async function sendParentTurn(params: {
   input: ParentPromptInput
   history: Array<{ role: 'user' | 'assistant'; text: string }>
   userText: string
-}): Promise<ParentTurn> {
+}, opts?: { signal?: AbortSignal }): Promise<ParentTurn> {
   try {
     const contents = [
       ...params.history.map((message) => ({
@@ -104,6 +104,7 @@ export async function sendParentTurn(params: {
         systemInstruction: buildParentSystemPrompt(params.input),
         responseMimeType: 'application/json',
         responseSchema: parentReplySchema,
+        abortSignal: opts?.signal,
       },
     })
 
@@ -119,6 +120,7 @@ export async function sendParentTurn(params: {
 
 export async function checkMixingTurn(
   input: MixingCheckPromptInput,
+  opts?: { signal?: AbortSignal },
 ): Promise<MixingCheckResult> {
   try {
     const response = await getGeminiClient().models.generateContent({
@@ -131,6 +133,7 @@ export async function checkMixingTurn(
         temperature: 0.3,
         responseMimeType: 'application/json',
         responseSchema: mixingCheckSchema,
+        abortSignal: opts?.signal,
       },
     })
 

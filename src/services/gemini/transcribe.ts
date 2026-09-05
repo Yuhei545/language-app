@@ -7,6 +7,7 @@ import { buildTranscribePrompt } from './prompts'
 export const transcribeAudio = (async (
   audio: { base64: string; mimeType: string },
   lang: Lang,
+  opts?: { signal?: AbortSignal },
 ): Promise<string> => {
   try {
     const response = await getGeminiClient().models.generateContent({
@@ -21,6 +22,7 @@ export const transcribeAudio = (async (
       config: {
         temperature: 0,
         maxOutputTokens: 96,
+        abortSignal: opts?.signal,
       },
     })
     const text = response.text?.trim()

@@ -42,6 +42,13 @@ function getMessage(error: unknown): string {
   return String(error)
 }
 
+function getName(error: unknown): string {
+  if (typeof error !== 'object' || error === null || !('name' in error)) {
+    return ''
+  }
+  return String((error as { name: unknown }).name)
+}
+
 export function toGeminiError(error: unknown): GeminiError {
   if (error instanceof GeminiError) {
     return new GeminiError(error.message, error, error.kind)
@@ -49,6 +56,15 @@ export function toGeminiError(error: unknown): GeminiError {
 
   const status = getStatus(error)
   const message = getMessage(error)
+  const name = getName(error)
+
+  if (name === 'AbortError' || /abort|timeout|timed out/i.test(`${name} ${message}`)) {
+    return new GeminiError(
+      '通信が遅いか途切れたため中断しました。もう一度試してください',
+      error,
+      'network',
+    )
+  }
 
   if (status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(message)) {
     return new GeminiError(

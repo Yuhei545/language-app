@@ -14,6 +14,7 @@ type FlashcardProps = {
   onListen: () => Promise<void>
   onStartRecording: () => Promise<void>
   onStopRecording: () => Promise<void>
+  onCancelTranscription?: () => void
   onShowHint: () => Promise<void>
   onGrade: (grade: Grade) => Promise<void>
 }
@@ -41,6 +42,7 @@ export function Flashcard({
   onListen,
   onStartRecording,
   onStopRecording,
+  onCancelTranscription,
   onShowHint,
   onGrade,
 }: FlashcardProps) {
@@ -155,6 +157,15 @@ export function Flashcard({
             >
               {isRecording ? '■ 録音を止める' : isTranscribing ? '声を言葉にしています…' : '🎤 言ってみる'}
             </button>
+            {isTranscribing ? (
+              <button
+                type="button"
+                onClick={onCancelTranscription}
+                className="mt-3 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4"
+              >
+                やめる
+              </button>
+            ) : null}
             <p className="mt-2 text-[11px] text-slate-500">
               {isRecording ? '聞いています。話し終えたらタップ' : `音声入力：${engineLabel(sttEngine)}`}
             </p>

@@ -299,6 +299,10 @@ export function useTalkSession(lang: 'en' | 'ko') {
     }
   }, [captureError, phase, status])
 
+  // 文字起こし・返答待ち中の「やめる」用。世代番号が変わった処理は結果を捨てる
+  const turnGenerationRef = useRef(0)
+  const turnAbortRef = useRef<AbortController | null>(null)
+
   const stopRecording = useCallback(async () => {
     const data = sessionDataRef.current
     const input = inputRef.current
@@ -307,9 +311,16 @@ export function useTalkSession(lang: 'en' | 'ko') {
     }
 
     setPhase('transcribing')
+    turnGenerationRef.current += 1
+    const generation = turnGenerationRef.current
+    const controller = new AbortController()
+    turnAbortRef.current = controller
 
     try {
       const result = await input.stop()
+      if (turnGenerationRef.current !== generation) {
+        return
+      }
       inputRef.current = null
       setSttEngine(result.engine)
       const userText = result.text.trim()
@@ -342,7 +353,10 @@ export function useTalkSession(lang: 'en' | 'ko') {
         },
         history,
         userText,
-      })
+      }, { signal: controller.signal })
+      if (turnGenerationRef.current !== generation) {
+        return
+      }
       const assistantMessage = await addMessage({
         conversation_id: data.conversationId,
         user_id: data.userId,
@@ -370,12 +384,27 @@ export function useTalkSession(lang: 'en' | 'ko') {
       await recordTargetWordUse(data, userText)
       setPhase('ready')
     } catch (turnError) {
+      if (turnGenerationRef.current !== generation) {
+        return
+      }
       inputRef.current?.cancel()
       inputRef.current = null
       captureError(turnError)
       setPhase('ready')
     }
   }, [appendMessage, captureError, phase])
+
+  const cancelTurn = useCallback(() => {
+    if (phase !== 'transcribing' && phase !== 'thinking') {
+      return
+    }
+    turnGenerationRef.current += 1
+    turnAbortRef.current?.abort()
+    turnAbortRef.current = null
+    inputRef.current?.cancel()
+    inputRef.current = null
+    setPhase('ready')
+  }, [phase])
 
   const endCurrentSession = useCallback(async () => {
     const data = sessionDataRef.current
@@ -545,6 +574,7 @@ export function useTalkSession(lang: 'en' | 'ko') {
     startSession,
     startRecording,
     stopRecording,
+    cancelTurn,
     endCurrentSession,
     playText,
     toggleShadowing,

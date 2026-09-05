@@ -325,6 +325,10 @@ export function useMixingSession(lang: 'en' | 'ko') {
     }
   }, [captureError, currentDeal, feedback?.understood, isSpeaking, lang, status])
 
+  // 判定中の「やめる」用。世代番号が変わった処理は結果を捨てる
+  const checkingGenerationRef = useRef(0)
+  const checkAbortRef = useRef<AbortController | null>(null)
+
   const stopRecording = useCallback(async () => {
     const input = inputRef.current
     const userId = userIdRef.current
@@ -335,9 +339,16 @@ export function useMixingSession(lang: 'en' | 'ko') {
 
     const durationMs = Math.max(0, Date.now() - startedAt)
     setStatus('checking')
+    checkingGenerationRef.current += 1
+    const generation = checkingGenerationRef.current
+    const controller = new AbortController()
+    checkAbortRef.current = controller
 
     try {
       const result = await input.stop()
+      if (checkingGenerationRef.current !== generation) {
+        return
+      }
       inputRef.current = null
       recordingStartedAtRef.current = null
       setSttEngine(result.engine)
@@ -352,7 +363,10 @@ export function useMixingSession(lang: 'en' | 'ko') {
         personaName: settingsRef.current.parentName[lang],
         intendedMeaningJa,
         learnerText,
-      })
+      }, { signal: controller.signal })
+      if (checkingGenerationRef.current !== generation) {
+        return
+      }
       const identity = progressIdentity(core, currentDeal.frame, currentDeal.words)
       const key = identityKey(identity)
       const previous = progressRef.current.get(key)
@@ -379,6 +393,9 @@ export function useMixingSession(lang: 'en' | 'ko') {
       setStatus('feedback')
       await speakText(nextFeedback.recast)
     } catch (checkError) {
+      if (checkingGenerationRef.current !== generation) {
+        return
+      }
       inputRef.current?.cancel()
       inputRef.current = null
       recordingStartedAtRef.current = null
@@ -386,6 +403,19 @@ export function useMixingSession(lang: 'en' | 'ko') {
       setStatus('dealt')
     }
   }, [captureError, core, currentDeal, lang, speakText, status])
+
+  const cancelChecking = useCallback(() => {
+    if (status !== 'checking') {
+      return
+    }
+    checkingGenerationRef.current += 1
+    checkAbortRef.current?.abort()
+    checkAbortRef.current = null
+    inputRef.current?.cancel()
+    inputRef.current = null
+    recordingStartedAtRef.current = null
+    setStatus('dealt')
+  }, [status])
 
   const hearRecast = useCallback(async () => {
     if (!feedback || (status !== 'feedback' && status !== 'fluency-done') || isSpeaking) {
@@ -486,6 +516,7 @@ export function useMixingSession(lang: 'en' | 'ko') {
 
   return {
     status,
+    cancelChecking,
     loading,
     level: settings.mixingLevel,
     totalWords: core ? wordCount(core) : 0,
