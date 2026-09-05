@@ -8,6 +8,7 @@ export type PronunciationScore = {
   /** 0〜1。1 が完全一致。 */
   similarity: number
   matched: boolean
+  unreliable: boolean
   /** どちらと比べて出した数字か。 */
   target: 'text' | 'example'
 }
@@ -30,11 +31,11 @@ export function scorePronunciation(
   const textNormalized = normalizeText(card.text, lang)
 
   if (spokenNormalized.length === 0) {
-    return { similarity: 0, matched: false, target: 'text' }
+    return { similarity: 0, matched: false, unreliable: false, target: 'text' }
   }
 
   if (textNormalized.length > 0 && spokenNormalized.includes(textNormalized)) {
-    return { similarity: 1, matched: true, target: 'text' }
+    return { similarity: 1, matched: true, unreliable: false, target: 'text' }
   }
 
   const againstText = similarity(spoken, card.text, lang)
@@ -44,6 +45,11 @@ export function scorePronunciation(
 
   const target: PronunciationScore['target'] = againstExample > againstText ? 'example' : 'text'
   const best = Math.max(againstText, againstExample)
+  const unreliable = (
+    spokenNormalized.length > textNormalized.length * 3
+    && !spokenNormalized.includes(textNormalized)
+    && best < threshold
+  )
 
-  return { similarity: best, matched: best >= threshold, target }
+  return { similarity: best, matched: best >= threshold, unreliable, target }
 }

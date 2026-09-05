@@ -81,11 +81,17 @@ export function Flashcard({
           <div className="mt-7" aria-live="polite">
             <p className="text-3xl font-bold tracking-tight text-slate-900">{card.text}</p>
             <p className="mx-auto mt-3 max-w-sm text-base leading-7 text-slate-600">{card.example || card.text}</p>
-            <div className={`mx-auto mt-5 rounded-2xl px-4 py-3 ${attempt.matched ? 'bg-teal-50 text-teal-900' : 'bg-amber-50 text-amber-900'}`}>
+            <div className={`mx-auto mt-5 rounded-2xl px-4 py-3 ${attempt.unreliable ? 'bg-slate-100 text-slate-800' : attempt.matched ? 'bg-teal-50 text-teal-900' : 'bg-amber-50 text-amber-900'}`}>
               <p className="font-bold">
-                {attempt.matched ? 'その調子です' : 'もう一度声に出してみましょう'}
+                {attempt.unreliable
+                  ? '聞き取りが不安定でした。もう一度どうぞ'
+                  : attempt.matched
+                    ? 'その調子です'
+                    : 'もう一度声に出してみましょう'}
               </p>
-              <p className="mt-1 text-xs opacity-75">声の近さ {Math.round(attempt.similarity * 100)}%</p>
+              {attempt.unreliable ? null : (
+                <p className="mt-1 text-xs opacity-75">声の近さ {Math.round(attempt.similarity * 100)}%</p>
+              )}
               <p className="mt-2 text-xs opacity-75">こう聞こえました：「{attempt.spokenText}」</p>
             </div>
           </div>

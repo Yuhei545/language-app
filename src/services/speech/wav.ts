@@ -77,6 +77,78 @@ export function downsampleTo16k(input: Float32Array, inputRate: number): Float32
   return output
 }
 
+export function trimSilence(
+  samples: Float32Array,
+  sampleRate: number,
+  opts: { threshold?: number; paddingSec?: number } = {},
+): Float32Array {
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0) {
+    throw new RangeError('サンプルレートは正の数で指定してください')
+  }
+
+  const threshold = opts.threshold ?? 0.01
+  const paddingSec = opts.paddingSec ?? 0.2
+  if (!Number.isFinite(threshold) || threshold < 0) {
+    throw new RangeError('無音判定のしきい値は0以上で指定してください')
+  }
+  if (!Number.isFinite(paddingSec) || paddingSec < 0) {
+    throw new RangeError('前後の余白は0秒以上で指定してください')
+  }
+
+  let firstSignal = -1
+  let lastSignal = -1
+
+  for (let index = 0; index < samples.length; index += 1) {
+    if (Math.abs(samples[index]) > threshold) {
+      if (firstSignal === -1) {
+        firstSignal = index
+      }
+      lastSignal = index
+    }
+  }
+
+  if (firstSignal === -1) {
+    return new Float32Array()
+  }
+
+  const paddingSamples = Math.round(paddingSec * sampleRate)
+  const start = Math.max(0, firstSignal - paddingSamples)
+  const end = Math.min(samples.length, lastSignal + paddingSamples + 1)
+  return samples.slice(start, end)
+}
+
+export function peakRms(
+  samples: Float32Array,
+  sampleRate: number,
+  windowSec = 0.1,
+): number {
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0) {
+    throw new RangeError('サンプルレートは正の数で指定してください')
+  }
+  if (!Number.isFinite(windowSec) || windowSec <= 0) {
+    throw new RangeError('RMSの窓幅は正の秒数で指定してください')
+  }
+  if (samples.length === 0) {
+    return 0
+  }
+
+  const windowSamples = Math.max(1, Math.round(windowSec * sampleRate))
+  let maximum = 0
+
+  for (let start = 0; start < samples.length; start += windowSamples) {
+    const end = Math.min(samples.length, start + windowSamples)
+    let sumSquares = 0
+
+    for (let index = start; index < end; index += 1) {
+      sumSquares += samples[index] * samples[index]
+    }
+
+    maximum = Math.max(maximum, Math.sqrt(sumSquares / (end - start)))
+  }
+
+  return maximum
+}
+
 export function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

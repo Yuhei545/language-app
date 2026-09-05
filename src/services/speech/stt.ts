@@ -1,5 +1,16 @@
 import type { SpeechLanguage } from './normalize'
-import { blobToBase64, downsampleTo16k, encodeWav } from './wav'
+import { stopSpeaking } from './tts'
+import {
+  blobToBase64,
+  downsampleTo16k,
+  encodeWav,
+  peakRms,
+  trimSilence,
+} from './wav'
+
+// 録音環境や端末差を見ながら実機で調整する値。
+const MIN_SPEECH_SECONDS = 0.3
+const MIN_PEAK_RMS = 0.02
 
 export type SttResult = { text: string; engine: 'webspeech' | 'gemini' }
 
@@ -131,6 +142,8 @@ export class WebSpeechInput implements SpeechInput {
   }
 
   async start(): Promise<void> {
+    stopSpeaking()
+
     if (this.started) {
       throw new Error('音声認識はすでに開始されています')
     }
@@ -271,6 +284,8 @@ export class GeminiAudioInput implements SpeechInput {
   }
 
   async start(): Promise<void> {
+    stopSpeaking()
+
     if (this.recordingDone) {
       throw new Error('録音はすでに開始されています')
     }
@@ -388,7 +403,16 @@ export class GeminiAudioInput implements SpeechInput {
       throw new Error('録音をキャンセルしました')
     }
 
-    const wav = encodeWav(downsampleTo16k(samples, sampleRate), 16_000)
+    const resampled = downsampleTo16k(samples, sampleRate)
+    const trimmed = trimSilence(resampled, 16_000)
+    if (
+      trimmed.length < MIN_SPEECH_SECONDS * 16_000
+      || peakRms(trimmed, 16_000) < MIN_PEAK_RMS
+    ) {
+      throw new Error('声が小さすぎます。もう少し近くで、はっきり話してみてください')
+    }
+
+    const wav = encodeWav(trimmed, 16_000)
     const base64 = await blobToBase64(wav)
     const text = await this.transcribe({ base64, mimeType: 'audio/wav' }, this.lang)
     return { text, engine: this.engine }

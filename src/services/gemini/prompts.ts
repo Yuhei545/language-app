@@ -103,5 +103,6 @@ export function buildTranscribePrompt(lang: Lang): string {
   }
 
   return `Transcribe this ${languageNames[lang]} speech exactly as spoken. ${script[lang]} `
-    + 'Output only the transcription: no translation, no romanization, no commentary, no quotation marks.'
+    + 'Output only the transcription: no translation, no romanization, no commentary, no quotation marks. '
+    + 'If there is no clear speech, output exactly [NO_SPEECH].'
 }

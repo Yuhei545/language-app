@@ -69,4 +69,30 @@ describe('scorePronunciation', () => {
     expect(result.matched).toBe(false)
     expect(result.similarity).toBe(0)
   })
+
+  describe('聞き取りの信頼性', () => {
+    const card = { text: 'water', example: 'Water, please.' }
+
+    it('対象語と無関係な長文は不安定と判定する', () => {
+      const result = scorePronunciation(
+        'Today I visited a beautiful mountain and talked with many people for hours',
+        card,
+        'en',
+      )
+
+      expect(result.unreliable).toBe(true)
+    })
+
+    it('対象語を含む文は不安定と判定しない', () => {
+      const result = scorePronunciation('Could I have some water for the table please', card, 'en')
+
+      expect(result.unreliable).toBe(false)
+    })
+
+    it('短い別の語は不安定と判定しない', () => {
+      const result = scorePronunciation('coffee', card, 'en')
+
+      expect(result.unreliable).toBe(false)
+    })
+  })
 })

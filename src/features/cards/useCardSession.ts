@@ -25,6 +25,7 @@ export type CardAttempt = {
   spokenText: string
   matched: boolean
   similarity: number
+  unreliable: boolean
 }
 
 const EMPTY_SRS_STATE: SrsState = {
@@ -257,6 +258,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
         spokenText,
         matched: score.matched,
         similarity: score.similarity,
+        unreliable: score.unreliable,
       })
       setPhase('result')
     } catch (recordingError) {

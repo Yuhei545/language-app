@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { downsampleTo16k, encodeWavBuffer } from './wav'
+import {
+  downsampleTo16k,
+  encodeWavBuffer,
+  peakRms,
+  trimSilence,
+} from './wav'
 
 function getView(buffer: ArrayBuffer): DataView {
   return new DataView(buffer)
@@ -51,5 +56,61 @@ describe('downsampleTo16k', () => {
   it('48000Hzから16000Hzへ変換すると長さが3分の1になる', () => {
     const input = new Float32Array(480)
     expect(downsampleTo16k(input, 48_000)).toHaveLength(160)
+  })
+})
+
+describe('trimSilence', () => {
+  it('全て無音なら空の配列を返す', () => {
+    expect(trimSilence(new Float32Array(100), 100)).toHaveLength(0)
+  })
+
+  it('中央の信号を前後の余白付きで切り出す', () => {
+    const samples = new Float32Array(10)
+    samples[4] = 0.2
+    samples[5] = -0.2
+
+    const trimmed = trimSilence(samples, 10)
+
+    expect(trimmed).toHaveLength(6)
+    expect(trimmed[0]).toBe(0)
+    expect(trimmed[1]).toBe(0)
+    expect(trimmed[2]).toBeCloseTo(0.2)
+    expect(trimmed[3]).toBeCloseTo(-0.2)
+    expect(trimmed[4]).toBe(0)
+    expect(trimmed[5]).toBe(0)
+  })
+
+  it('信号が配列の端にあるとき余白を端でクランプする', () => {
+    const atStart = new Float32Array(10)
+    atStart[0] = 0.2
+    const atEnd = new Float32Array(10)
+    atEnd[9] = 0.2
+
+    expect(trimSilence(atStart, 10)).toHaveLength(3)
+    expect(trimSilence(atEnd, 10)).toHaveLength(3)
+  })
+})
+
+describe('peakRms', () => {
+  it('振幅0.5の正弦波は約0.354になる', () => {
+    const sampleRate = 1_000
+    const samples = Float32Array.from(
+      { length: sampleRate },
+      (_, index) => 0.5 * Math.sin(2 * Math.PI * 10 * index / sampleRate),
+    )
+
+    expect(peakRms(samples, sampleRate)).toBeCloseTo(0.354, 2)
+  })
+
+  it('無音は0になる', () => {
+    expect(peakRms(new Float32Array(1_000), 1_000)).toBe(0)
+    expect(peakRms(new Float32Array(), 1_000)).toBe(0)
+  })
+
+  it('長い無音後の短い信号も端数を含む窓で検出する', () => {
+    const samples = new Float32Array(600)
+    samples.fill(0.3, 500)
+
+    expect(peakRms(samples, 1_000)).toBeCloseTo(0.3, 5)
   })
 })

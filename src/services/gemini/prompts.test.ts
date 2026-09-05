@@ -79,6 +79,7 @@ describe('buildTranscribePrompt', () => {
     expect(prompt).toContain('Hangul only')
     expect(prompt).toContain('no romanization')
     expect(prompt).toContain('no translation')
+    expect(prompt).toContain('[NO_SPEECH]')
   })
 
   it('英語は英字限定で、余計な説明を禁止する', () => {
@@ -86,5 +87,6 @@ describe('buildTranscribePrompt', () => {
     expect(prompt).toContain('English')
     expect(prompt).toContain('English letters only')
     expect(prompt).toContain('no commentary')
+    expect(prompt).toContain('[NO_SPEECH]')
   })
 })

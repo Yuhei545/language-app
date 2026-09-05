@@ -17,6 +17,12 @@ export function isTtsSupported(): boolean {
   )
 }
 
+export function stopSpeaking(): void {
+  if (isTtsSupported()) {
+    window.speechSynthesis.cancel()
+  }
+}
+
 function refreshVoiceCache(): void {
   if (!isTtsSupported()) {
     cachedVoices = []
@@ -72,6 +78,11 @@ export function speak(
 
     utterance.onend = () => resolve()
     utterance.onerror = (event) => {
+      if (event.error === 'interrupted' || event.error === 'canceled') {
+        resolve()
+        return
+      }
+
       reject(new Error(`読み上げに失敗しました: ${event.error}`))
     }
     window.speechSynthesis.speak(utterance)
