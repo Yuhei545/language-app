@@ -8,7 +8,7 @@ import { useLanguage } from './LanguageContext'
 const tabs = [
   { to: '/', label: 'ホーム', end: true },
   { to: '/talk', label: '会話' },
-  { to: '/cards', label: 'カード' },
+  { to: '/practice', label: '練習' },
   { to: '/curriculum', label: 'カリキュラム' },
   { to: '/settings', label: '設定' },
 ]

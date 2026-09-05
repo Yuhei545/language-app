@@ -145,6 +145,18 @@ export function HomePage() {
         </div>
       </section>
 
+      <Link
+        to="/mixing"
+        className="mt-4 flex items-center gap-4 rounded-2xl border border-violet-200 bg-violet-50 p-4"
+      >
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-2xl" aria-hidden="true">🧩</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-slate-900">文をつくる</span>
+          <span className="mt-1 block text-sm leading-5 text-slate-600">知っている言葉を組み合わせて話す</span>
+        </span>
+        <span className="text-xl text-violet-700" aria-hidden="true">→</span>
+      </Link>
+
       <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-end justify-between gap-4">
           <div>

@@ -1,5 +1,6 @@
 export type SttEngine = 'auto' | 'webspeech' | 'gemini'
 export type Interest = 'travel' | 'friends' | 'content'
+export type MixingLevel = 1 | 2 | 3
 
 export type Settings = {
   geminiApiKey: string
@@ -9,6 +10,7 @@ export type Settings = {
   ttsRate: number
   interests: Interest[]
   parentName: { en: string; ko: string }
+  mixingLevel: MixingLevel
 }
 
 type SettingsListener = (settings: Settings) => void
@@ -26,6 +28,7 @@ const DEFAULT_SETTINGS: Settings = {
   ttsRate: 0.9,
   interests: [],
   parentName: { en: '', ko: '' },
+  mixingLevel: 1,
 }
 
 function defaultSettings(): Settings {
@@ -65,6 +68,7 @@ function isSettings(value: unknown): value is Settings {
     && value.interests.every((interest) => typeof interest === 'string' && INTERESTS.includes(interest as Interest))
     && typeof value.parentName.en === 'string'
     && typeof value.parentName.ko === 'string'
+    && (value.mixingLevel === 1 || value.mixingLevel === 2 || value.mixingLevel === 3)
   )
 }
 
@@ -76,7 +80,11 @@ export function getSettings(): Settings {
   }
 
   try {
-    const parsed: unknown = JSON.parse(saved)
+    let parsed: unknown = JSON.parse(saved)
+
+    if (isRecord(parsed) && parsed.mixingLevel === undefined) {
+      parsed = { ...parsed, mixingLevel: DEFAULT_SETTINGS.mixingLevel }
+    }
 
     if (!isSettings(parsed)) {
       console.error('lla.settings の保存内容が不正です。既定値を使用します。', parsed)

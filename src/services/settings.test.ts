@@ -9,6 +9,7 @@ const defaults = {
   ttsRate: 0.9,
   interests: [],
   parentName: { en: '', ko: '' },
+  mixingLevel: 1,
 }
 
 describe('settings service', () => {
