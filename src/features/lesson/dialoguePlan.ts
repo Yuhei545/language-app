@@ -1,6 +1,7 @@
+import { estimateActionsMs } from './estimate'
 import type { DialogueTurn, LessonDialogue, NewExpression } from './lessonDialogueSchema'
-import { buildBackChainActions, planStep, type LessonAction } from './plan'
-import { buildSchedule } from './schedule'
+import { buildBackChainActions, type LessonAction } from './plan'
+import { RECALL_OFFSETS_SEC } from './schedule'
 import type { LessonItem, LessonStage } from './types'
 
 export type DialogueLessonStepKind =
@@ -24,11 +25,12 @@ export type DialogueLessonStep = {
   stage?: LessonStage
 }
 
+/** 再出題の表示。実際の間隔は経過時間の見積もりで決まるので、何回目かだけを示す。 */
 const STAGE_LABELS: Record<Exclude<LessonStage, 0>, string> = {
-  1: '5秒後',
-  2: '25秒後',
-  3: '2分後',
-  4: '10分後',
+  1: '1回目',
+  2: '2回目',
+  3: '3回目',
+  4: '4回目',
 }
 
 export function expressionCue(expression: NewExpression): string {
@@ -48,6 +50,13 @@ export const SUMMARY_NARRATION_JA = 'おつかれさまでした。今日の表�
 /** 応用の合図(組み替え練習)の項目 id の接頭辞。正答率の集計に使う。 */
 export const PROMPT_ITEM_PREFIX = 'prompt:'
 
+/** 1 つの区切り(ステップの間)で出す再出題は最大 2 つ。それ以上は次の区切りへ送る。 */
+export const MAX_RECALLS_PER_BOUNDARY = 2
+/** 同じ項目の再出題は、間に少なくともこの数のステップを挟む(同じ表現が続かないように)。 */
+export const MIN_STEPS_BETWEEN_RECALLS = 2
+/** 行を終えた時点で再出題がこの回数に届いていない項目(終盤の行)には、締めの前に 1 回だけ出す。 */
+export const MIN_RECALLS_BEFORE_REPLAY = 2
+
 function dialogueSpeaks(
   dialogue: LessonDialogue,
   lang: 'en' | 'ko',
@@ -59,15 +68,18 @@ function dialogueSpeaks(
   ])
 }
 
-function itemTurnIndex(item: LessonItem): number {
-  const match = /^(?:key|line):(\d+)$/.exec(item.id)
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
+type TurnGroup = {
+  steps: DialogueLessonStep[]
+  /** この行の再出題に使う項目。核の表現があればそれ、なければ文全体。 */
+  item: LessonItem
+  speaker: 'A' | 'B'
 }
 
 /**
  * 1 行分の学習ステップ。
  * 核の表現(あれば) → 文全体 → 解説(あれば) → 応用の合図(0〜2)。
- * 核と文全体は Pimsleur 式の逆順組み立て(全体 → 末尾から+繰り返す間 → 全体)で、その行の話者の声で読む。
+ * 核と文全体は Pimsleur 式の逆順組み立て(全体 → 末尾から最大 3 段 → 全体)で、その行の話者の声で読む。
+ * 文全体では、核の中にあるかけらは(すでに練習したので)飛ばす。
  */
 function buildTurnSteps(
   turn: DialogueTurn,
@@ -75,8 +87,7 @@ function buildTurnSteps(
   total: number,
   lang: 'en' | 'ko',
   pause: LessonAction,
-  items: LessonItem[],
-): DialogueLessonStep[] {
+): TurnGroup {
   const speaker = turn.speaker
   const label = `会話 ${index + 1}/${total}`
   const steps: DialogueLessonStep[] = []
@@ -84,14 +95,14 @@ function buildTurnSteps(
     ? [{ type: 'speak', text: BACK_CHAIN_INSTRUCTION_JA, lang: 'ja', voice: 'narrator' }, { type: 'gap', ms: 300 }]
     : []
 
+  let keyItem: LessonItem | null = null
   if (turn.key) {
-    const keyItem: LessonItem = {
+    keyItem = {
       id: `key:${index}`,
       kind: 'word',
       cueJa: cueFor(turn.key.ja),
       answer: turn.key.text,
     }
-    items.push(keyItem)
     steps.push({
       kind: 'breakdown',
       label: `${label}: 核の表現`,
@@ -115,7 +126,6 @@ function buildTurnSteps(
     cueJa: cueFor(turn.ja),
     answer: turn.text,
   }
-  items.push(lineItem)
   const role = speaker === 'B' ? 'あなたの役' : '相手'
   steps.push({
     kind: 'line',
@@ -126,7 +136,7 @@ function buildTurnSteps(
     actions: [
       { type: 'speak', text: `${role}の台詞です。「${turn.ja}」`, lang: 'ja', voice: 'narrator' },
       ...(turn.key ? [] : instruction),
-      ...buildBackChainActions(turn.text, lang, { voice: speaker }),
+      ...buildBackChainActions(turn.text, lang, { voice: speaker, skipContainedIn: turn.key?.text }),
       { type: 'speak', text: cueFor(turn.ja), lang: 'ja', voice: 'narrator' },
       pause,
       { type: 'speak', text: turn.text, lang, voice: speaker },
@@ -163,13 +173,42 @@ function buildTurnSteps(
     })
   })
 
-  return steps
+  return { steps, item: keyItem ?? lineItem, speaker }
+}
+
+type RecallState = {
+  item: LessonItem
+  speaker: 'A' | 'B'
+  groupIndex: number
+  /** 項目を初めて教え終えた時点(見積もりのミリ秒)。再出題の期限はここから数える。 */
+  introducedAt: number
+  nextStage: number
+  lastStepIndex: number
+  recallCount: number
+}
+
+function recallStep(state: RecallState, lang: 'en' | 'ko', pause: LessonAction): DialogueLessonStep {
+  const stage = state.nextStage as Exclude<LessonStage, 0>
+  return {
+    kind: 'recall',
+    label: `思い出す(${STAGE_LABELS[stage]})`,
+    speaker: state.speaker,
+    item: state.item,
+    stage,
+    actions: [
+      { type: 'speak', text: state.item.cueJa, lang: 'ja', voice: 'narrator' },
+      pause,
+      { type: 'speak', text: state.item.answer, lang, voice: state.speaker },
+    ],
+  }
 }
 
 /**
  * 会話 1 本を Pimsleur の 1 レッスンの流れに落とす。
- * 導入(会話を 2 回) → 各行を順に[核 → 文全体 → 解説 → 応用 2 つ]、その間に既出項目の再出題 →
- * 通し再生 → あなたが B の役で会話 → まとめ。長さは内容で決まり、上限は設けない。
+ * 導入(会話を 2 回) → 各行を順に[核 → 文全体 → 解説 → 応用 2 つ] → 通し再生 → あなたが B の役で会話 → まとめ。
+ * 前の行の再出題は、次の行の途中(ステップの間)に、経過時間の見積もりが 5 秒/25 秒/2 分/10 分を
+ * 過ぎたものから差し込む。同じ行の中では出さず、同じ項目が続かないように間を空ける。
+ * 長さは内容で決まり、上限は設けない。
  */
 export function buildDialogueLesson(
   dialogue: LessonDialogue,
@@ -177,7 +216,6 @@ export function buildDialogueLesson(
 ): { steps: DialogueLessonStep[]; items: LessonItem[] } {
   const { lang } = opts
   const pause: LessonAction = { type: 'pause', ms: opts.pauseSeconds * 1000, recordable: true }
-  const items: LessonItem[] = []
 
   const intro: DialogueLessonStep = {
     kind: 'intro',
@@ -194,38 +232,62 @@ export function buildDialogueLesson(
   }
 
   const groups = dialogue.turns.map((turn, index) => (
-    buildTurnSteps(turn, index, dialogue.turns.length, lang, pause, items)
+    buildTurnSteps(turn, index, dialogue.turns.length, lang, pause)
   ))
+  const items = groups.map((group) => group.item)
 
-  const recalls: DialogueLessonStep[] = buildSchedule(items)
-    .filter((step) => step.stage !== 0)
-    .map((step) => ({
-      kind: 'recall',
-      label: `思い出す(${STAGE_LABELS[step.stage as Exclude<LessonStage, 0>]})`,
-      item: step.item,
-      stage: step.stage,
-      actions: planStep(step, { lang, pauseSeconds: opts.pauseSeconds }),
-    }))
-
-  // 再出題は行の処理の間に散らす。ただし、まだ出ていない行の項目は出さない。
-  const quota = groups.length > 0 ? Math.ceil(recalls.length / groups.length) : recalls.length
-  const pending = [...recalls]
   const body: DialogueLessonStep[] = []
+  const states: RecallState[] = []
+  let now = estimateActionsMs(intro.actions)
+
+  const push = (step: DialogueLessonStep) => {
+    body.push(step)
+    now += estimateActionsMs(step.actions)
+  }
+  const dueAt = (state: RecallState) => state.introducedAt + RECALL_OFFSETS_SEC[state.nextStage - 1] * 1000
+  const emitRecall = (state: RecallState) => {
+    push(recallStep(state, lang, pause))
+    state.lastStepIndex = body.length - 1
+    state.nextStage += 1
+    state.recallCount += 1
+  }
+  const emitDueRecalls = (currentGroup: number) => {
+    const due = states
+      .filter((state) => (
+        state.nextStage <= RECALL_OFFSETS_SEC.length
+        && state.groupIndex < currentGroup
+        && body.length - 1 - state.lastStepIndex >= MIN_STEPS_BETWEEN_RECALLS
+        && dueAt(state) <= now
+      ))
+      .sort((left, right) => dueAt(left) - dueAt(right))
+      .slice(0, MAX_RECALLS_PER_BOUNDARY)
+    due.forEach(emitRecall)
+  }
+
   groups.forEach((group, groupIndex) => {
-    body.push(...group)
-    let taken = 0
-    for (let index = 0; index < pending.length && taken < quota;) {
-      const candidate = pending[index]
-      if (candidate.item && itemTurnIndex(candidate.item) <= groupIndex) {
-        body.push(candidate)
-        pending.splice(index, 1)
-        taken += 1
-      } else {
-        index += 1
+    group.steps.forEach((step, stepIndex) => {
+      if (stepIndex > 0) {
+        emitDueRecalls(groupIndex)
       }
-    }
+      push(step)
+      if (stepIndex === 0) {
+        states.push({
+          item: group.item,
+          speaker: group.speaker,
+          groupIndex,
+          introducedAt: now,
+          nextStage: 1,
+          lastStepIndex: body.length - 1,
+          recallCount: 0,
+        })
+      }
+    })
   })
-  body.push(...pending)
+
+  // 終盤の行はまだ再出題の機会が少ないので、締めの前に 1 回だけ思い出させる。
+  states
+    .filter((state) => state.recallCount < MIN_RECALLS_BEFORE_REPLAY && state.nextStage <= RECALL_OFFSETS_SEC.length)
+    .forEach(emitRecall)
 
   const replay: DialogueLessonStep = {
     kind: 'replay',

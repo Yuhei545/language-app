@@ -37,7 +37,7 @@ describe('repeatPauseMs', () => {
 })
 
 describe('buildBackChainActions', () => {
-  it('全体 → 末尾からのかけら(句読点なし)+繰り返す間 → 全体ゆっくり → 間 → 全体', () => {
+  it('全体 → 末尾からのかけら(句読点なし)+繰り返す間 → 全体を 1 回', () => {
     const actions = buildBackChainActions('I want to go.', 'en', { voice: 'B' })
     const speaks = actions.filter((action) => action.type === 'speak')
 
@@ -46,7 +46,6 @@ describe('buildBackChainActions', () => {
       'go',
       'to go',
       'want to go',
-      'I want to go.',
       'I want to go.',
     ])
     expect(actions[0]).toMatchObject({ type: 'speak', text: 'I want to go.', voice: 'B' })
@@ -62,7 +61,7 @@ describe('buildBackChainActions', () => {
       }
     })
     const pauses = actions.filter((action) => action.type === 'pause')
-    expect(pauses).toHaveLength(5)
+    expect(pauses).toHaveLength(4)
     expect(pauses.every((action) => action.type === 'pause' && action.ms >= REPEAT_PAUSE.baseMs)).toBe(true)
   })
 
@@ -74,7 +73,27 @@ describe('buildBackChainActions', () => {
   it('韓国語は音節単位で組み立てる', () => {
     const speaks = buildBackChainActions('역에 가요.', 'ko').filter((action) => action.type === 'speak')
     expect(speaks.map((action) => action.type === 'speak' && action.text)).toEqual([
-      '역에 가요.', '요', '가요', '에 가요', '역에 가요.', '역에 가요.',
+      '역에 가요.', '요', '가요', '에 가요', '역에 가요.',
+    ])
+  })
+
+  it('核の表現に含まれるかけらは飛ばし、残りだけを組み立てる', () => {
+    const speaks = buildBackChainActions('Hi, what can I get for you?', 'en', { skipContainedIn: 'what can I get for you' })
+      .filter((action) => action.type === 'speak')
+    expect(speaks.map((action) => action.type === 'speak' && action.text)).toEqual([
+      'Hi, what can I get for you?',
+      'Hi, what can I get for you?',
+    ])
+
+    const partly = buildBackChainActions('Could I get a coffee, please?', 'en', { skipContainedIn: 'could I get' })
+      .filter((action) => action.type === 'speak')
+    // 6 語なので末尾から 3 段(2 語・3 語・5 語)。核 'could I get' に含まれるかけらは無い
+    expect(partly.map((action) => action.type === 'speak' && action.text)).toEqual([
+      'Could I get a coffee, please?',
+      'coffee, please',
+      'a coffee, please',
+      'I get a coffee, please',
+      'Could I get a coffee, please?',
     ])
   })
 })
@@ -90,7 +109,7 @@ describe('planStep', () => {
     expect(texts).toContain('want to go')
     expect(texts).toContain('もう一度')
     expect(actions[actions.length - 1]).toEqual({ type: 'speak', text: firstStep.item.answer, lang: 'en' })
-    expect(actions.filter((action) => action.type === 'pause' && !action.recordable)).toHaveLength(5)
+    expect(actions.filter((action) => action.type === 'pause' && !action.recordable)).toHaveLength(4)
   })
 
   it('stage 2 は問い、間、模範の3行動になる', () => {

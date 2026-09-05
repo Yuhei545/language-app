@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDialogueLesson } from './dialoguePlan'
+import { buildDialogueLesson, MAX_RECALLS_PER_BOUNDARY, type DialogueLessonStep } from './dialoguePlan'
 import type { LessonDialogue } from './lessonDialogueSchema'
 
 const dialogue: LessonDialogue = {
@@ -64,10 +64,16 @@ const dialogue: LessonDialogue = {
   ],
 }
 
+/** 「会話 k/N」のラベルを持つ最初のステップの位置。 */
+function firstStepOfTurn(steps: DialogueLessonStep[], turnNumber: number): number {
+  return steps.findIndex((step) => step.label.startsWith(`会話 ${turnNumber}/`))
+}
+
 describe('buildDialogueLesson (Pimsleur 忠実版)', () => {
   const { steps, items } = buildDialogueLesson(dialogue, { lang: 'en', pauseSeconds: 4, currentWeek: 3 })
   const count = (kind: string) => steps.filter((step) => step.kind === kind).length
   const turnCount = dialogue.turns.length
+  const kinds = steps.map((step) => step.kind)
 
   it('構成: 冒頭 1・核 N・文全体 N・解説(あるものだけ)・応用 2N・再生 1・締め(B の行数)・まとめ 1', () => {
     expect(count('intro')).toBe(1)
@@ -89,29 +95,37 @@ describe('buildDialogueLesson (Pimsleur 忠実版)', () => {
     expect(narration).toBeDefined()
   })
 
-  it('各行は 核 → 文全体 → (解説) → 応用 2 つ の順で、会話の登場順に並ぶ', () => {
-    const kinds = steps.map((step) => step.kind)
-    const firstBreakdown = kinds.indexOf('breakdown')
-    expect(kinds[firstBreakdown + 1]).toBe('line')
-    // 2 行目(B)は解説あり: 核 → 文全体 → 解説 → 応用 → 応用
-    const secondBreakdown = steps.findIndex((step) => step.kind === 'breakdown' && step.label.includes('2/'))
-    const seq = steps.slice(secondBreakdown, secondBreakdown + 5).map((step) => step.kind)
+  it('各行は(再出題を除くと)核 → 文全体 → (解説) → 応用 2 つ の順で、会話の登場順に並ぶ', () => {
+    const second = firstStepOfTurn(steps, 2)
+    const seq = steps.slice(second).filter((step) => step.kind !== 'recall').slice(0, 5).map((step) => step.kind)
     expect(seq).toEqual(['breakdown', 'line', 'explain', 'prompt', 'prompt'])
-    // 全部の行を終えてから通し再生、その後に締め、最後にまとめ
+    for (let turn = 1; turn < turnCount; turn += 1) {
+      expect(firstStepOfTurn(steps, turn)).toBeLessThan(firstStepOfTurn(steps, turn + 1))
+    }
     expect(kinds.indexOf('replay')).toBeGreaterThan(kinds.lastIndexOf('prompt'))
     expect(kinds.indexOf('closing')).toBeGreaterThan(kinds.indexOf('replay'))
     expect(kinds[kinds.length - 1]).toBe('summary')
   })
 
-  it('核と文全体はその行の話者の声で組み立て、全体を先に聞かせる', () => {
+  it('核はその行の話者の声で、全体 → かけら → 全体 → 合図 → 間 → 確認 と短く', () => {
     const second = steps.find((step) => step.kind === 'breakdown' && step.label.includes('2/'))
     expect(second?.speaker).toBe('B')
     const speaks = (second?.actions ?? []).filter((action) => action.type === 'speak' && action.lang === 'en')
-    expect(speaks[0]).toMatchObject({ text: 'how do I get to', voice: 'B' })
+    // 5 語なので末尾から 3 段(1 語・3 語・4 語)に間引く
+    expect(speaks.map((action) => action.type === 'speak' && action.text)).toEqual([
+      'how do I get to', 'to', 'I get to', 'do I get to', 'how do I get to', 'how do I get to',
+    ])
     expect(speaks.every((action) => action.type === 'speak' && action.voice === 'B')).toBe(true)
-    const line = steps.find((step) => step.kind === 'line' && step.label.includes('2/'))
-    const lineSpeaks = (line?.actions ?? []).filter((action) => action.type === 'speak' && action.lang === 'en')
-    expect(lineSpeaks[0]).toMatchObject({ text: 'How do I get to the airport?', voice: 'B' })
+  })
+
+  it('文全体では核の中のかけらを飛ばし、同じ表現の繰り返しを減らす', () => {
+    const first = steps.find((step) => step.kind === 'line' && step.label.includes('1/'))
+    const speaks = (first?.actions ?? []).filter((action) => action.type === 'speak' && action.lang === 'en')
+    // 'you' と 'help you' は核 'help you' で練習済みなので出さない
+    expect(speaks.map((action) => action.type === 'speak' && action.text)).toEqual([
+      'Can I help you?', 'I help you', 'Can I help you?', 'Can I help you?',
+    ])
+    expect(speaks[0]).toMatchObject({ voice: 'A' })
   })
 
   it('応用の合図は 日本語の合図 → 録音できる間 → 話者の声で答え、item を持つ', () => {
@@ -131,37 +145,70 @@ describe('buildDialogueLesson (Pimsleur 忠実版)', () => {
     ])
   })
 
-  it('再出題の項目は 核 + 文全体 で、stage 1〜4 が各 4 回ずつ入り、行の処理の間に散らばる', () => {
-    expect(items).toHaveLength(turnCount * 2)
+  it('再出題の項目は各行 1 つ(核があれば核)で、どの項目も少なくとも 1 回は思い出させる', () => {
+    expect(items.map((item) => item.id)).toEqual(dialogue.turns.map((_turn, index) => `key:${index}`))
     const recalls = steps.filter((step) => step.kind === 'recall')
-    expect(recalls.every((step) => step.stage !== undefined && step.stage >= 1 && step.stage <= 4)).toBe(true)
     for (const item of items) {
-      expect(recalls.filter((step) => step.item?.id === item.id)).toHaveLength(4)
+      expect(recalls.filter((step) => step.item?.id === item.id).length).toBeGreaterThanOrEqual(1)
     }
-    const kinds = steps.map((step) => step.kind)
-    expect(kinds.indexOf('recall')).toBeLessThan(kinds.lastIndexOf('line'))
+    expect(recalls.every((step) => step.stage !== undefined && step.stage >= 1 && step.stage <= 4)).toBe(true)
   })
 
-  it('まだ出ていない行の項目は再出題しない', () => {
-    const introduced = new Set<string>()
-    for (const step of steps) {
-      if ((step.kind === 'breakdown' || step.kind === 'line') && step.item) {
-        introduced.add(step.item.id)
-      }
-      if (step.kind === 'recall' && step.item) {
-        expect(introduced.has(step.item.id)).toBe(true)
-      }
+  it('前の行の再出題は、次の行の途中に入る(同じ行の中や、行の頭には入れない)', () => {
+    const firstRecallOfItem0 = steps.findIndex((step) => step.kind === 'recall' && step.item?.id === 'key:0')
+    const secondTurnStart = firstStepOfTurn(steps, 2)
+    const thirdTurnStart = firstStepOfTurn(steps, 3)
+    expect(firstRecallOfItem0).toBeGreaterThan(secondTurnStart)
+    expect(firstRecallOfItem0).toBeLessThan(thirdTurnStart)
+
+    // どの再出題も、その項目の行のステップが全部終わってから出る
+    for (let index = 0; index < turnCount; index += 1) {
+      const lastStepOfTurn = steps.reduce(
+        (last, step, position) => (step.label.startsWith(`会話 ${index + 1}/`) ? position : last),
+        -1,
+      )
+      const recallIndexes = steps
+        .map((step, position) => (step.kind === 'recall' && step.item?.id === `key:${index}` ? position : -1))
+        .filter((position) => position >= 0)
+      recallIndexes.forEach((position) => expect(position).toBeGreaterThan(lastStepOfTurn))
     }
+  })
+
+  it('同じ項目の再出題は連続させず、1 つの区切りに入る再出題は上限まで', () => {
+    steps.forEach((step, index) => {
+      if (step.kind !== 'recall') {
+        return
+      }
+      const previous = steps[index - 1]
+      const next = steps[index + 1]
+      expect(previous?.item?.id).not.toBe(step.item?.id)
+      expect(next?.item?.id).not.toBe(step.item?.id)
+    })
+    let run = 0
+    for (const step of steps) {
+      run = step.kind === 'recall' ? run + 1 : 0
+      expect(run).toBeLessThanOrEqual(MAX_RECALLS_PER_BOUNDARY)
+    }
+  })
+
+  it('再出題は 日本語の合図 → 録音できる間 → その行の話者の声で答え', () => {
+    const recall = steps.find((step) => step.kind === 'recall' && step.item?.id === 'key:0')
+    expect(recall?.speaker).toBe('A')
+    expect(recall?.actions).toEqual([
+      { type: 'speak', text: '「手伝う」と言ってみましょう', lang: 'ja', voice: 'narrator' },
+      { type: 'pause', ms: 4000, recordable: true },
+      { type: 'speak', text: 'help you', lang: 'en', voice: 'A' },
+    ])
   })
 
   it('保存済みの古い形式(核・応用なし)でも壊れず、文全体だけで進める', () => {
     const legacy: LessonDialogue = { ...dialogue, turns: dialogue.turns.map(({ speaker, text, ja }) => ({ speaker, text, ja })) }
     const built = buildDialogueLesson(legacy, { lang: 'en', pauseSeconds: 4, currentWeek: 1 })
-    const kinds = built.steps.map((step) => step.kind)
-    expect(kinds.filter((kind) => kind === 'prompt')).toHaveLength(0)
-    expect(kinds.filter((kind) => kind === 'breakdown')).toHaveLength(0)
-    expect(kinds.filter((kind) => kind === 'explain')).toHaveLength(0)
-    expect(kinds.filter((kind) => kind === 'line')).toHaveLength(turnCount)
-    expect(built.items).toHaveLength(turnCount)
+    const legacyKinds = built.steps.map((step) => step.kind)
+    expect(legacyKinds.filter((kind) => kind === 'prompt')).toHaveLength(0)
+    expect(legacyKinds.filter((kind) => kind === 'breakdown')).toHaveLength(0)
+    expect(legacyKinds.filter((kind) => kind === 'explain')).toHaveLength(0)
+    expect(legacyKinds.filter((kind) => kind === 'line')).toHaveLength(turnCount)
+    expect(built.items.map((item) => item.id)).toEqual(dialogue.turns.map((_turn, index) => `line:${index}`))
   })
 })

@@ -32,17 +32,23 @@ export function repeatPauseMs(chunk: string, lang: 'en' | 'ko'): number {
   return Math.min(REPEAT_PAUSE.maxMs, REPEAT_PAUSE.baseMs + REPEAT_PAUSE.perUnitMs * units)
 }
 
+/** 含有判定用に小文字化し、記号を落として空白を 1 つにそろえる。 */
+function normalizeChunk(text: string): string {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+}
+
 /**
  * 表現を Pimsleur 式に組み立てる行動列。
  * 1. まず全体を自然な速さで聞く
- * 2. 末尾のかけらから、言う → 繰り返す間、を重ねていく(部分は句読点なし、少しゆっくり)
- * 3. 全体を少しゆっくり → 繰り返す間 → 全体を自然な速さで
+ * 2. 末尾のかけら(最大 3 段)から、言う → 繰り返す間、を重ねていく(部分は句読点なし、少しゆっくり)
+ * 3. 最後に全体を自然な速さで 1 回
  * 単位が 3 未満の短い表現は、全体 → 間 → 全体 だけにする。
+ * skipContainedIn に核の表現を渡すと、その中に含まれるかけら(すでに練習済み)は飛ばす。
  */
 export function buildBackChainActions(
   text: string,
   lang: 'en' | 'ko',
-  opts: { voice?: LessonVoice } = {},
+  opts: { voice?: LessonVoice; skipContainedIn?: string } = {},
 ): LessonAction[] {
   const withVoice = (action: LessonAction): LessonAction => (
     action.type === 'speak' && opts.voice ? { ...action, voice: opts.voice } : action
@@ -60,7 +66,11 @@ export function buildBackChainActions(
   })
 
   const chunks = backChainSteps(text, lang)
-  const partials = chunks.slice(0, -1)
+  let partials = chunks.slice(0, -1)
+  if (opts.skipContainedIn) {
+    const known = normalizeChunk(opts.skipContainedIn)
+    partials = partials.filter((chunk) => !known.includes(normalizeChunk(chunk)))
+  }
 
   if (partials.length === 0) {
     return [full(), repeat(text), full()]
@@ -72,7 +82,7 @@ export function buildBackChainActions(
     actions.push(withVoice({ type: 'speak', text: spoken, lang, rate: 0.9 }))
     actions.push(repeat(spoken))
   }
-  actions.push(full(0.9), repeat(text), full())
+  actions.push(full())
   return actions
 }
 
