@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoreFrame, CoreVocab, CoreWord } from '../../content/coreSchema'
 import { loadCore } from '../../content/coreSchema'
+import { generateDialogue } from '../../services/gemini/dialogue'
 import { transcribeAudio } from '../../services/gemini/transcribe'
 import {
   createSpeechInput,
@@ -12,23 +13,36 @@ import {
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import {
+  getLanguageProgress,
   getVocabProgress,
   listMixingProgress,
   listPrepEvents,
   listVocabItems,
+  markDialogueCompleted,
+  saveLessonDialogue,
+  upsertVocabItems,
 } from '../../services/supabase/db'
-import type { MixingProgressRow } from '../../services/supabase/types'
+import type {
+  LessonDialogueRow,
+  MixingProgressRow,
+  PrepEventRow,
+} from '../../services/supabase/types'
 import { scorePronunciation } from '../cards/scoring'
 import { selectDueCards, type SrsState } from '../cards/srs'
 import { comboKey } from '../mixing/deal'
 import { slotPool } from '../mixing/combinations'
+import { buildDialogueLesson, type DialogueLessonStep } from './dialoguePlan'
+import type { LessonDialogue } from './lessonDialogueSchema'
 import { buildLessonItems } from './material'
 import { planStep, type LessonAction } from './plan'
 import { buildSchedule } from './schedule'
 import type { LessonStep } from './types'
 
-export type LessonStatus = 'loading' | 'ready' | 'running' | 'finished'
+export type LessonStatus = 'loading' | 'choosing' | 'generating' | 'ready' | 'running' | 'finished'
+export type LessonMode = 'words' | 'dialogue'
 export type CurrentLessonAction = 'cue' | 'pause' | 'answer' | null
+export type CurrentLessonSpeaker = 'A' | 'B' | 'you' | null
+type RunnableLessonStep = LessonStep | DialogueLessonStep
 
 export type LessonRecallResult = {
   itemId: string
@@ -130,13 +144,31 @@ function actionLabel(action: LessonAction): CurrentLessonAction {
   return null
 }
 
-export function useLesson(lang: 'en' | 'ko') {
+function isDialogueStep(step: RunnableLessonStep): step is DialogueLessonStep {
+  return 'actions' in step
+}
+
+function rowToDialogue(row: LessonDialogueRow): LessonDialogue {
+  return {
+    title_ja: row.title_ja,
+    scene_ja: row.scene_ja,
+    turns: row.dialogue,
+    new_expressions: row.new_expressions,
+  }
+}
+
+export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow | null) {
   const [settings, setSettingsState] = useState<Settings>(getSettings)
   const settingsRef = useRef(settings)
   const [status, setStatus] = useState<LessonStatus>('loading')
-  const [steps, setSteps] = useState<LessonStep[]>([])
+  const [mode, setMode] = useState<LessonMode>('words')
+  const [steps, setSteps] = useState<RunnableLessonStep[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [currentAction, setCurrentAction] = useState<CurrentLessonAction>(null)
+  const [currentSpokenText, setCurrentSpokenText] = useState<string | null>(null)
+  const [currentSpeaker, setCurrentSpeaker] = useState<CurrentLessonSpeaker>(null)
+  const [dialogue, setDialogue] = useState<LessonDialogue | null>(null)
+  const [upcomingPrepEvents, setUpcomingPrepEvents] = useState<PrepEventRow[]>([])
   const [elapsedMs, setElapsedMs] = useState(0)
   const [paused, setPaused] = useState(false)
   const [recallResults, setRecallResults] = useState<LessonRecallResult[]>([])
@@ -152,6 +184,13 @@ export function useLesson(lang: 'en' | 'ko') {
   const mountedRef = useRef(true)
   const japaneseVoiceAvailableRef = useRef(true)
   const consecutiveSpeechFailuresRef = useRef(0)
+  const userIdRef = useRef<string | null>(null)
+  const currentWeekRef = useRef(1)
+  const knownWordsRef = useRef<string[]>([])
+  const wordStepsRef = useRef<LessonStep[]>([])
+  const dialogueIdRef = useRef<string | null>(null)
+  const generationAbortRef = useRef<AbortController | null>(null)
+  const completionRunRef = useRef<number | null>(null)
 
   const currentStep = steps[currentIndex] ?? null
 
@@ -163,6 +202,8 @@ export function useLesson(lang: 'en' | 'ko') {
 
   const cancelActive = useCallback(() => {
     generationRef.current += 1
+    generationAbortRef.current?.abort()
+    generationAbortRef.current = null
     stopSpeaking()
 
     if (timeoutRef.current !== null) {
@@ -210,11 +251,19 @@ export function useLesson(lang: 'en' | 'ko') {
     setSteps([])
     setCurrentIndex(0)
     setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
     setElapsedMs(0)
     setPaused(false)
     setRecallResults([])
     setError(null)
     setWarnings([])
+    setDialogue(null)
+    setUpcomingPrepEvents([])
+    setMode('words')
+    userIdRef.current = null
+    dialogueIdRef.current = null
+    completionRunRef.current = null
     consecutiveSpeechFailuresRef.current = 0
 
     const load = async () => {
@@ -226,11 +275,13 @@ export function useLesson(lang: 'en' | 'ko') {
 
         const userId = authSession.user.id
         const core = loadCore(lang)
-        const [vocabItems, mixingRows, prepEvents] = await Promise.all([
+        const [vocabItems, mixingRows, prepEvents, languageProgress] = await Promise.all([
           listVocabItems(userId, lang),
           listMixingProgress(userId, lang),
           listPrepEvents(userId, lang),
+          getLanguageProgress(userId, lang),
         ])
+        const currentWeek = languageProgress?.current_week ?? 1
         const upcomingEvents = prepEvents.filter(
           (event) => event.event_date !== null && event.event_date >= localDateString(new Date()),
         )
@@ -255,10 +306,45 @@ export function useLesson(lang: 'en' | 'ko') {
           prepWords: prepGroups.flat(),
         })
         const nextSteps = buildSchedule(items)
+        const coreWords = [
+          ...core.verbs,
+          ...core.nouns,
+          ...core.adjectives,
+          ...core.phrasal,
+        ].map((word) => word.text)
+        const knownWords = Array.from(new Set([
+          ...vocabItems.filter((item) => (
+            item.week === currentWeek
+            || vocabProgress.some((progress) => (
+              progress.vocab_item_id === item.id && progress.status === 'known'
+            ))
+          )).map((item) => item.text),
+          ...coreWords,
+        ]))
 
         if (active) {
-          setSteps(nextSteps)
-          setStatus('ready')
+          userIdRef.current = userId
+          currentWeekRef.current = currentWeek
+          knownWordsRef.current = knownWords
+          wordStepsRef.current = nextSteps
+          setUpcomingPrepEvents(upcomingEvents)
+
+          if (initialDialogue) {
+            const savedDialogue = rowToDialogue(initialDialogue)
+            const built = buildDialogueLesson(savedDialogue, {
+              lang,
+              pauseSeconds: settingsRef.current.lessonPauseSeconds,
+              currentWeek,
+            })
+            dialogueIdRef.current = initialDialogue.id
+            setDialogue(savedDialogue)
+            setMode('dialogue')
+            setSteps(built.steps)
+            setStatus('ready')
+          } else {
+            setSteps([])
+            setStatus('choosing')
+          }
         }
       } catch (loadError) {
         if (active) {
@@ -272,7 +358,7 @@ export function useLesson(lang: 'en' | 'ko') {
       active = false
       cancelActive()
     }
-  }, [cancelActive, lang])
+  }, [cancelActive, initialDialogue, lang])
 
   useEffect(() => {
     if (status !== 'running' || paused || !currentStep) {
@@ -280,10 +366,12 @@ export function useLesson(lang: 'en' | 'ko') {
     }
 
     const generation = generationRef.current
-    const actions = planStep(currentStep, {
-      lang,
-      pauseSeconds: settings.lessonPauseSeconds,
-    })
+    const actions = isDialogueStep(currentStep)
+      ? currentStep.actions
+      : planStep(currentStep, {
+          lang,
+          pauseSeconds: settings.lessonPauseSeconds,
+        })
     const runId = lessonRunRef.current
 
     const runPause = async (action: Extract<LessonAction, { type: 'pause' }>) => {
@@ -322,15 +410,20 @@ export function useLesson(lang: 'en' | 'ko') {
         try {
           const transcription = input.stop()
           void transcription.then((result) => {
+            const item = currentStep.item
+            const stage = currentStep.stage
+            if (!item || stage === undefined) {
+              return
+            }
             const score = scorePronunciation(
               result.text,
-              { text: currentStep.item.answer, example: '' },
+              { text: item.answer, example: '' },
               lang,
             )
             if (mountedRef.current && lessonRunRef.current === runId) {
               setRecallResults((current) => [...current, {
-                itemId: currentStep.item.id,
-                stage: currentStep.stage,
+                itemId: item.id,
+                stage,
                 matched: score.matched,
               }])
             }
@@ -351,16 +444,35 @@ export function useLesson(lang: 'en' | 'ko') {
 
         const action = actions[index]
         setCurrentAction(actionLabel(action))
+        setCurrentSpokenText(action.type === 'speak' ? action.text : null)
+        if (isDialogueStep(currentStep)) {
+          setCurrentSpeaker(
+            action.type === 'pause'
+              ? 'you'
+              : action.type === 'speak' && (action.voice === 'A' || action.voice === 'B')
+                ? action.voice
+                : null,
+          )
+        } else {
+          setCurrentSpeaker(null)
+        }
 
         if (action.type === 'speak') {
           if (action.lang === 'ja' && !japaneseVoiceAvailableRef.current) {
             await wait(1_500)
           } else {
             try {
+              const isFallbackB = action.voice === 'B' && !settingsRef.current.ttsVoiceB[lang]
+              const targetVoice = action.voice === 'B'
+                ? settingsRef.current.ttsVoiceB[lang] ?? settingsRef.current.ttsVoice[lang]
+                : settingsRef.current.ttsVoice[lang]
               await speak(action.text, {
                 lang: action.lang,
-                rate: action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
-                voiceURI: action.lang === 'ja' ? undefined : settingsRef.current.ttsVoice[lang],
+                rate: isFallbackB
+                  ? 0.95
+                  : action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
+                voiceURI: action.lang === 'ja' ? undefined : targetVoice,
+                pitch: isFallbackB ? 0.9 : undefined,
               })
               consecutiveSpeechFailuresRef.current = 0
             } catch (speechError) {
@@ -389,6 +501,8 @@ export function useLesson(lang: 'en' | 'ko') {
       }
       actionIndexRef.current = 0
       setCurrentAction(null)
+      setCurrentSpokenText(null)
+      setCurrentSpeaker(null)
       if (currentIndex + 1 >= steps.length) {
         updateElapsed()
         setStatus('finished')
@@ -426,15 +540,148 @@ export function useLesson(lang: 'en' | 'ko') {
     wait,
   ])
 
-  const start = useCallback(() => {
-    if (status !== 'ready' && status !== 'finished') {
+  useEffect(() => {
+    if (status !== 'finished' || mode !== 'dialogue' || !dialogue) {
       return
     }
-    if (steps.length === 0) {
+
+    const dialogueId = dialogueIdRef.current
+    const userId = userIdRef.current
+    const runId = lessonRunRef.current
+    if (!dialogueId || !userId || completionRunRef.current === runId) {
+      return
+    }
+    completionRunRef.current = runId
+
+    const complete = async () => {
+      try {
+        await markDialogueCompleted(dialogueId)
+        await upsertVocabItems(dialogue.new_expressions.map((expression) => ({
+          user_id: userId,
+          lang,
+          week: currentWeekRef.current,
+          text: expression.text,
+          emoji: '💬',
+          hint_ja: expression.ja,
+          example: dialogue.turns[expression.turn_index]?.text ?? expression.text,
+          category: 'dialogue' as const,
+          source: 'generated' as const,
+        })))
+      } catch (completionError) {
+        if (mountedRef.current && lessonRunRef.current === runId) {
+          setError(completionError)
+        }
+      }
+    }
+
+    void complete()
+  }, [dialogue, lang, mode, status])
+
+  const selectWordLesson = useCallback(() => {
+    cancelActive()
+    setMode('words')
+    setDialogue(null)
+    dialogueIdRef.current = null
+    setSteps(wordStepsRef.current)
+    setCurrentIndex(0)
+    setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
+    setError(null)
+    setStatus('ready')
+  }, [cancelActive])
+
+  const startDialogueLesson = useCallback(async (sceneJa: string) => {
+    const userId = userIdRef.current
+    const scene = sceneJa.trim()
+    if (!userId || !scene || status === 'generating') {
       return
     }
 
     cancelActive()
+    const controller = new AbortController()
+    generationAbortRef.current = controller
+    setMode('dialogue')
+    setDialogue(null)
+    setSteps([])
+    setError(null)
+    setStatus('generating')
+
+    try {
+      const generated = await generateDialogue({
+        lang,
+        sceneJa: scene,
+        interests: settingsRef.current.interests,
+        knownWords: knownWordsRef.current,
+        level: lang === 'en' ? 'practical-b1' : 'beginner',
+      }, { signal: controller.signal })
+      const saved = await saveLessonDialogue({
+        user_id: userId,
+        lang,
+        scene_ja: generated.dialogue.scene_ja,
+        title_ja: generated.dialogue.title_ja,
+        dialogue: generated.dialogue.turns,
+        new_expressions: generated.dialogue.new_expressions,
+      })
+
+      if (controller.signal.aborted || !mountedRef.current) {
+        return
+      }
+
+      const built = buildDialogueLesson(generated.dialogue, {
+        lang,
+        pauseSeconds: settingsRef.current.lessonPauseSeconds,
+        currentWeek: currentWeekRef.current,
+      })
+      dialogueIdRef.current = saved.id
+      completionRunRef.current = null
+      setDialogue(generated.dialogue)
+      setSteps(built.steps)
+      setCurrentIndex(0)
+      setStatus('ready')
+    } catch (generationError) {
+      if (!controller.signal.aborted && mountedRef.current) {
+        setError(generationError)
+        setStatus('choosing')
+      }
+    } finally {
+      if (generationAbortRef.current === controller) {
+        generationAbortRef.current = null
+      }
+    }
+  }, [cancelActive, lang, status])
+
+  const chooseDifferentScene = useCallback(() => {
+    cancelActive()
+    setMode('dialogue')
+    setDialogue(null)
+    dialogueIdRef.current = null
+    setSteps([])
+    setCurrentIndex(0)
+    setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
+    setError(null)
+    setStatus('choosing')
+  }, [cancelActive])
+
+  const start = useCallback(() => {
+    if (status !== 'ready' && status !== 'finished') {
+      return
+    }
+    const nextSteps = mode === 'dialogue' && dialogue
+      ? buildDialogueLesson(dialogue, {
+          lang,
+          pauseSeconds: settingsRef.current.lessonPauseSeconds,
+          currentWeek: currentWeekRef.current,
+        }).steps
+      : steps
+    if (nextSteps.length === 0) {
+      return
+    }
+
+    cancelActive()
+    setSteps(nextSteps)
     const japaneseVoiceAvailable = hasVoiceFor('ja')
     japaneseVoiceAvailableRef.current = japaneseVoiceAvailable
     const nextWarnings: string[] = []
@@ -450,13 +697,15 @@ export function useLesson(lang: 'en' | 'ko') {
     actionIndexRef.current = 0
     setCurrentIndex(0)
     setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
     setElapsedMs(0)
     setRecallResults([])
     setError(null)
     setPaused(false)
     startedAtRef.current = Date.now()
     setStatus('running')
-  }, [cancelActive, lang, status, steps.length])
+  }, [cancelActive, dialogue, lang, mode, status, steps])
 
   const pause = useCallback(() => {
     if (status !== 'running' || paused) {
@@ -465,6 +714,8 @@ export function useLesson(lang: 'en' | 'ko') {
     cancelActive()
     updateElapsed()
     setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
     setPaused(true)
   }, [cancelActive, paused, status, updateElapsed])
 
@@ -485,6 +736,8 @@ export function useLesson(lang: 'en' | 'ko') {
     updateElapsed()
     actionIndexRef.current = 0
     setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
     if (currentIndex + 1 >= steps.length) {
       setPaused(false)
       setStatus('finished')
@@ -501,6 +754,8 @@ export function useLesson(lang: 'en' | 'ko') {
     updateElapsed()
     actionIndexRef.current = 0
     setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
     setPaused(false)
     setStatus('finished')
   }, [cancelActive, status, updateElapsed])
@@ -514,14 +769,25 @@ export function useLesson(lang: 'en' | 'ko') {
   }, [settings.lessonPauseSeconds, steps.length])
 
   return {
+    mode,
     status,
     steps,
     currentIndex,
     currentStep,
     currentAction,
+    currentSpokenText,
+    currentStepLabel: currentStep && isDialogueStep(currentStep)
+      ? currentStep.label
+      : null,
+    currentSpeaker,
+    dialogue,
+    upcomingPrepEvents,
     estimatedMinutes,
     elapsedMs,
     paused,
+    selectWordLesson,
+    startDialogueLesson,
+    chooseDifferentScene,
     start,
     pause,
     resume,

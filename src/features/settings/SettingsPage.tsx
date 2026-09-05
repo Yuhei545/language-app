@@ -220,6 +220,24 @@ export function SettingsPage() {
               value={settingsState.ttsVoice.ko}
               onChange={(voiceUri) => update({ ttsVoice: { ...settingsState.ttsVoice, ko: voiceUri } })}
             />
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-sm font-bold text-slate-800">会話の相手役(B)の声</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">音声レッスンの会話で、相手役と区別するための声です。未選択なら同じ声を少し低くして使います。</p>
+              <div className="mt-4 space-y-4">
+                <VoiceSelect
+                  label="英語の相手役"
+                  voices={englishVoices}
+                  value={settingsState.ttsVoiceB.en}
+                  onChange={(voiceUri) => update({ ttsVoiceB: { ...settingsState.ttsVoiceB, en: voiceUri } })}
+                />
+                <VoiceSelect
+                  label="韓国語の相手役"
+                  voices={koreanVoices}
+                  value={settingsState.ttsVoiceB.ko}
+                  onChange={(voiceUri) => update({ ttsVoiceB: { ...settingsState.ttsVoiceB, ko: voiceUri } })}
+                />
+              </div>
+            </div>
             <label className="block">
               <span className="mb-2 flex justify-between text-sm font-bold text-slate-700">
                 読み上げ速度

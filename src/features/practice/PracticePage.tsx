@@ -21,7 +21,7 @@ const practices = [
   },
   {
     title: '音声レッスン',
-    description: 'まとまった音声を聞きながら、言葉に浸ります。',
+    description: '会話から学ぶ 15 分',
     to: '/lesson',
     emoji: '🎧',
   },

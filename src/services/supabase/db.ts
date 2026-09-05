@@ -491,3 +491,17 @@ export async function markDialogueCompleted(id: string): Promise<LessonDialogueR
 
   return data
 }
+
+export async function getLessonDialogue(id: string): Promise<LessonDialogueRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
