@@ -57,6 +57,7 @@ export function SettingsPage() {
 
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'))
   const koreanVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('ko'))
+  const japaneseVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('ja'))
 
   const loadModels = async () => {
     setModelsLoading(true)
@@ -175,6 +176,18 @@ export function SettingsPage() {
         <fieldset className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <legend className="px-1 text-base font-bold text-slate-800">読み上げ</legend>
           <div className="space-y-5">
+            <p className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs leading-5 text-sky-900">
+              自然な声が見つからないときは、このアプリを Microsoft Edge で開いてみてください。Edge には「Online (Natural)」と付く
+              自然な声が日本語・韓国語・英語それぞれに男女で用意されています。声は「試聴」で聞き比べられます。
+            </p>
+            <VoiceSelect
+              label="日本語(ナレーター)の声"
+              lang="ja"
+              rate={1}
+              voices={japaneseVoices}
+              value={settingsState.ttsVoiceJa}
+              onChange={(voiceUri) => update({ ttsVoiceJa: voiceUri })}
+            />
             <VoiceSelect
               label="英語の音声"
               lang="en"

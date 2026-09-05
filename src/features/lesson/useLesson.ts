@@ -471,7 +471,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
                 rate: isFallbackB
                   ? 0.95
                   : action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
-                voiceURI: action.lang === 'ja' ? undefined : targetVoice,
+                voiceURI: action.lang === 'ja' ? settingsRef.current.ttsVoiceJa ?? undefined : targetVoice,
                 pitch: isFallbackB ? 0.9 : undefined,
               })
               consecutiveSpeechFailuresRef.current = 0

@@ -1,6 +1,5 @@
-import { backChainSteps } from './backChain'
 import type { LessonDialogue, NewExpression } from './lessonDialogueSchema'
-import { planStep, type LessonAction } from './plan'
+import { buildBackChainActions, planStep, type LessonAction } from './plan'
 import { buildSchedule } from './schedule'
 import type { LessonItem, LessonStage } from './types'
 
@@ -26,6 +25,9 @@ const STAGE_LABELS: Record<Exclude<LessonStage, 0>, string> = {
 export function expressionCue(expression: NewExpression): string {
   return `「${expression.ja}」と言ってみましょう`
 }
+
+/** 最初の分解の前に一度だけ流す説明。 */
+export const BACK_CHAIN_INSTRUCTION_JA = '後ろから組み立てます。聞こえたら、そのまま繰り返してください'
 
 function dialogueSpeaks(
   dialogue: LessonDialogue,
@@ -67,25 +69,27 @@ export function buildDialogueLesson(
   }
 
   const breakdowns: DialogueLessonStep[] = dialogue.new_expressions.map((expression, index) => {
-    const chain = backChainSteps(expression.text, lang)
-    const chainActions = chain.flatMap<LessonAction>((text, chainIndex) => [
-      { type: 'speak', text, lang, rate: 0.9 },
-      ...(chainIndex < chain.length - 1 ? [{ type: 'gap', ms: 400 } as LessonAction] : []),
-    ])
+    // その表現を言う人物の声で組み立てる(あなたの役の表現は B、相手の表現は A)
+    const speaker = dialogue.turns[expression.turn_index]?.speaker ?? 'A'
+    const instruction: LessonAction[] = index === 0
+      ? [{ type: 'speak', text: BACK_CHAIN_INSTRUCTION_JA, lang: 'ja', voice: 'narrator' }, { type: 'gap', ms: 300 }]
+      : []
     return {
       kind: 'breakdown',
       label: `新しい表現 ${index + 1}/${dialogue.new_expressions.length}`,
       item: items[index],
       stage: 0,
+      speaker,
       actions: [
         { type: 'speak', text: expression.note_ja, lang: 'ja', voice: 'narrator' },
-        ...chainActions,
+        ...instruction,
+        ...buildBackChainActions(expression.text, lang, { voice: speaker }),
         { type: 'speak', text: expressionCue(expression), lang: 'ja', voice: 'narrator' },
         pause,
-        { type: 'speak', text: expression.text, lang },
+        { type: 'speak', text: expression.text, lang, voice: speaker },
         { type: 'speak', text: 'もう一度', lang: 'ja', voice: 'narrator' },
         pause,
-        { type: 'speak', text: expression.text, lang },
+        { type: 'speak', text: expression.text, lang, voice: speaker },
       ],
     }
   })

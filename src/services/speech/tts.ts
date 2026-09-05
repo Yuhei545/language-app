@@ -118,7 +118,7 @@ export function speak(
       utterance.rate = opts.rate
     }
 
-    if (opts.lang !== 'ja' && opts.voiceURI) {
+    if (opts.voiceURI) {
       const voice = cachedVoices.find((candidate) => candidate.voiceURI === opts.voiceURI)
       if (voice) {
         utterance.voice = voice

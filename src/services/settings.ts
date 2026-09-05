@@ -15,6 +15,7 @@ export type Settings = {
   lessonPauseSeconds: number
   lessonRecording: boolean
   micDeviceId: string | null
+  ttsVoiceJa: string | null
 }
 
 type SettingsListener = (settings: Settings) => void
@@ -37,6 +38,7 @@ const DEFAULT_SETTINGS: Settings = {
   lessonPauseSeconds: 4,
   lessonRecording: false,
   micDeviceId: null,
+  ttsVoiceJa: null,
 }
 
 function defaultSettings(): Settings {
@@ -91,6 +93,7 @@ function isSettings(value: unknown): value is Settings {
     && value.lessonPauseSeconds <= 8
     && typeof value.lessonRecording === 'boolean'
     && isNullableString(value.micDeviceId)
+    && isNullableString(value.ttsVoiceJa)
   )
 }
 
@@ -127,6 +130,9 @@ export function getSettings(): Settings {
         micDeviceId: parsed.micDeviceId === undefined
           ? DEFAULT_SETTINGS.micDeviceId
           : parsed.micDeviceId,
+        ttsVoiceJa: parsed.ttsVoiceJa === undefined
+          ? DEFAULT_SETTINGS.ttsVoiceJa
+          : parsed.ttsVoiceJa,
       }
     }
 

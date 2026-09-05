@@ -80,12 +80,37 @@ describe('buildDialogueLesson', () => {
     })
   })
 
-  it('分解は解説 → 末尾からの組み立て → 問い → 間 → 模範 の並びを含む', () => {
+  it('分解は解説 → 全体 → 末尾からのかけら(繰り返す間つき) → 問い → 間 → 模範 の並び', () => {
     const first = steps.find((step) => step.kind === 'breakdown')
     const actions = first?.actions ?? []
-    expect(actions[0]).toMatchObject({ type: 'speak', lang: 'ja', text: dialogue.new_expressions[0].note_ja })
+    const expression = dialogue.new_expressions[0]
+    expect(actions[0]).toMatchObject({ type: 'speak', lang: 'ja', text: expression.note_ja })
     expect(actions.some((action) => action.type === 'pause' && action.ms === 4000)).toBe(true)
     const last = actions[actions.length - 1]
-    expect(last).toMatchObject({ type: 'speak', text: dialogue.new_expressions[0].text })
+    expect(last).toMatchObject({ type: 'speak', text: expression.text })
+
+    const speaks = actions.filter((action) => action.type === 'speak' && action.lang === 'en')
+    expect(speaks[0]).toMatchObject({ text: expression.text })
+    const partial = speaks.find((action) => action.type === 'speak' && action.text === 'to')
+    expect(partial).toMatchObject({ rate: 0.9, voice: 'B' })
+    const partialIndex = actions.indexOf(partial as (typeof actions)[number])
+    expect(actions[partialIndex + 1]).toMatchObject({ type: 'pause', recordable: false })
+  })
+
+  it('最初の分解だけ、後ろから組み立てる説明を日本語で流す', () => {
+    const breakdowns = steps.filter((step) => step.kind === 'breakdown')
+    const hasInstruction = (step: (typeof breakdowns)[number]) => step.actions.some(
+      (action) => action.type === 'speak' && action.lang === 'ja' && action.text.includes('後ろから組み立てます'),
+    )
+    expect(hasInstruction(breakdowns[0])).toBe(true)
+    expect(breakdowns.slice(1).some(hasInstruction)).toBe(false)
+  })
+
+  it('かけらは、その表現を言う人物の声で読む(あなたの役は B、相手は A)', () => {
+    const breakdowns = steps.filter((step) => step.kind === 'breakdown')
+    expect(breakdowns[0].speaker).toBe('B')
+    expect(breakdowns[1].speaker).toBe('A')
+    const secondSpeaks = breakdowns[1].actions.filter((action) => action.type === 'speak' && action.lang === 'en')
+    expect(secondSpeaks.every((action) => action.type === 'speak' && action.voice === 'A')).toBe(true)
   })
 })

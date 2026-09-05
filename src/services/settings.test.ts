@@ -14,6 +14,7 @@ const defaults = {
   lessonPauseSeconds: 4,
   lessonRecording: false,
   micDeviceId: null,
+  ttsVoiceJa: null,
 }
 
 describe('settings service', () => {

@@ -2,9 +2,10 @@ import { useId, useState } from 'react'
 import { speak, unlockAudio } from '../../services/speech'
 
 /** 試聴用の短い文。設定画面で声の違いが分かる長さにする。 */
-const PREVIEW_SAMPLES: Record<'en' | 'ko', string> = {
+const PREVIEW_SAMPLES: Record<'en' | 'ko' | 'ja', string> = {
   en: 'Hi! Could I get a coffee, please?',
   ko: '안녕하세요. 커피 한 잔 주세요.',
+  ja: 'こんにちは。今日のレッスンを始めましょう。',
 }
 
 export function VoiceSelect({
@@ -17,7 +18,7 @@ export function VoiceSelect({
   previewPitch,
 }: {
   label: string
-  lang: 'en' | 'ko'
+  lang: 'en' | 'ko' | 'ja'
   voices: SpeechSynthesisVoice[]
   value: string | null
   onChange: (voiceUri: string | null) => void

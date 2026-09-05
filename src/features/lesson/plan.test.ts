@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { planStep } from './plan'
+import {
+  buildBackChainActions,
+  planStep,
+  repeatPauseMs,
+  stripTrailingPunctuation,
+  REPEAT_PAUSE,
+} from './plan'
 import type { LessonStep } from './types'
 
 const firstStep: LessonStep = {
@@ -12,20 +18,79 @@ const firstStep: LessonStep = {
   stage: 0,
 }
 
-describe('planStep', () => {
-  it('初出では back-chaining を末尾から順に含める', () => {
-    const actions = planStep(firstStep, { lang: 'en', pauseSeconds: 4 })
-    const targetSpeech = actions.filter(
-      (action) => action.type === 'speak' && action.lang === 'en' && action.rate === 0.9,
-    )
+describe('stripTrailingPunctuation', () => {
+  it('末尾の句読点だけを落とす', () => {
+    expect(stripTrailingPunctuation('go.')).toBe('go')
+    expect(stripTrailingPunctuation('to go?')).toBe('to go')
+    expect(stripTrailingPunctuation('가요.')).toBe('가요')
+    expect(stripTrailingPunctuation("Don't go")).toBe("Don't go")
+  })
+})
 
-    expect(targetSpeech).toEqual([
-      { type: 'speak', text: 'go.', lang: 'en', rate: 0.9 },
-      { type: 'speak', text: 'to go.', lang: 'en', rate: 0.9 },
-      { type: 'speak', text: 'want to go.', lang: 'en', rate: 0.9 },
-      { type: 'speak', text: 'I want to go.', lang: 'en', rate: 0.9 },
+describe('repeatPauseMs', () => {
+  it('チャンクが長いほど間が長く、上限で止まる', () => {
+    expect(repeatPauseMs('go', 'en')).toBe(REPEAT_PAUSE.baseMs + REPEAT_PAUSE.perUnitMs)
+    expect(repeatPauseMs('I want to go', 'en')).toBe(REPEAT_PAUSE.baseMs + REPEAT_PAUSE.perUnitMs * 4)
+    expect(repeatPauseMs('one two three four five six seven eight nine ten', 'en')).toBe(REPEAT_PAUSE.maxMs)
+    expect(repeatPauseMs('역에 가요', 'ko')).toBe(REPEAT_PAUSE.baseMs + REPEAT_PAUSE.perUnitMs * 4)
+  })
+})
+
+describe('buildBackChainActions', () => {
+  it('全体 → 末尾からのかけら(句読点なし)+繰り返す間 → 全体ゆっくり → 間 → 全体', () => {
+    const actions = buildBackChainActions('I want to go.', 'en', { voice: 'B' })
+    const speaks = actions.filter((action) => action.type === 'speak')
+
+    expect(speaks.map((action) => action.type === 'speak' && action.text)).toEqual([
+      'I want to go.',
+      'go',
+      'to go',
+      'want to go',
+      'I want to go.',
+      'I want to go.',
     ])
-    expect(actions.filter((action) => action.type === 'gap')).toHaveLength(3)
+    expect(actions[0]).toMatchObject({ type: 'speak', text: 'I want to go.', voice: 'B' })
+    expect(actions[0]).not.toHaveProperty('rate')
+    expect(speaks.slice(1, 4).every((action) => action.type === 'speak' && action.rate === 0.9 && action.voice === 'B')).toBe(true)
+  })
+
+  it('かけらの直後には必ず繰り返す間があり、録音の対象にはしない', () => {
+    const actions = buildBackChainActions('I want to go.', 'en')
+    actions.forEach((action, index) => {
+      if (action.type === 'speak' && index < actions.length - 1) {
+        expect(actions[index + 1]).toMatchObject({ type: 'pause', recordable: false })
+      }
+    })
+    const pauses = actions.filter((action) => action.type === 'pause')
+    expect(pauses).toHaveLength(5)
+    expect(pauses.every((action) => action.type === 'pause' && action.ms >= REPEAT_PAUSE.baseMs)).toBe(true)
+  })
+
+  it('短い表現は 全体 → 間 → 全体 だけ', () => {
+    const actions = buildBackChainActions('Thank you.', 'en')
+    expect(actions.map((action) => action.type)).toEqual(['speak', 'pause', 'speak'])
+  })
+
+  it('韓国語は音節単位で組み立てる', () => {
+    const speaks = buildBackChainActions('역에 가요.', 'ko').filter((action) => action.type === 'speak')
+    expect(speaks.map((action) => action.type === 'speak' && action.text)).toEqual([
+      '역에 가요.', '요', '가요', '에 가요', '역에 가요.', '역에 가요.',
+    ])
+  })
+})
+
+describe('planStep', () => {
+  it('初出では問い → 間 → 逆順組み立て → もう一度 → 間 → 模範', () => {
+    const actions = planStep(firstStep, { lang: 'en', pauseSeconds: 4 })
+
+    expect(actions[0]).toEqual({ type: 'speak', text: firstStep.item.cueJa, lang: 'ja' })
+    expect(actions[1]).toEqual({ type: 'pause', ms: 4000, recordable: true })
+    const texts = actions.filter((action) => action.type === 'speak').map((action) => action.type === 'speak' && action.text)
+    expect(texts).toContain('go')
+    expect(texts).toContain('want to go')
+    expect(texts).toContain('もう一度')
+    expect(actions[actions.length - 1]).toEqual({ type: 'speak', text: firstStep.item.answer, lang: 'en' })
+    expect(actions.filter((action) => action.type === 'pause' && !action.recordable)).toHaveLength(5)
   })
 
   it('stage 2 は問い、間、模範の3行動になる', () => {
