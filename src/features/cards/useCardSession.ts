@@ -83,6 +83,11 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
   const progressRef = useRef(new Map<string, VocabProgressRow>())
 
   const currentCard = cards[currentIndex] ?? null
+  const currentProgress = currentCard
+    ? progressRef.current.get(currentCard.id)
+    : undefined
+  const isFirstEncounter = currentCard !== null
+    && (!currentProgress || currentProgress.last_reviewed_at === null)
 
   const captureError = useCallback((caught: unknown) => {
     setError(caught ?? new Error('不明なエラーが発生しました'))
@@ -372,6 +377,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     started,
     finished,
     currentCard,
+    isFirstEncounter,
     currentIndex,
     totalCards: cards.length,
     progressPercent,

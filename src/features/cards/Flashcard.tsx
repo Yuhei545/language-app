@@ -5,6 +5,7 @@ import type { CardAttempt, CardPhase } from './useCardSession'
 
 type FlashcardProps = {
   card: VocabItemRow
+  isFirstEncounter: boolean
   phase: CardPhase
   attempt: CardAttempt | null
   hintVisible: boolean
@@ -31,6 +32,7 @@ function engineLabel(engine: 'webspeech' | 'gemini' | null): string {
 
 export function Flashcard({
   card,
+  isFirstEncounter,
   phase,
   attempt,
   hintVisible,
@@ -72,7 +74,20 @@ export function Flashcard({
       <div className="bg-gradient-to-b from-teal-50 to-white px-5 pb-7 pt-8 text-center">
         <p className="text-[5rem] leading-none" aria-label="単語を表す絵文字">{card.emoji || '💭'}</p>
 
-        {!answerVisible ? (
+        {!answerVisible && isFirstEncounter ? (
+          <div className="mt-7">
+            <p className="text-sm font-bold text-teal-900">
+              はじめての言葉です。意味を確かめてから声に出しましょう
+            </p>
+            <p className="mt-4 text-3xl font-bold tracking-tight text-slate-900">{card.text}</p>
+            <p className="mx-auto mt-3 max-w-sm text-base leading-7 text-slate-600">
+              {card.example || card.text}
+            </p>
+            <p className="mx-auto mt-4 max-w-sm rounded-2xl bg-sky-50 px-4 py-3 text-sm leading-6 text-slate-700">
+              {card.hint_ja || '日本語の意味はまだ登録されていません'}
+            </p>
+          </div>
+        ) : !answerVisible ? (
           <div className="mt-7">
             <p className="text-sm font-bold text-teal-900">絵と音を、そのまま結びつけてみましょう</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">聞こえた音を、声に出すところまでが今日の練習です。</p>
@@ -99,7 +114,7 @@ export function Flashcard({
       </div>
 
       <div className="border-t border-slate-100 px-5 py-5">
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${isFirstEncounter && !answerVisible ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <button
             type="button"
             onClick={() => void onListen()}
@@ -108,14 +123,16 @@ export function Flashcard({
           >
             🔊 聞く
           </button>
-          <button
-            type="button"
-            onClick={() => void onShowHint()}
-            disabled={hintVisible || hintSaving || isRecording || isBusy}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40"
-          >
-            {hintSaving ? '保存中…' : '🇯🇵 ヒント'}
-          </button>
+          {isFirstEncounter && !answerVisible ? null : (
+            <button
+              type="button"
+              onClick={() => void onShowHint()}
+              disabled={hintVisible || hintSaving || isRecording || isBusy}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40"
+            >
+              {hintSaving ? '保存中…' : '🇯🇵 ヒント'}
+            </button>
+          )}
         </div>
 
         {hintVisible ? (

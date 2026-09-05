@@ -135,6 +135,7 @@ export function CardsPage() {
         <Flashcard
           key={session.currentCard.id}
           card={session.currentCard}
+          isFirstEncounter={session.isFirstEncounter}
           phase={session.phase}
           attempt={session.attempt}
           hintVisible={session.hintVisible}
