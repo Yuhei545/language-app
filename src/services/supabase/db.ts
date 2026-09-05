@@ -67,6 +67,27 @@ export async function upsertLanguageProgress(
   return data
 }
 
+export async function advanceLanguageWeek(
+  userId: string,
+  lang: Language,
+  nextWeek: number,
+  today: string,
+): Promise<LanguageProgressRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('language_progress')
+    .update({ current_week: nextWeek, week_started_at: today })
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 export async function listVocabItems(
   userId: string,
   lang: Language,

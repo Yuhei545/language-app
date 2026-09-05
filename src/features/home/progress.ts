@@ -49,9 +49,30 @@ export function weekNumberFor(startedAt: string, now: Date): number {
   return Math.min(26, Math.floor(elapsedDays / 7) + 1)
 }
 
-export function dayInWeek(startedAt: string, now: Date): number {
-  const elapsedDays = Math.max(0, daysSince(startedAt, now))
+export function dayInWeek(weekStartedAt: string, now: Date): number {
+  const elapsedDays = Math.max(0, daysSince(weekStartedAt, now))
   return (elapsedDays % 7) + 1
+}
+
+export function weekMasteryRatio(
+  weekItems: Array<{ id: string }>,
+  progress: Map<string, { correct_count: number }>,
+): number {
+  if (weekItems.length === 0) {
+    return 0
+  }
+
+  const masteredCount = weekItems.filter(
+    (item) => (progress.get(item.id)?.correct_count ?? 0) >= 1,
+  ).length
+  return masteredCount / weekItems.length
+}
+
+export function canAdvanceWeek(
+  weekItems: Array<{ id: string }>,
+  progress: Map<string, { correct_count: number }>,
+): boolean {
+  return weekItems.length > 0 && weekMasteryRatio(weekItems, progress) >= 0.8
 }
 
 export function updateStreak(

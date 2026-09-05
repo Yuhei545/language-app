@@ -15,6 +15,7 @@ export type LanguageProgressRow = {
   lang: Language
   current_week: number
   started_at: string
+  week_started_at: string | null
   streak: number
   last_active_date: string | null
   created_at: string
@@ -78,6 +79,28 @@ export type MessageRow = {
   created_at: string
 }
 
+export type MixingProgressRow = {
+  user_id: string
+  lang: Language
+  frame_id: string
+  verb_text: string
+  noun_text: string
+  understood_count: number
+  attempt_count: number
+  last_at: string | null
+  created_at: string
+}
+
+export type DictationProgressRow = {
+  user_id: string
+  lang: Language
+  sentence_id: string
+  best_ratio: number
+  attempts: number
+  last_at: string | null
+  created_at: string
+}
+
 export type ProfileInsert = {
   user_id: string
   interests?: string[]
@@ -89,6 +112,7 @@ export type LanguageProgressInsert = {
   lang: Language
   current_week?: number
   started_at?: string
+  week_started_at?: string | null
   streak?: number
   last_active_date?: string | null
   created_at?: string
@@ -152,6 +176,28 @@ export type MessageInsert = {
   created_at?: string
 }
 
+export type MixingProgressInsert = {
+  user_id: string
+  lang: Language
+  frame_id: string
+  verb_text?: string
+  noun_text?: string
+  understood_count?: number
+  attempt_count?: number
+  last_at?: string | null
+  created_at?: string
+}
+
+export type DictationProgressInsert = {
+  user_id: string
+  lang: Language
+  sentence_id: string
+  best_ratio?: number
+  attempts?: number
+  last_at?: string | null
+  created_at?: string
+}
+
 type TableDefinition<Row, Insert> = {
   Row: Row
   Insert: Insert
@@ -169,6 +215,8 @@ export type Database = {
       vocab_progress: TableDefinition<VocabProgressRow, VocabProgressInsert>
       conversations: TableDefinition<ConversationRow, ConversationInsert>
       messages: TableDefinition<MessageRow, MessageInsert>
+      mixing_progress: TableDefinition<MixingProgressRow, MixingProgressInsert>
+      dictation_progress: TableDefinition<DictationProgressRow, DictationProgressInsert>
     }
     Views: Record<string, never>
     Functions: Record<string, never>

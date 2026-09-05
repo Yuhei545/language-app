@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { dayInWeek, daysUntil, updateStreak, weekNumberFor } from './progress'
+import {
+  canAdvanceWeek,
+  dayInWeek,
+  daysUntil,
+  updateStreak,
+  weekMasteryRatio,
+  weekNumberFor,
+} from './progress'
 
 function localDate(year: number, month: number, day: number): Date {
   return new Date(year, month - 1, day, 12)
@@ -22,9 +29,53 @@ describe('weekNumberFor', () => {
 })
 
 describe('dayInWeek', () => {
-  it('開始日は1、7日後は次週の1日目になる', () => {
+  it('週の開始日を基準に1〜7を繰り返す', () => {
     expect(dayInWeek('2026-01-01', localDate(2026, 1, 1))).toBe(1)
+    expect(dayInWeek('2026-01-01', localDate(2026, 1, 7))).toBe(7)
     expect(dayInWeek('2026-01-01', localDate(2026, 1, 8))).toBe(1)
+    expect(dayInWeek('2026-01-01', localDate(2026, 1, 14))).toBe(7)
+  })
+})
+
+describe('週の習得率', () => {
+  const fourItems = [
+    { id: 'a' },
+    { id: 'b' },
+    { id: 'c' },
+    { id: 'd' },
+  ]
+
+  it('語が空なら進めず、習得率は0になる', () => {
+    expect(weekMasteryRatio([], new Map())).toBe(0)
+    expect(canAdvanceWeek([], new Map())).toBe(false)
+  })
+
+  it('0.75では進めず、0.8の境界で進める', () => {
+    const threeOfFour = new Map([
+      ['a', { correct_count: 1 }],
+      ['b', { correct_count: 2 }],
+      ['c', { correct_count: 1 }],
+    ])
+    expect(weekMasteryRatio(fourItems, threeOfFour)).toBe(0.75)
+    expect(canAdvanceWeek(fourItems, threeOfFour)).toBe(false)
+
+    const fiveItems = [...fourItems, { id: 'e' }]
+    const fourOfFive = new Map([
+      ...threeOfFour,
+      ['d', { correct_count: 1 }] as const,
+    ])
+    expect(weekMasteryRatio(fiveItems, fourOfFive)).toBe(0.8)
+    expect(canAdvanceWeek(fiveItems, fourOfFive)).toBe(true)
+  })
+
+  it('進捗が無い語とcorrect_countが0の語は未達として扱う', () => {
+    const progress = new Map([
+      ['a', { correct_count: 1 }],
+      ['b', { correct_count: 0 }],
+    ])
+
+    expect(weekMasteryRatio(fourItems, progress)).toBe(0.25)
+    expect(canAdvanceWeek(fourItems, progress)).toBe(false)
   })
 })
 

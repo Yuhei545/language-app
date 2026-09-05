@@ -5,18 +5,27 @@ import { generateWeeklyVocab } from '../../services/gemini/vocab'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import {
+  advanceLanguageWeek,
   getLanguageProgress,
   getVocabProgress,
   listVocabItems,
   upsertVocabItems,
 } from '../../services/supabase/db'
 import type { VocabItemRow, VocabProgressRow } from '../../services/supabase/types'
-import { weekNumberFor } from '../home/progress'
+import { canAdvanceWeek, weekMasteryRatio } from '../home/progress'
 
 type WeekSummary = {
   week: number
   wordCount: number
-  knownCount: number
+  masteredCount: number
+  masteryRatio: number
+}
+
+function localDateString(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export function CurriculumPage() {
@@ -28,6 +37,7 @@ export function CurriculumPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [advancing, setAdvancing] = useState(false)
   const [error, setError] = useState<unknown>(null)
 
   useEffect(() => subscribe(setSettingsState), [])
@@ -55,11 +65,7 @@ export function CurriculumPage() {
       setUserId(nextUserId)
       setItems(vocabItems)
       setProgress(vocabProgress)
-      setCurrentWeek(
-        languageProgress
-          ? weekNumberFor(languageProgress.started_at, new Date())
-          : 1,
-      )
+      setCurrentWeek(languageProgress?.current_week ?? 1)
     } catch (loadError) {
       setError(loadError)
     } finally {
@@ -79,7 +85,8 @@ export function CurriculumPage() {
     const summaries = Array.from({ length: 26 }, (_, index) => ({
       week: index + 1,
       wordCount: 0,
-      knownCount: 0,
+      masteredCount: 0,
+      masteryRatio: 0,
     }))
 
     items.forEach((item) => {
@@ -93,14 +100,30 @@ export function CurriculumPage() {
       }
 
       summary.wordCount += 1
-      if (progressById.get(item.id)?.status === 'known') {
-        summary.knownCount += 1
+      if ((progressById.get(item.id)?.correct_count ?? 0) >= 1) {
+        summary.masteredCount += 1
       }
+    })
+
+    summaries.forEach((summary) => {
+      summary.masteryRatio = summary.wordCount === 0
+        ? 0
+        : summary.masteredCount / summary.wordCount
     })
 
     return summaries
   }, [items, progressById])
   const currentSummary = weeks[currentWeek - 1]
+  const currentWeekItems = useMemo(
+    () => items.filter(
+      (item) => item.week === currentWeek && item.category !== 'prep',
+    ),
+    [currentWeek, items],
+  )
+  const currentCanAdvance = useMemo(
+    () => canAdvanceWeek(currentWeekItems, progressById),
+    [currentWeekItems, progressById],
+  )
 
   const generateCurrentWeek = async () => {
     if (!userId || currentWeek < 5 || !currentSummary || currentSummary.wordCount > 0 || generating) {
@@ -143,6 +166,36 @@ export function CurriculumPage() {
     }
   }
 
+  const advanceWeek = async () => {
+    if (!userId || currentWeek >= 26 || advancing) {
+      return
+    }
+
+    if (
+      !currentCanAdvance
+      && !window.confirm('まだ今週の言葉を 80% 言えていません。進めますか?')
+    ) {
+      return
+    }
+
+    setError(null)
+    setAdvancing(true)
+
+    try {
+      await advanceLanguageWeek(
+        userId,
+        language,
+        currentWeek + 1,
+        localDateString(new Date()),
+      )
+      await loadCurriculum()
+    } catch (advanceError) {
+      setError(advanceError)
+    } finally {
+      setAdvancing(false)
+    }
+  }
+
   return (
     <section>
       <Toast error={error} onClose={() => setError(null)} />
@@ -156,6 +209,28 @@ export function CurriculumPage() {
         </p>
       ) : (
         <>
+          <div className="mt-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold tracking-wider text-slate-400">WEEK {currentWeek}</p>
+                <p className="mt-1 text-sm font-bold text-slate-700">
+                  今週の習得率 {Math.round(weekMasteryRatio(currentWeekItems, progressById) * 100)}%
+                </p>
+              </div>
+              {currentWeek >= 26 ? (
+                <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800">最終週</span>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => void advanceWeek()}
+              disabled={!userId || currentWeek >= 26 || advancing}
+              className="mt-4 w-full rounded-2xl border border-teal-300 bg-white px-5 py-3 text-sm font-bold text-teal-800 disabled:opacity-45"
+            >
+              {advancing ? '次の週へ進んでいます…' : '次の週へ手動で進む'}
+            </button>
+          </div>
+
           {currentWeek >= 5 && currentSummary?.wordCount === 0 ? (
             <div className="mt-7 rounded-3xl border border-teal-200 bg-teal-50 p-5">
               <p className="text-xs font-bold tracking-wider text-teal-700">WEEK {currentWeek}</p>
@@ -199,8 +274,13 @@ export function CurriculumPage() {
                       <p className="mt-1 text-xs text-slate-500">{availability}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold tabular-nums text-slate-700">{week.knownCount} / {week.wordCount}</p>
-                      <p className="mt-1 text-[10px] font-bold text-slate-400">習得済み / 語数</p>
+                      <p className="text-sm font-bold tabular-nums text-slate-700">
+                        {week.masteredCount} / {week.wordCount}
+                        <span className="ml-1 text-xs text-slate-400">
+                          ({Math.round(week.masteryRatio * 100)}%)
+                        </span>
+                      </p>
+                      <p className="mt-1 text-[10px] font-bold text-slate-400">言えた / 語数</p>
                     </div>
                   </div>
                 </article>

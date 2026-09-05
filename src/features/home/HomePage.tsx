@@ -18,7 +18,15 @@ function eventDateLabel(event: PrepEventRow): string {
 
 export function HomePage() {
   const { language } = useLanguage()
-  const { data, loading, error, reload, clearError } = useHomeData(language)
+  const {
+    data,
+    loading,
+    error,
+    advancing,
+    reload,
+    advanceWeek,
+    clearError,
+  } = useHomeData(language)
 
   if (loading) {
     return (
@@ -51,6 +59,7 @@ export function HomePage() {
   }
 
   const knownPercent = Math.min(100, (data.knownWordCount / 1000) * 100)
+  const masteryPercent = Math.round(data.masteryRatio * 100)
 
   return (
     <section>
@@ -66,6 +75,34 @@ export function HomePage() {
           🔥 {data.streak}日
         </div>
       </div>
+
+      <div className="mt-3">
+        <div className="flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
+          <p>今週の言葉 {data.masteredWeekWordCount}/{data.weekWordCount} を言えた</p>
+          <p className="tabular-nums">{masteryPercent}%</p>
+        </div>
+        <div
+          className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"
+          role="progressbar"
+          aria-label="今週の言葉の習得率"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={masteryPercent}
+        >
+          <div className="h-full rounded-full bg-teal-600" style={{ width: `${masteryPercent}%` }} />
+        </div>
+      </div>
+
+      {data.canAdvance && data.week < 26 ? (
+        <button
+          type="button"
+          onClick={() => void advanceWeek()}
+          disabled={advancing}
+          className="mt-4 w-full rounded-2xl border border-teal-300 bg-teal-50 px-5 py-3 text-sm font-bold text-teal-900 disabled:opacity-50"
+        >
+          {advancing ? '次の週へ進んでいます…' : `第${data.week + 1}週へ進む`}
+        </button>
+      ) : null}
 
       <Link
         to="/talk"

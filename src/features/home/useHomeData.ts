@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { selectDueCards, type SrsState } from '../cards/srs'
 import { getSession } from '../../services/supabase/auth'
 import {
+  advanceLanguageWeek,
   countConversationsToday,
   getLanguageProgress,
   getOrCreateProfile,
@@ -11,7 +12,13 @@ import {
   upsertLanguageProgress,
 } from '../../services/supabase/db'
 import type { PrepEventRow } from '../../services/supabase/types'
-import { dayInWeek, daysUntil, updateStreak, weekNumberFor } from './progress'
+import {
+  canAdvanceWeek,
+  dayInWeek,
+  daysUntil,
+  updateStreak,
+  weekMasteryRatio,
+} from './progress'
 
 export type UpcomingPrepEvent = {
   event: PrepEventRow
@@ -25,6 +32,10 @@ export type HomeData = {
   dueCardCount: number
   conversationComplete: boolean
   knownWordCount: number
+  weekWordCount: number
+  masteredWeekWordCount: number
+  masteryRatio: number
+  canAdvance: boolean
   upcomingEvents: UpcomingPrepEvent[]
 }
 
@@ -44,11 +55,14 @@ export function useHomeData(lang: 'en' | 'ko') {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [reloadToken, setReloadToken] = useState(0)
+  const [advancing, setAdvancing] = useState(false)
+  const userIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     let active = true
     setLoading(true)
     setError(null)
+    userIdRef.current = null
 
     const load = async () => {
       try {
@@ -79,21 +93,19 @@ export function useHomeData(lang: 'en' | 'ko') {
             lang,
             current_week: 1,
             started_at: today,
+            week_started_at: today,
             streak: 1,
             last_active_date: today,
           })
         } else {
-          const calculatedWeek = weekNumberFor(languageProgress.started_at, now)
           const nextStreak = updateStreak(languageProgress, today)
           if (
-            calculatedWeek !== languageProgress.current_week
-            || nextStreak.streak !== languageProgress.streak
+            nextStreak.streak !== languageProgress.streak
             || nextStreak.last_active_date !== languageProgress.last_active_date
           ) {
             languageProgress = await upsertLanguageProgress({
               user_id: userId,
               lang,
-              current_week: calculatedWeek,
               streak: nextStreak.streak,
               last_active_date: nextStreak.last_active_date,
             })
@@ -110,6 +122,13 @@ export function useHomeData(lang: 'en' | 'ko') {
             next_review_at: progress.next_review_at,
           }]),
         )
+        const weekItems = vocabItems.filter(
+          (item) => item.week === languageProgress.current_week && item.category !== 'prep',
+        )
+        const masteryRatio = weekMasteryRatio(weekItems, progressById)
+        const masteredWeekWordCount = weekItems.filter(
+          (item) => (progressById.get(item.id)?.correct_count ?? 0) >= 1,
+        ).length
         const upcomingEvents = prepEvents
           .flatMap((event) => {
             if (!event.event_date) {
@@ -125,15 +144,23 @@ export function useHomeData(lang: 'en' | 'ko') {
           ))
 
         if (active) {
+          userIdRef.current = userId
           setData({
-            week: weekNumberFor(languageProgress.started_at, now),
-            day: dayInWeek(languageProgress.started_at, now),
+            week: languageProgress.current_week,
+            day: dayInWeek(
+              languageProgress.week_started_at ?? languageProgress.started_at,
+              now,
+            ),
             streak: languageProgress.streak,
             dueCardCount: selectDueCards(vocabItems, srsProgress, now, 10).length,
             conversationComplete: conversationCount > 0,
             knownWordCount: vocabItems.filter(
               (item) => progressById.get(item.id)?.status === 'known',
             ).length,
+            weekWordCount: weekItems.length,
+            masteredWeekWordCount,
+            masteryRatio,
+            canAdvance: canAdvanceWeek(weekItems, progressById),
             upcomingEvents,
           })
         }
@@ -159,11 +186,37 @@ export function useHomeData(lang: 'en' | 'ko') {
     setReloadToken((current) => current + 1)
   }, [])
 
+  const advanceWeek = useCallback(async () => {
+    const userId = userIdRef.current
+    if (!userId || !data || data.week >= 26 || advancing) {
+      return
+    }
+
+    setError(null)
+    setAdvancing(true)
+
+    try {
+      await advanceLanguageWeek(
+        userId,
+        lang,
+        data.week + 1,
+        localDateString(new Date()),
+      )
+      setReloadToken((current) => current + 1)
+    } catch (advanceError) {
+      setError(advanceError)
+    } finally {
+      setAdvancing(false)
+    }
+  }, [advancing, data, lang])
+
   return {
     data,
     loading,
     error,
+    advancing,
     reload,
+    advanceWeek,
     clearError: () => setError(null),
   }
 }
