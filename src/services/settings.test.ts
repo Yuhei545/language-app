@@ -10,6 +10,8 @@ const defaults = {
   interests: [],
   parentName: { en: '', ko: '' },
   mixingLevel: 1,
+  lessonPauseSeconds: 4,
+  lessonRecording: false,
 }
 
 describe('settings service', () => {
@@ -45,5 +47,18 @@ describe('settings service', () => {
 
     expect(getSettings()).toEqual(defaults)
     expect(errorSpy).toHaveBeenCalledOnce()
+  })
+
+  it('lessonPauseSeconds が範囲外なら既定値へ戻す', () => {
+    localStorage.setItem('lla.settings', JSON.stringify({
+      ...defaults,
+      geminiApiKey: 'keep-this-key',
+      lessonPauseSeconds: 9,
+    }))
+
+    expect(getSettings()).toEqual({
+      ...defaults,
+      geminiApiKey: 'keep-this-key',
+    })
   })
 })

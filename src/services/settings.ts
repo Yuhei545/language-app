@@ -11,6 +11,8 @@ export type Settings = {
   interests: Interest[]
   parentName: { en: string; ko: string }
   mixingLevel: MixingLevel
+  lessonPauseSeconds: number
+  lessonRecording: boolean
 }
 
 type SettingsListener = (settings: Settings) => void
@@ -29,6 +31,8 @@ const DEFAULT_SETTINGS: Settings = {
   interests: [],
   parentName: { en: '', ko: '' },
   mixingLevel: 1,
+  lessonPauseSeconds: 4,
+  lessonRecording: false,
 }
 
 function defaultSettings(): Settings {
@@ -69,6 +73,11 @@ function isSettings(value: unknown): value is Settings {
     && typeof value.parentName.en === 'string'
     && typeof value.parentName.ko === 'string'
     && (value.mixingLevel === 1 || value.mixingLevel === 2 || value.mixingLevel === 3)
+    && typeof value.lessonPauseSeconds === 'number'
+    && Number.isFinite(value.lessonPauseSeconds)
+    && value.lessonPauseSeconds >= 2
+    && value.lessonPauseSeconds <= 8
+    && typeof value.lessonRecording === 'boolean'
   )
 }
 
@@ -82,8 +91,24 @@ export function getSettings(): Settings {
   try {
     let parsed: unknown = JSON.parse(saved)
 
-    if (isRecord(parsed) && parsed.mixingLevel === undefined) {
-      parsed = { ...parsed, mixingLevel: DEFAULT_SETTINGS.mixingLevel }
+    if (isRecord(parsed)) {
+      const pauseSeconds = parsed.lessonPauseSeconds
+      parsed = {
+        ...parsed,
+        mixingLevel: parsed.mixingLevel === undefined
+          ? DEFAULT_SETTINGS.mixingLevel
+          : parsed.mixingLevel,
+        lessonPauseSeconds: pauseSeconds === undefined
+          ? DEFAULT_SETTINGS.lessonPauseSeconds
+          : typeof pauseSeconds === 'number'
+            && Number.isFinite(pauseSeconds)
+            && (pauseSeconds < 2 || pauseSeconds > 8)
+            ? DEFAULT_SETTINGS.lessonPauseSeconds
+            : pauseSeconds,
+        lessonRecording: parsed.lessonRecording === undefined
+          ? DEFAULT_SETTINGS.lessonRecording
+          : parsed.lessonRecording,
+      }
     }
 
     if (!isSettings(parsed)) {
