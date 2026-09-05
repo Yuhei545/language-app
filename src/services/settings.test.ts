@@ -12,6 +12,7 @@ const defaults = {
   mixingLevel: 1,
   lessonPauseSeconds: 4,
   lessonRecording: false,
+  micDeviceId: null,
 }
 
 describe('settings service', () => {

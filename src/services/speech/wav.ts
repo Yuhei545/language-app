@@ -49,6 +49,29 @@ export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   return new Blob([encodeWavBuffer(samples, sampleRate)], { type: 'audio/wav' })
 }
 
+export function downmixToMono(channels: Float32Array[]): Float32Array {
+  if (channels.length === 0) {
+    return new Float32Array()
+  }
+  if (channels.length === 1) {
+    return channels[0].slice()
+  }
+
+  const outputLength = channels.reduce(
+    (longest, channel) => Math.max(longest, channel.length),
+    0,
+  )
+  const output = new Float32Array(outputLength)
+
+  channels.forEach((channel) => {
+    for (let index = 0; index < channel.length; index += 1) {
+      output[index] += channel[index] / channels.length
+    }
+  })
+
+  return output
+}
+
 export function downsampleTo16k(input: Float32Array, inputRate: number): Float32Array {
   if (!Number.isFinite(inputRate) || inputRate <= 0) {
     throw new RangeError('入力サンプルレートは正の数で指定してください')

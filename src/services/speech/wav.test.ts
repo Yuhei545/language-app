@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  downmixToMono,
   downsampleTo16k,
   encodeWavBuffer,
   peakRms,
@@ -56,6 +57,39 @@ describe('downsampleTo16k', () => {
   it('48000Hzから16000Hzへ変換すると長さが3分の1になる', () => {
     const input = new Float32Array(480)
     expect(downsampleTo16k(input, 48_000)).toHaveLength(160)
+  })
+})
+
+describe('downmixToMono', () => {
+  it('1チャンネルは同じ内容のコピーを返す', () => {
+    const input = new Float32Array([0.1, -0.2, 0.3])
+    const output = downmixToMono([input])
+
+    expect(output).not.toBe(input)
+    expect(Array.from(output)).toEqual(Array.from(input))
+  })
+
+  it('2チャンネルを平均し、短い側の不足部分を0として扱う', () => {
+    const output = downmixToMono([
+      new Float32Array([0.2, 0.4, 0.6]),
+      new Float32Array([0.4, 0.2]),
+    ])
+
+    expect(output).toHaveLength(3)
+    Array.from(output).forEach((sample) => expect(sample).toBeCloseTo(0.3, 5))
+  })
+
+  it('左が無音で右が0.4なら0.2になる', () => {
+    const output = downmixToMono([
+      new Float32Array(3),
+      new Float32Array([0.4, 0.4, 0.4]),
+    ])
+
+    Array.from(output).forEach((sample) => expect(sample).toBeCloseTo(0.2, 5))
+  })
+
+  it('0チャンネルは空を返す', () => {
+    expect(downmixToMono([])).toHaveLength(0)
   })
 })
 

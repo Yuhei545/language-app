@@ -1,7 +1,9 @@
 import type { SpeechLanguage } from './normalize'
+import { getSettings } from '../settings'
 import { stopSpeaking } from './tts'
 import {
   blobToBase64,
+  downmixToMono,
   downsampleTo16k,
   encodeWav,
   peakRms,
@@ -10,7 +12,7 @@ import {
 
 // 録音環境や端末差を見ながら実機で調整する値。
 const MIN_SPEECH_SECONDS = 0.3
-const MIN_PEAK_RMS = 0.02
+const MIN_PEAK_RMS = 0.01
 
 export type SttResult = { text: string; engine: 'webspeech' | 'gemini' }
 
@@ -277,6 +279,7 @@ export class GeminiAudioInput implements SpeechInput {
   private chunks: Blob[] = []
   private timeoutId: ReturnType<typeof setTimeout> | null = null
   private cancelled = false
+  private inputInfo: { label: string; settings: MediaTrackSettings } | null = null
 
   constructor(lang: SpeechLanguage, transcribe: TranscribeAudio) {
     this.lang = lang
@@ -300,9 +303,34 @@ export class GeminiAudioInput implements SpeechInput {
 
     this.cancelled = false
     this.chunks = []
+    this.inputInfo = null
 
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const micDeviceId = getSettings().micDeviceId
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: micDeviceId ? { deviceId: { exact: micDeviceId } } : true,
+        })
+      } catch (error) {
+        const name = error instanceof DOMException
+          ? error.name
+          : typeof error === 'object' && error !== null && 'name' in error
+            ? String(error.name)
+            : ''
+        if (micDeviceId && (name === 'OverconstrainedError' || name === 'NotFoundError')) {
+          console.warn('選択したマイクを利用できないため、端末の既定マイクへ切り替えます', {
+            micDeviceId,
+            error,
+          })
+          this.stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        } else {
+          throw error
+        }
+      }
+      const inputTrack = this.stream.getAudioTracks()[0]
+      this.inputInfo = inputTrack
+        ? { label: inputTrack.label, settings: inputTrack.getSettings() }
+        : null
       this.recorder = new MediaRecorder(this.stream)
     } catch (error) {
       this.stopTracks()
@@ -393,7 +421,11 @@ export class GeminiAudioInput implements SpeechInput {
 
     try {
       const audioBuffer = await audioContext.decodeAudioData(await recordedBlob.arrayBuffer())
-      samples = new Float32Array(audioBuffer.getChannelData(0))
+      const channels = Array.from(
+        { length: audioBuffer.numberOfChannels },
+        (_, index) => new Float32Array(audioBuffer.getChannelData(index)),
+      )
+      samples = downmixToMono(channels)
       sampleRate = audioBuffer.sampleRate
     } finally {
       await audioContext.close()
@@ -405,11 +437,24 @@ export class GeminiAudioInput implements SpeechInput {
 
     const resampled = downsampleTo16k(samples, sampleRate)
     const trimmed = trimSilence(resampled, 16_000)
+    const peak = peakRms(trimmed, 16_000)
+    const rawSec = sampleRate > 0 ? samples.length / sampleRate : 0
+    const trimmedSec = trimmed.length / 16_000
     if (
       trimmed.length < MIN_SPEECH_SECONDS * 16_000
-      || peakRms(trimmed, 16_000) < MIN_PEAK_RMS
+      || peak < MIN_PEAK_RMS
     ) {
-      throw new Error('声が小さすぎます。もう少し近くで、はっきり話してみてください')
+      const label = this.inputInfo?.label || '不明'
+      const message = `声が小さすぎます(最大音量 ${peak.toFixed(3)}、録音 ${rawSec.toFixed(1)}秒、声の部分 ${trimmedSec.toFixed(1)}秒、入力: ${label})。設定の「マイクテスト」で入力を確認してください`
+      console.warn(message, {
+        inputInfo: this.inputInfo,
+        minimumPeakRms: MIN_PEAK_RMS,
+        minimumSpeechSeconds: MIN_SPEECH_SECONDS,
+        peak,
+        rawSec,
+        trimmedSec,
+      })
+      throw new Error(message)
     }
 
     const wav = encodeWav(trimmed, 16_000)

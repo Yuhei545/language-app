@@ -8,6 +8,7 @@ import {
   type Settings,
   type SttEngine,
 } from '../../services/settings'
+import { MicTest } from './MicTest'
 
 const sttOptions: Array<{ value: SttEngine; label: string }> = [
   { value: 'auto', label: '自動' },
@@ -201,6 +202,7 @@ export function SettingsPage() {
               </label>
             ))}
           </div>
+          <MicTest />
         </fieldset>
 
         <fieldset className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
