@@ -302,3 +302,66 @@ Nation の流暢さ発達(知っている材料で速く)、Michel Thomas(部品
 ### 共通
 下タブは 5 つのまま。「カード」を「練習」にして 4 つの入口を並べる。`002_v2.sql` に
 `week_started_at`、`mixing_progress`、`dictation_progress`(RLS 付き)。
+
+## 16. P6 音声レッスンの会話ベース化(2026-09-05 追記、ユーザー承認済み)
+
+### 根拠
+Pimsleur の実際の構成(冒頭の会話 → 語り手が約20分かけて分解・予期・段階的想起 → 締めの会話で学習者が片方の役)を
+踏襲する。会話文は固定台本ではなく **Gemini が目的タグ・場面・既知語に合わせて生成**し、機械検査に通ったものだけ使う
+(個人化された入力は動機と不安の面で固定教材より良い結果が報告されている一方、生成には品質のばらつきがあるため)。
+ユーザー決定: この構成で進める / 実装は Codex 復帰後 / **場面は毎回ユーザーが選ぶ**。
+
+### 1レッスンの流れ(約 15 分、新表現 4〜6 個)
+1. **場面を選ぶ**: 目的タグから作った定型の場面(旅行: カフェで注文・道を尋ねる・ホテルのチェックイン・空港・買い物・トラブル /
+   友人: 週末の予定・近況・最近見た番組の感想 / コンテンツ: 推しの新曲・最新話の感想・ライブの話)、準備モードの予定、
+   自由入力。既定の選択は置かない。
+2. **冒頭の会話**: 2 人(A = 相手役、B = 学習者役)6〜8 往復を対象言語で。A と B は別の声(設定 `ttsVoiceB`。無ければ同じ声で
+   `rate 0.95` `pitch 0.9`)。1 回通しで再生。文字は出さない。
+3. **分解**(新表現ごと): 日本語の解説 1 文 → 末尾から組み立て(`backChainSteps`)→ 状況の問い(日本語)→ 間 → 模範 →
+   「もう一度」→ 間 → 模範。
+4. **会話を再生**(`rate 0.9`)。
+5. **再出題**: 新表現を `LessonItem` にして `buildSchedule` に通し、stage 0 を除いた再出題(5 秒 / 25 秒 / 2 分 / 10 分)を差し込む。
+6. **締めの会話**: B の行ごとに、直前の A の行を再生 → 「あなたの番:『{B の日本語}』」→ 間(録音は任意)→ 模範 B。
+   採点も訂正もしない。録音オンなら「言えた/全体」の数だけ。
+7. **保存**: 会話と新表現を `lesson_dialogues` に保存。新表現は `vocab_items` に `category: 'dialogue'`、`week: current_week`、
+   `source: 'generated'` で投入し、翌日からカードと文づくりの素材にする。
+
+### 生成の入出力
+入力: `lang`、場面(`scene_ja`、自由入力の場合はその文)、目的タグ、既知語(known + 今週の語 + core 語、最大 300)、
+レベル指示(英語: 実践的な B1、韓国語: 初級)。
+出力 JSON(スキーマで固定):
+```json
+{ "title_ja": "…", "scene_ja": "…",
+  "turns": [{ "speaker": "A", "text": "…", "ja": "…" }, …],
+  "new_expressions": [{ "text": "…", "ja": "…", "note_ja": "使い方を 1 文で", "turn_index": 0 }, …] }
+```
+
+### 機械検査(`validateDialogue`、純粋関数、テスト必須)
+- 往復数 6〜8、A から始まり A/B が交互
+- 1 行の長さ: 英語 14 語以内、韓国語 30 文字以内
+- 新表現 4〜6 個、各 `text` がいずれかの行に**そのまま**含まれる、`turn_index` が一致
+- 既知語比率: 新表現の語を除いた全トークンのうち既知語集合に含まれる割合が **英語 0.8 以上、韓国語 0.5 以上**
+  (韓国語は助詞が付くため緩める。トークンは空白区切り、`normalizeText` で正規化)
+- 対象言語以外の文字が本文に混ざっていない(英語行にハングル・日本語、韓国語行にラテン文字の単語)
+- 不合格なら理由を付けて 1 回だけ再生成。2 回目も不合格なら、比率だけが 0.1 未満の不足なら採用、それ以外は
+  エラーを見せて場面を選び直させる(握りつぶさない)。
+
+### データ
+`supabase/migrations/003_lesson_dialogues.sql`:
+- `lesson_dialogues`(id uuid PK, user_id, lang, scene_ja text, title_ja text, dialogue jsonb, new_expressions jsonb,
+  times_completed int default 0, last_completed_at timestamptz, created_at)。RLS は既存と同じ own ポリシー。
+- `vocab_items.category` の check 制約に `'dialogue'` を追加(制約を drop して作り直す)。
+- 設定 `ttsVoiceB: { en: string | null; ko: string | null }` を追加。`speak` に `pitch` オプションを追加。
+
+### 画面
+`/lesson` を置き換える。`ready` の前に **場面選択**画面。`running` は現行(問い・答え・一時停止・スキップ・終了)に
+「いま誰が話しているか(A / B / あなた)」の表示を足す。`finished` に会話全文(文字)と新表現一覧、「もう一度」「別の場面で」。
+過去のレッスンは `/lesson/history` で一覧し、再生とやり直しができる。
+
+### 実装分割(Codex 復帰後)
+- **P6a 土台**: `lessonDialogueSchema.ts`(型・`validateDialogue`・テスト)、`gemini/dialogue.ts`(`generateDialogue` +
+  再生成ループ)、`prompts.ts` の `buildDialoguePrompt`(+テスト)、`schemas.ts`、`003_lesson_dialogues.sql`、`db.ts` の
+  `saveLessonDialogue` / `listLessonDialogues` / `markDialogueCompleted`、`settings.ts` の `ttsVoiceB`、`tts.ts` の `pitch`、
+  `lesson/dialoguePlan.ts`(会話 → 行動列、純粋関数、テスト)。
+- **P6b 画面**: 場面選択、`useLesson` の会話モード対応(既存の世代番号方式・警告・録音はそのまま)、話者表示、
+  完了画面、履歴、設定画面の B の声の選択。
