@@ -25,6 +25,13 @@ export type PrepPromptInput = {
   knownWords: string[]
 }
 
+export type MixingCheckPromptInput = {
+  lang: Lang
+  personaName: string
+  intendedMeaningJa: string
+  learnerText: string
+}
+
 const languageNames: Record<Lang, string> = {
   en: 'English',
   ko: 'Korean',
@@ -105,4 +112,18 @@ export function buildTranscribePrompt(lang: Lang): string {
   return `Transcribe this ${languageNames[lang]} speech exactly as spoken. ${script[lang]} `
     + 'Output only the transcription: no translation, no romanization, no commentary, no quotation marks. '
     + 'If there is no clear speech, output exactly [NO_SPEECH].'
+}
+
+export function buildMixingCheckPrompt(input: MixingCheckPromptInput): string {
+  const language = languageNames[input.lang]
+
+  return `You are ${input.personaName}, a warm and patient language parent.
+The learner was trying to express this intended meaning in ${language}: ${input.intendedMeaningJa}
+The learner said: ${input.learnerText}
+
+Decide only whether the intended meaning was communicated.
+1. Do not evaluate grammar or pronunciation. Never correct the learner. Never use words such as "wrong", "mistake", or "incorrect".
+2. If the meaning came through, set understood=true and restate what you understood as one natural, correct ${language} sentence in recast.
+3. If the meaning did not come through, set understood=false and write one gentle ${language} question in recast that says what you heard and checks the learner's intent.
+4. Put a Japanese translation of recast in ja.`
 }

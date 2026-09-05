@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "verbs": [
+    { "text": "go", "emoji": "🚶", "hint_ja": "行く", "takes": "place" },
+    { "text": "come", "emoji": "🏃", "hint_ja": "来る", "takes": "place" },
+    { "text": "want", "emoji": "🙌", "hint_ja": "欲しい", "takes": "thing" },
+    { "text": "eat", "emoji": "🍽️", "hint_ja": "食べる", "takes": "thing" },
+    { "text": "drink", "emoji": "🥤", "hint_ja": "飲む", "takes": "thing" },
+    { "text": "have", "emoji": "🤲", "hint_ja": "持っている", "takes": "thing" },
+    { "text": "buy", "emoji": "🛒", "hint_ja": "買う", "takes": "thing" },
+    { "text": "see", "emoji": "👀", "hint_ja": "見る", "takes": "thing" },
+    { "text": "like", "emoji": "❤️", "hint_ja": "好き", "takes": "thing" },
+    { "text": "know", "emoji": "🧠", "hint_ja": "知っている", "takes": "thing" }
+  ],
+  "nouns": [
+    { "text": "water", "emoji": "💧", "hint_ja": "水", "kind": "thing" },
+    { "text": "food", "emoji": "🍚", "hint_ja": "食べ物", "kind": "thing" },
+    { "text": "coffee", "emoji": "☕", "hint_ja": "コーヒー", "kind": "thing" },
+    { "text": "ticket", "emoji": "🎫", "hint_ja": "切符", "kind": "thing" },
+    { "text": "phone", "emoji": "📱", "hint_ja": "電話", "kind": "thing" },
+    { "text": "money", "emoji": "💴", "hint_ja": "お金", "kind": "thing" },
+    { "text": "station", "emoji": "🚉", "hint_ja": "駅", "kind": "place" },
+    { "text": "cafe", "emoji": "🏪", "hint_ja": "カフェ", "kind": "place" },
+    { "text": "room", "emoji": "🚪", "hint_ja": "部屋", "kind": "place" },
+    { "text": "toilet", "emoji": "🚻", "hint_ja": "トイレ", "kind": "place" },
+    { "text": "friend", "emoji": "🧑‍🤝‍🧑", "hint_ja": "友達", "kind": "person" },
+    { "text": "today", "emoji": "📅", "hint_ja": "今日", "kind": "time" },
+    { "text": "tomorrow", "emoji": "🌅", "hint_ja": "明日", "kind": "time" }
+  ],
+  "adjectives": [
+    { "text": "hot", "emoji": "🔥", "hint_ja": "熱い" },
+    { "text": "cold", "emoji": "🧊", "hint_ja": "冷たい" },
+    { "text": "good", "emoji": "👍", "hint_ja": "良い" },
+    { "text": "bad", "emoji": "👎", "hint_ja": "悪い" },
+    { "text": "big", "emoji": "🐘", "hint_ja": "大きい" },
+    { "text": "small", "emoji": "🐜", "hint_ja": "小さい" },
+    { "text": "delicious", "emoji": "😋", "hint_ja": "美味しい" },
+    { "text": "expensive", "emoji": "💸", "hint_ja": "高い(値段)" },
+    { "text": "cheap", "emoji": "🏷️", "hint_ja": "安い" },
+    { "text": "new", "emoji": "✨", "hint_ja": "新しい" }
+  ],
+  "phrasal": [
+    { "text": "get up", "emoji": "🛏️", "hint_ja": "起きる", "takes": "none" },
+    { "text": "go out", "emoji": "🚪", "hint_ja": "出かける", "takes": "none" },
+    { "text": "come back", "emoji": "↩️", "hint_ja": "戻る", "takes": "none" },
+    { "text": "wake up", "emoji": "⏰", "hint_ja": "目が覚める", "takes": "none" },
+    { "text": "look for", "emoji": "🔍", "hint_ja": "探す", "takes": "thing" },
+    { "text": "put on", "emoji": "🧥", "hint_ja": "身につける", "takes": "thing" },
+    { "text": "take off", "emoji": "🧤", "hint_ja": "脱ぐ", "takes": "thing" },
+    { "text": "pick up", "emoji": "🤏", "hint_ja": "拾う・取りに行く", "takes": "thing" },
+    { "text": "turn on", "emoji": "💡", "hint_ja": "つける", "takes": "thing" },
+    { "text": "turn off", "emoji": "🌑", "hint_ja": "消す", "takes": "thing" }
+  ],
+  "frames": [
+    { "id": "en-want-thing", "level": 1, "pattern": "I want {noun:thing}.", "slots": ["noun:thing"], "hint_ja": "{1}が欲しい" },
+    { "id": "en-have-q", "level": 1, "pattern": "Do you have {noun:thing}?", "slots": ["noun:thing"], "hint_ja": "{1}はありますか" },
+    { "id": "en-phrasal-none", "level": 1, "pattern": "I {phrasal:none}.", "slots": ["phrasal:none"], "hint_ja": "私は{1}" },
+    { "id": "en-verb-thing", "level": 2, "pattern": "I {verb:thing} {noun:thing}.", "slots": ["verb:thing", "noun:thing"], "hint_ja": "私は{2}を{1}" },
+    { "id": "en-verb-place", "level": 2, "pattern": "I {verb:place} to {noun:place}.", "slots": ["verb:place", "noun:place"], "hint_ja": "私は{2}に{1}" },
+    { "id": "en-noun-adj", "level": 2, "pattern": "{noun:thing} is {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "{1}は{2}" },
+    { "id": "en-phrasal-thing", "level": 2, "pattern": "I {phrasal:thing} {noun:thing}.", "slots": ["phrasal:thing", "noun:thing"], "hint_ja": "私は{2}を{1}" },
+    { "id": "en-phrasal-time", "level": 2, "pattern": "I {phrasal:none} {noun:time}.", "slots": ["phrasal:none", "noun:time"], "hint_ja": "私は{2}{1}" },
+    { "id": "en-verb-thing-place", "level": 3, "pattern": "I {verb:thing} {noun:thing} at {noun:place}.", "slots": ["verb:thing", "noun:thing", "noun:place"], "hint_ja": "私は{3}で{2}を{1}" },
+    { "id": "en-time-verb-place-person", "level": 3, "pattern": "{noun:time}, I {verb:place} to {noun:place} with {noun:person}.", "slots": ["noun:time", "verb:place", "noun:place", "noun:person"], "hint_ja": "{1}、私は{4}と{3}に{2}" },
+    { "id": "en-this-noun-too-adj", "level": 3, "pattern": "This {noun:thing} is too {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "この{1}は{2}すぎる" },
+    { "id": "en-want-to-verb-thing", "level": 3, "pattern": "I want to {verb:thing} {noun:thing} {noun:time}.", "slots": ["verb:thing", "noun:thing", "noun:time"], "hint_ja": "{3}、私は{2}を{1}つもり" }
+  ]
+}

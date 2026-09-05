@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildMixingCheckPrompt,
   buildParentSystemPrompt,
   buildTranscribePrompt,
   buildVocabPrompt,
@@ -88,5 +89,33 @@ describe('buildTranscribePrompt', () => {
     expect(prompt).toContain('English letters only')
     expect(prompt).toContain('no commentary')
     expect(prompt).toContain('[NO_SPEECH]')
+  })
+})
+
+describe('buildMixingCheckPrompt', () => {
+  it('意図した日本語と学習者の発話を本文に含める', () => {
+    const prompt = buildMixingCheckPrompt({
+      lang: 'ko',
+      personaName: '지민',
+      intendedMeaningJa: '水を飲みます',
+      learnerText: '물 마셔요',
+    })
+
+    expect(prompt).toContain('水を飲みます')
+    expect(prompt).toContain('물 마셔요')
+    expect(prompt).toContain('Korean')
+  })
+
+  it('文法や発音を評価せず、訂正語を使わない規則を含める', () => {
+    const prompt = buildMixingCheckPrompt({
+      lang: 'en',
+      personaName: 'Alex',
+      intendedMeaningJa: '食べ物を食べます',
+      learnerText: 'I eat food',
+    })
+
+    expect(prompt).toContain('Do not evaluate grammar or pronunciation')
+    expect(prompt).toContain('Never correct the learner')
+    expect(prompt).toContain('"wrong", "mistake", or "incorrect"')
   })
 })

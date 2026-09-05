@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "verbs": [
+    { "text": "가요", "emoji": "🚶", "hint_ja": "行きます", "takes": "place" },
+    { "text": "와요", "emoji": "🏃", "hint_ja": "来ます", "takes": "place" },
+    { "text": "먹어요", "emoji": "🍽️", "hint_ja": "食べます", "takes": "thing" },
+    { "text": "마셔요", "emoji": "🥤", "hint_ja": "飲みます", "takes": "thing" },
+    { "text": "사요", "emoji": "🛒", "hint_ja": "買います", "takes": "thing" },
+    { "text": "봐요", "emoji": "👀", "hint_ja": "見ます", "takes": "thing" },
+    { "text": "좋아해요", "emoji": "❤️", "hint_ja": "好きです", "takes": "thing" },
+    { "text": "알아요", "emoji": "🧠", "hint_ja": "知っています", "takes": "thing" },
+    { "text": "찾아요", "emoji": "🔍", "hint_ja": "探します", "takes": "thing" },
+    { "text": "만나요", "emoji": "🤝", "hint_ja": "会います", "takes": "person" }
+  ],
+  "nouns": [
+    { "text": "물", "emoji": "💧", "hint_ja": "水", "kind": "thing" },
+    { "text": "밥", "emoji": "🍚", "hint_ja": "ご飯", "kind": "thing" },
+    { "text": "커피", "emoji": "☕", "hint_ja": "コーヒー", "kind": "thing" },
+    { "text": "표", "emoji": "🎫", "hint_ja": "切符", "kind": "thing" },
+    { "text": "핸드폰", "emoji": "📱", "hint_ja": "携帯電話", "kind": "thing" },
+    { "text": "돈", "emoji": "💴", "hint_ja": "お金", "kind": "thing" },
+    { "text": "역", "emoji": "🚉", "hint_ja": "駅", "kind": "place" },
+    { "text": "카페", "emoji": "🏪", "hint_ja": "カフェ", "kind": "place" },
+    { "text": "방", "emoji": "🚪", "hint_ja": "部屋", "kind": "place" },
+    { "text": "화장실", "emoji": "🚻", "hint_ja": "トイレ", "kind": "place" },
+    { "text": "친구", "emoji": "🧑‍🤝‍🧑", "hint_ja": "友達", "kind": "person" },
+    { "text": "오늘", "emoji": "📅", "hint_ja": "今日", "kind": "time" },
+    { "text": "내일", "emoji": "🌅", "hint_ja": "明日", "kind": "time" }
+  ],
+  "adjectives": [
+    { "text": "뜨거워요", "emoji": "🔥", "hint_ja": "熱いです" },
+    { "text": "차가워요", "emoji": "🧊", "hint_ja": "冷たいです" },
+    { "text": "좋아요", "emoji": "👍", "hint_ja": "良いです" },
+    { "text": "나빠요", "emoji": "👎", "hint_ja": "悪いです" },
+    { "text": "커요", "emoji": "🐘", "hint_ja": "大きいです" },
+    { "text": "작아요", "emoji": "🐜", "hint_ja": "小さいです" },
+    { "text": "맛있어요", "emoji": "😋", "hint_ja": "美味しいです" },
+    { "text": "비싸요", "emoji": "💸", "hint_ja": "高いです(値段)" },
+    { "text": "싸요", "emoji": "🏷️", "hint_ja": "安いです" },
+    { "text": "새로워요", "emoji": "✨", "hint_ja": "新しいです" }
+  ],
+  "phrasal": [],
+  "frames": [
+    { "id": "ko-noun-juseyo", "level": 1, "pattern": "{noun:thing} 주세요.", "slots": ["noun:thing"], "hint_ja": "{1}をください" },
+    { "id": "ko-noun-isseoyo-q", "level": 1, "pattern": "{noun:thing} 있어요?", "slots": ["noun:thing"], "hint_ja": "{1}はありますか" },
+    { "id": "ko-place-gayo", "level": 1, "pattern": "{noun:place}에 가요.", "slots": ["noun:place"], "hint_ja": "{1}に行きます" },
+    { "id": "ko-thing-verb", "level": 2, "pattern": "{noun:thing}을/를 {verb:thing}.", "slots": ["noun:thing", "verb:thing"], "hint_ja": "{1}を{2}" },
+    { "id": "ko-place-verb", "level": 2, "pattern": "{noun:place}에 {verb:place}.", "slots": ["noun:place", "verb:place"], "hint_ja": "{1}に{2}" },
+    { "id": "ko-noun-adj", "level": 2, "pattern": "{noun:thing}이/가 {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "{1}が{2}" },
+    { "id": "ko-person-verb", "level": 2, "pattern": "{noun:person}을/를 {verb:person}.", "slots": ["noun:person", "verb:person"], "hint_ja": "{1}に{2}" },
+    { "id": "ko-time-place-gayo", "level": 2, "pattern": "{noun:time} {noun:place}에 가요.", "slots": ["noun:time", "noun:place"], "hint_ja": "{1}、{2}に行きます" },
+    { "id": "ko-place-thing-verb", "level": 3, "pattern": "{noun:place}에서 {noun:thing}을/를 {verb:thing}.", "slots": ["noun:place", "noun:thing", "verb:thing"], "hint_ja": "{1}で{2}を{3}" },
+    { "id": "ko-time-person-place", "level": 3, "pattern": "{noun:time} {noun:person}하고 {noun:place}에 가요.", "slots": ["noun:time", "noun:person", "noun:place"], "hint_ja": "{1}、{2}と{3}に行きます" },
+    { "id": "ko-i-noun-too-adj", "level": 3, "pattern": "이 {noun:thing}은/는 너무 {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "この{1}は{2}すぎます" }
+  ]
+}

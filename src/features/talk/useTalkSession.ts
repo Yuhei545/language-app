@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { loadCore } from '../../content/coreSchema'
 import { getPersona } from '../../services/gemini/persona'
 import { sendParentTurn } from '../../services/gemini/parent'
 import { transcribeAudio } from '../../services/gemini/transcribe'
@@ -223,6 +224,13 @@ export function useTalkSession(lang: 'en' | 'ko') {
       const progressById = new Map(
         vocabProgress.map((progress) => [progress.vocab_item_id, progress]),
       )
+      const core = loadCore(lang)
+      const coreWords = [
+        ...core.verbs,
+        ...core.nouns,
+        ...core.adjectives,
+        ...core.phrasal,
+      ].map((word) => word.text)
       const week = languageProgress?.current_week ?? 1
       const conversation = await createConversation(userId, lang, scenario.prompt)
       const persona = getPersona(lang, settingsRef.current.parentName[lang])
@@ -238,9 +246,12 @@ export function useTalkSession(lang: 'en' | 'ko') {
         knownWords: uniqueWords(vocabItems
           .filter((item) => progressById.get(item.id)?.status === 'known')
           .map((item) => item.text)),
-        weekWords: uniqueWords(vocabItems
-          .filter((item) => item.week === week)
-          .map((item) => item.text)),
+        weekWords: uniqueWords([
+          ...vocabItems
+            .filter((item) => item.week === week)
+            .map((item) => item.text),
+          ...coreWords,
+        ]),
         targets: buildTargets(vocabItems, progressById),
       }
 

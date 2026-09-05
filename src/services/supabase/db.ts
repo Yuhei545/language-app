@@ -6,6 +6,8 @@ import type {
   LanguageProgressRow,
   MessageInsert,
   MessageRow,
+  MixingProgressInsert,
+  MixingProgressRow,
   PrepEventInsert,
   PrepEventRow,
   ProfileRow,
@@ -78,6 +80,39 @@ export async function advanceLanguageWeek(
     .update({ current_week: nextWeek, week_started_at: today })
     .eq('user_id', userId)
     .eq('lang', lang)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function listMixingProgress(
+  userId: string,
+  lang: Language,
+): Promise<MixingProgressRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('mixing_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function upsertMixingProgress(
+  row: MixingProgressInsert,
+): Promise<MixingProgressRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('mixing_progress')
+    .upsert(row, { onConflict: 'user_id,lang,frame_id,verb_text,noun_text' })
     .select('*')
     .single()
 

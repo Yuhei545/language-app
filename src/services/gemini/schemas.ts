@@ -33,3 +33,13 @@ export const vocabListSchema = {
   },
   required: ['items'],
 }
+
+export const mixingCheckSchema = {
+  type: Type.OBJECT,
+  properties: {
+    understood: { type: Type.BOOLEAN },
+    recast: { type: Type.STRING },
+    ja: { type: Type.STRING },
+  },
+  required: ['understood', 'recast', 'ja'],
+}

@@ -1,13 +1,24 @@
 import { getGeminiClient, getModelId } from './client'
 import { GeminiError, toGeminiError } from './errors'
-import { buildParentSystemPrompt, type ParentPromptInput } from './prompts'
-import { parentReplySchema } from './schemas'
+import {
+  buildMixingCheckPrompt,
+  buildParentSystemPrompt,
+  type MixingCheckPromptInput,
+  type ParentPromptInput,
+} from './prompts'
+import { mixingCheckSchema, parentReplySchema } from './schemas'
 
 export type ParentTurn = {
   reply: string
   simpler: string
   ja: string
   new_words: string[]
+}
+
+export type MixingCheckResult = {
+  understood: boolean
+  recast: string
+  ja: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -45,6 +56,34 @@ function parseParentTurn(text: string | undefined): ParentTurn {
   }
 }
 
+function parseMixingCheck(text: string | undefined): MixingCheckResult {
+  if (!text) {
+    throw new GeminiError('Geminiの意味判定が空でした', text, 'parse')
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch (error) {
+    throw new GeminiError('Geminiの意味判定を解析できませんでした', error, 'parse')
+  }
+
+  if (
+    !isRecord(parsed)
+    || typeof parsed.understood !== 'boolean'
+    || typeof parsed.recast !== 'string'
+    || typeof parsed.ja !== 'string'
+  ) {
+    throw new GeminiError('Geminiの意味判定に必要な項目がありません', parsed, 'parse')
+  }
+
+  return {
+    understood: parsed.understood,
+    recast: parsed.recast,
+    ja: parsed.ja,
+  }
+}
+
 export async function sendParentTurn(params: {
   input: ParentPromptInput
   history: Array<{ role: 'user' | 'assistant'; text: string }>
@@ -69,6 +108,33 @@ export async function sendParentTurn(params: {
     })
 
     return parseParentTurn(response.text)
+  } catch (error) {
+    if (error instanceof GeminiError) {
+      throw error
+    }
+
+    throw toGeminiError(error)
+  }
+}
+
+export async function checkMixingTurn(
+  input: MixingCheckPromptInput,
+): Promise<MixingCheckResult> {
+  try {
+    const response = await getGeminiClient().models.generateContent({
+      model: getModelId(),
+      contents: [{
+        role: 'user',
+        parts: [{ text: buildMixingCheckPrompt(input) }],
+      }],
+      config: {
+        temperature: 0.3,
+        responseMimeType: 'application/json',
+        responseSchema: mixingCheckSchema,
+      },
+    })
+
+    return parseMixingCheck(response.text)
   } catch (error) {
     if (error instanceof GeminiError) {
       throw error
