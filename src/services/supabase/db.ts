@@ -271,6 +271,25 @@ export async function upsertVocabProgress(
   return data
 }
 
+export async function upsertVocabProgressBulk(
+  rows: VocabProgressInsert[],
+): Promise<VocabProgressRow[]> {
+  if (rows.length === 0) {
+    return []
+  }
+
+  const { data, error } = await getSupabaseClient()
+    .from('vocab_progress')
+    .upsert(rows, { onConflict: 'user_id,vocab_item_id' })
+    .select('*')
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 export async function createConversation(
   userId: string,
   lang: Language,

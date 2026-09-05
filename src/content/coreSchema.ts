@@ -12,13 +12,13 @@ export type CoreVerb = CoreWord & {
 }
 
 export type CoreNoun = CoreWord & {
-  kind: 'thing' | 'place' | 'person' | 'time'
+  kind: 'thing' | 'place' | 'person' | 'time' | 'media'
 }
 
 export type CoreAdjective = CoreWord
 
 export type CorePhrasal = CoreWord & {
-  takes: 'thing' | 'none'
+  takes: 'thing' | 'none' | 'media'
 }
 
 export type CoreFrame = {
@@ -41,9 +41,9 @@ export type CoreVocab = {
 type UnknownRecord = Record<string, unknown>
 
 const VERB_TAKES = new Set(['place', 'thing', 'person', 'none'])
-const NOUN_KINDS = new Set(['thing', 'place', 'person', 'time'])
-const PHRASAL_TAKES = new Set(['thing', 'none'])
-const SLOT_PATTERN = /^(?:verb:(?:place|thing|person|none)|noun:(?:thing|place|person|time)|adj|phrasal:(?:thing|none))$/
+const NOUN_KINDS = new Set(['thing', 'place', 'person', 'time', 'media'])
+const PHRASAL_TAKES = new Set(['thing', 'none', 'media'])
+const SLOT_PATTERN = /^(?:verb:(?:place|thing|person|none)|noun:(?:thing|place|person|time|media)|adj|phrasal:(?:thing|none|media))$/
 
 function fail(label: string, path: string, reason: string): never {
   throw new Error(`${label}: ${path} ${reason}`)

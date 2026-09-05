@@ -3,10 +3,10 @@ import { loadCore } from '../../content/coreSchema'
 import { countCombinations, slotPool, wordCount } from './combinations'
 
 describe('core vocabulary combinations', () => {
-  it('英語の組み合わせ数は540', () => {
+  it('英語の組み合わせ数は1457', () => {
     const core = loadCore('en')
-    expect(countCombinations(core)).toBe(540)
-    expect(wordCount(core)).toBe(43)
+    expect(countCombinations(core)).toBe(1457)
+    expect(wordCount(core)).toBe(60)
   })
 
   it('韓国語の組み合わせ数は371', () => {

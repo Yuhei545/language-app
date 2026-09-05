@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Navigate, Outlet } from 'react-router-dom'
 import { getSession, onAuthStateChange } from '../services/supabase/auth'
+import { retireOutdatedEnglish } from '../services/supabase/retire'
 import { seedBundledVocab } from '../services/supabase/seed'
 
 function errorMessage(error: unknown): string {
@@ -68,11 +69,14 @@ export function RequireAuth() {
     Promise.all([
       seedBundledVocab(userId, 'en'),
       seedBundledVocab(userId, 'ko'),
-    ]).catch((error: unknown) => {
-      if (active) {
-        setSeedError(`同梱語彙を準備できませんでした: ${errorMessage(error)}`)
-      }
-    })
+    ])
+      // 英語の旧・基礎語(2026-09-05 に実践フレーズへ差し替え)を「知っている」扱いにして復習に出さない
+      .then(() => retireOutdatedEnglish(userId))
+      .catch((error: unknown) => {
+        if (active) {
+          setSeedError(`同梱語彙を準備できませんでした: ${errorMessage(error)}`)
+        }
+      })
 
     return () => {
       active = false

@@ -1,107 +1,107 @@
 [
   {
-    "text": "How do you say that?",
-    "emoji": "🗣️",
-    "category": "toolbox",
-    "hint_ja": "それは何と言いますか?",
-    "example": "How do you say that in English?"
-  },
-  {
-    "text": "I don't understand.",
-    "emoji": "🤷",
-    "category": "toolbox",
-    "hint_ja": "分かりません",
-    "example": "Sorry, I don't understand."
-  },
-  {
-    "text": "Say that again, please.",
+    "text": "Sorry, could you say that again?",
     "emoji": "🔁",
     "category": "toolbox",
-    "hint_ja": "もう一度言ってください",
-    "example": "Say that again, please. I missed it."
+    "hint_ja": "すみません、もう一度言ってもらえますか",
+    "example": "Sorry, could you say that again? It was a bit fast for me."
   },
   {
-    "text": "Slower, please.",
+    "text": "I didn't catch that.",
+    "emoji": "👂",
+    "category": "toolbox",
+    "hint_ja": "聞き取れませんでした",
+    "example": "I didn't catch that. Which station did you say?"
+  },
+  {
+    "text": "What do you mean by that?",
+    "emoji": "🤔",
+    "category": "toolbox",
+    "hint_ja": "それはどういう意味ですか",
+    "example": "What do you mean by that? Is it a good thing or a bad thing?"
+  },
+  {
+    "text": "How do you say this in English?",
+    "emoji": "🗣️",
+    "category": "toolbox",
+    "hint_ja": "これは英語で何と言いますか",
+    "example": "How do you say this in English? The thing you press to stop the bus."
+  },
+  {
+    "text": "Could you speak a little slower?",
     "emoji": "🐢",
     "category": "toolbox",
-    "hint_ja": "もっとゆっくりお願いします",
-    "example": "Slower, please. You speak fast."
+    "hint_ja": "少しゆっくり話してもらえますか",
+    "example": "Could you speak a little slower? I'm still learning."
   },
   {
-    "text": "What does that mean?",
-    "emoji": "❓",
+    "text": "Let me think for a second.",
+    "emoji": "⏳",
     "category": "toolbox",
-    "hint_ja": "それはどういう意味ですか?",
-    "example": "What does that mean? I never heard it."
+    "hint_ja": "少し考えさせてください",
+    "example": "Let me think for a second. Okay, I'd go with the second one."
   },
   {
-    "text": "Is this correct?",
+    "text": "I'm not sure how to put it.",
+    "emoji": "💭",
+    "category": "toolbox",
+    "hint_ja": "どう言えばいいか分からない",
+    "example": "I'm not sure how to put it, but the ending felt a bit rushed."
+  },
+  {
+    "text": "Does that make sense?",
     "emoji": "✅",
     "category": "toolbox",
-    "hint_ja": "これで合っていますか?",
-    "example": "Is this correct? I want to say it well."
+    "hint_ja": "伝わっていますか",
+    "example": "So we meet at the east exit at seven. Does that make sense?"
   },
   {
-    "text": "Wait a moment.",
-    "emoji": "✋",
+    "text": "Could you give me an example?",
+    "emoji": "📝",
     "category": "toolbox",
-    "hint_ja": "ちょっと待ってください",
-    "example": "Wait a moment. I am thinking."
+    "hint_ja": "例を挙げてもらえますか",
+    "example": "Could you give me an example? I want to use it the right way."
   },
   {
-    "text": "Thank you.",
+    "text": "Is it okay if I ask you something?",
+    "emoji": "🙋",
+    "category": "toolbox",
+    "hint_ja": "ちょっと聞いてもいいですか",
+    "example": "Is it okay if I ask you something? How long have you lived here?"
+  },
+  {
+    "text": "Actually, I meant something else.",
+    "emoji": "↩️",
+    "category": "toolbox",
+    "hint_ja": "実は、別のことを言いたかったんです",
+    "example": "Actually, I meant something else. Not the price, the size."
+  },
+  {
+    "text": "Hold on, let me check.",
+    "emoji": "📱",
+    "category": "toolbox",
+    "hint_ja": "ちょっと待って、確認します",
+    "example": "Hold on, let me check. Yes, the last train is at 11:40."
+  },
+  {
+    "text": "Never mind, it's not important.",
+    "emoji": "🙅",
+    "category": "toolbox",
+    "hint_ja": "気にしないで、大したことじゃないから",
+    "example": "Never mind, it's not important. Let's just order."
+  },
+  {
+    "text": "Thanks, that really helps.",
     "emoji": "🙏",
     "category": "toolbox",
-    "hint_ja": "ありがとう",
-    "example": "Thank you. You help me a lot."
+    "hint_ja": "ありがとう、すごく助かる",
+    "example": "Thanks, that really helps. I had no idea where the platform was."
   },
   {
-    "text": "Sorry.",
-    "emoji": "😅",
-    "category": "toolbox",
-    "hint_ja": "すみません",
-    "example": "Sorry, my English is slow."
-  },
-  {
-    "text": "Yes.",
-    "emoji": "⭕",
-    "category": "toolbox",
-    "hint_ja": "はい",
-    "example": "Yes, I understand now."
-  },
-  {
-    "text": "No.",
-    "emoji": "❌",
-    "category": "toolbox",
-    "hint_ja": "いいえ",
-    "example": "No, not that one."
-  },
-  {
-    "text": "One more time.",
-    "emoji": "🔂",
-    "category": "toolbox",
-    "hint_ja": "もう一回",
-    "example": "One more time, please."
-  },
-  {
-    "text": "What is this?",
-    "emoji": "👉",
-    "category": "toolbox",
-    "hint_ja": "これは何ですか?",
-    "example": "What is this? I don't know the word."
-  },
-  {
-    "text": "I know.",
+    "text": "I got it now.",
     "emoji": "💡",
     "category": "toolbox",
-    "hint_ja": "分かります",
-    "example": "I know that word."
-  },
-  {
-    "text": "A little.",
-    "emoji": "🤏",
-    "category": "toolbox",
-    "hint_ja": "少しだけ",
-    "example": "I speak English a little."
+    "hint_ja": "今分かりました",
+    "example": "I got it now. So 'grab a bite' just means to eat something quick."
   }
 ]
