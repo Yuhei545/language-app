@@ -5,7 +5,7 @@ import {
   type LessonDialogue,
 } from '../../features/lesson/lessonDialogueSchema'
 import type { Interest } from '../settings'
-import { getGeminiClient, getModelId, LONG_GENERATION_TIMEOUT_MS } from './client'
+import { getGeminiClient, getModelId, LONG_GENERATION_TIMEOUT_MS, TRANSIENT_RETRY } from './client'
 import { GeminiError, toGeminiError } from './errors'
 import type { Lang } from './persona'
 import { buildDialoguePrompt, type DialogueLevel } from './prompts'
@@ -46,7 +46,11 @@ async function requestDialogue(
       responseSchema: dialogueSchema,
       abortSignal: signal,
       // 行ごとの核・解説・応用を含む長い JSON なので、全体の 30 秒では 504(サーバー側の期限切れ)になる。
-      httpOptions: { timeout: LONG_GENERATION_TIMEOUT_MS },
+      // 混雑(503)は少し待てば通ることが多いので、生成では待ちを長めにして 4 回まで試す。
+      httpOptions: {
+        timeout: LONG_GENERATION_TIMEOUT_MS,
+        retryOptions: { ...TRANSIENT_RETRY, attempts: 4, initialDelay: 2, maxDelay: 15 },
+      },
     },
   })
 

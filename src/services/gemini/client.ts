@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, type HttpRetryOptions } from '@google/genai'
 import { getSettings } from '../settings'
 import { GeminiError } from './errors'
 
@@ -12,6 +12,18 @@ export const GEMINI_TIMEOUT_MS = 30_000
 // 会話レッスンの生成のように出力が長い呼び出しは、リクエスト単位でこちらを使う。
 export const LONG_GENERATION_TIMEOUT_MS = 120_000
 
+/**
+ * 一時的なサーバー障害(500/502/503 = 混雑)だけ、短い待ちで再試行する。
+ * SDK の既定(5 回、504 も対象)は、期限切れ 504 をそのまま繰り返して数分固まるので使わない。
+ * 429(無料枠)は数秒待っても回復しないので再試行せず、すぐに知らせる。
+ */
+export const TRANSIENT_RETRY: HttpRetryOptions = {
+  attempts: 3,
+  initialDelay: 1,
+  maxDelay: 8,
+  httpStatusCodes: [500, 502, 503],
+}
+
 export function getGeminiClient(): GoogleGenAI {
   const apiKey = getSettings().geminiApiKey.trim()
 
@@ -22,7 +34,7 @@ export function getGeminiClient(): GoogleGenAI {
   if (!cachedClient || cachedApiKey !== apiKey) {
     cachedClient = new GoogleGenAI({
       apiKey,
-      httpOptions: { timeout: GEMINI_TIMEOUT_MS },
+      httpOptions: { timeout: GEMINI_TIMEOUT_MS, retryOptions: TRANSIENT_RETRY },
     })
     cachedApiKey = apiKey
   }

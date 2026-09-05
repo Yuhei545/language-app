@@ -642,6 +642,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
       setStatus('ready')
     } catch (generationError) {
       if (!controller.signal.aborted && mountedRef.current) {
+        console.error('会話の生成に失敗しました', generationError)
         setError(generationError)
         setStatus('choosing')
       }
