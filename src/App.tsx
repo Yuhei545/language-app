@@ -6,6 +6,7 @@ import { CardsPage } from './features/cards/CardsPage'
 import { CurriculumPage } from './features/curriculum/CurriculumPage'
 import { DictationPage } from './features/dictation/DictationPage'
 import { HomePage } from './features/home/HomePage'
+import { LessonPage } from './features/lesson/LessonPage'
 import { MixingPage } from './features/mixing/MixingPage'
 import { PrepPage } from './features/prep/PrepPage'
 import { PracticePage } from './features/practice/PracticePage'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/mixing" element={<MixingPage />} />
           <Route path="/dictation" element={<DictationPage />} />
+          <Route path="/lesson" element={<LessonPage />} />
           <Route path="/curriculum" element={<CurriculumPage />} />
           <Route path="/prep" element={<PrepPage />} />
           <Route path="/settings" element={<SettingsPage />} />

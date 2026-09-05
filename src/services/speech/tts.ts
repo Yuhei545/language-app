@@ -1,8 +1,11 @@
 import type { SpeechLanguage } from './normalize'
 
-const browserLanguages: Record<SpeechLanguage, string> = {
+export type TtsLanguage = SpeechLanguage | 'ja'
+
+const browserLanguages: Record<TtsLanguage, string> = {
   en: 'en-US',
   ko: 'ko-KR',
+  ja: 'ja-JP',
 }
 
 let cachedVoices: SpeechSynthesisVoice[] = []
@@ -52,7 +55,7 @@ export function listVoices(lang: SpeechLanguage): SpeechSynthesisVoice[] {
 
 export function speak(
   text: string,
-  opts: { lang: SpeechLanguage; rate?: number; voiceURI?: string | null },
+  opts: { lang: TtsLanguage; rate?: number; voiceURI?: string | null },
 ): Promise<void> {
   if (!isTtsSupported()) {
     return Promise.reject(new Error('この端末では読み上げが使えません'))
@@ -69,7 +72,7 @@ export function speak(
       utterance.rate = opts.rate
     }
 
-    if (opts.voiceURI) {
+    if (opts.lang !== 'ja' && opts.voiceURI) {
       const voice = cachedVoices.find((candidate) => candidate.voiceURI === opts.voiceURI)
       if (voice) {
         utterance.voice = voice

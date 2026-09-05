@@ -15,11 +15,11 @@ describe('PracticePage', () => {
     expect(screen.queryByText('音声レッスン')).not.toBeNull()
   })
 
-  it('聞いて書くはリンクで、準備中の音声レッスンはリンクにしない', () => {
+  it('聞いて書くと音声レッスンはリンクになる', () => {
     render(<PracticePage />, { wrapper: MemoryRouter })
 
     expect(screen.queryByRole('link', { name: /聞いて書く/ })).not.toBeNull()
-    expect(screen.queryByRole('link', { name: /音声レッスン/ })).toBeNull()
-    expect(screen.getAllByText('準備中')).toHaveLength(1)
+    expect(screen.queryByRole('link', { name: /音声レッスン/ })).not.toBeNull()
+    expect(screen.queryByText('準備中')).toBeNull()
   })
 })

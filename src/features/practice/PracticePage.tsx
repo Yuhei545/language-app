@@ -22,6 +22,7 @@ const practices = [
   {
     title: '音声レッスン',
     description: 'まとまった音声を聞きながら、言葉に浸ります。',
+    to: '/lesson',
     emoji: '🎧',
   },
 ] as const
@@ -44,11 +45,7 @@ export function PracticePage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="font-bold text-slate-900">{practice.title}</h2>
-                    {'to' in practice ? (
-                      <span className="text-xl text-teal-700" aria-hidden="true">→</span>
-                    ) : (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">準備中</span>
-                    )}
+                    <span className="text-xl text-teal-700" aria-hidden="true">→</span>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-slate-500">{practice.description}</p>
                 </div>
@@ -56,7 +53,7 @@ export function PracticePage() {
             </>
           )
 
-          return 'to' in practice ? (
+          return (
             <Link
               key={practice.title}
               to={practice.to}
@@ -64,14 +61,6 @@ export function PracticePage() {
             >
               {content}
             </Link>
-          ) : (
-            <article
-              key={practice.title}
-              aria-disabled="true"
-              className="rounded-3xl border border-slate-200 bg-slate-50 p-5 opacity-75"
-            >
-              {content}
-            </article>
           )
         })}
       </div>
