@@ -6,6 +6,8 @@ import type {
   Language,
   LanguageProgressInsert,
   LanguageProgressRow,
+  LessonDialogueInsert,
+  LessonDialogueRow,
   MessageInsert,
   MessageRow,
   MixingProgressInsert,
@@ -418,6 +420,70 @@ export async function listPrepEvents(userId: string, lang: Language): Promise<Pr
     .eq('user_id', userId)
     .eq('lang', lang)
     .order('event_date', { ascending: true, nullsFirst: false })
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function saveLessonDialogue(
+  row: LessonDialogueInsert,
+): Promise<LessonDialogueRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .insert(row)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function listLessonDialogues(
+  userId: string,
+  lang: Language,
+  limit = 20,
+): Promise<LessonDialogueRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function markDialogueCompleted(id: string): Promise<LessonDialogueRow> {
+  const { data: current, error: readError } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .select('times_completed')
+    .eq('id', id)
+    .single()
+
+  if (readError) {
+    throw readError
+  }
+
+  const { data, error } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .update({
+      times_completed: current.times_completed + 1,
+      last_completed_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
 
   if (error) {
     throw error

@@ -63,7 +63,7 @@ export function hasVoiceFor(lang: TtsLanguage): boolean {
 
 export function speak(
   text: string,
-  opts: { lang: TtsLanguage; rate?: number; voiceURI?: string | null },
+  opts: { lang: TtsLanguage; rate?: number; voiceURI?: string | null; pitch?: number },
 ): Promise<void> {
   if (!isTtsSupported()) {
     return Promise.reject(new Error('この端末では読み上げが使えません'))
@@ -75,6 +75,10 @@ export function speak(
   return new Promise((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = browserLanguages[opts.lang]
+    const requestedPitch = opts.pitch ?? 1
+    utterance.pitch = Number.isFinite(requestedPitch)
+      ? Math.max(0.5, Math.min(2, requestedPitch))
+      : 1
     const timeoutMs = Math.max(4_000, text.length * 250 + 2_000)
     let settled = false
     let watchdog: ReturnType<typeof setTimeout> | null = null

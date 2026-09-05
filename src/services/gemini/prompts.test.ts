@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildDialoguePrompt,
   buildMixingCheckPrompt,
   buildParentSystemPrompt,
   buildTranscribePrompt,
@@ -117,5 +118,54 @@ describe('buildMixingCheckPrompt', () => {
     expect(prompt).toContain('Do not evaluate grammar or pronunciation')
     expect(prompt).toContain('Never correct the learner')
     expect(prompt).toContain('"wrong", "mistake", or "incorrect"')
+  })
+})
+
+describe('buildDialoguePrompt', () => {
+  it('場面・既知語・英語レベルを本文に含める', () => {
+    const prompt = buildDialoguePrompt({
+      lang: 'en',
+      sceneJa: 'ホテルでチェックインする',
+      interests: ['travel'],
+      knownWords: ['hello', 'room'],
+      level: 'practical-b1',
+    })
+
+    expect(prompt).toContain('ホテルでチェックインする')
+    expect(prompt).toContain('hello, room')
+    expect(prompt).toContain('practical everyday English at CEFR B1')
+  })
+
+  it('韓国語レベルと再試行時の問題を列挙する', () => {
+    const prompt = buildDialoguePrompt({
+      lang: 'ko',
+      sceneJa: '友人と週末について話す',
+      interests: ['friends'],
+      knownWords: ['안녕하세요'],
+      level: 'beginner',
+      retryIssues: [
+        { code: 'length', message: '各行を短くしてください' },
+        { code: 'ratio', message: '既知語を増やしてください' },
+      ],
+    })
+
+    expect(prompt).toContain('beginner Korean, polite -요 forms')
+    expect(prompt).toContain('Your previous attempt had these problems:')
+    expect(prompt).toContain('各行を短くしてください')
+    expect(prompt).toContain('既知語を増やしてください')
+  })
+
+  it('既知語は先頭300語だけを列挙する', () => {
+    const knownWords = Array.from({ length: 301 }, (_, index) => `known${String(index).padStart(3, '0')}`)
+    const prompt = buildDialoguePrompt({
+      lang: 'en',
+      sceneJa: '友人と話す',
+      interests: [],
+      knownWords,
+      level: 'practical-b1',
+    })
+
+    expect(prompt).toContain('known299')
+    expect(prompt).not.toContain('known300')
   })
 })

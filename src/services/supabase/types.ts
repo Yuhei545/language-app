@@ -1,5 +1,5 @@
 export type Language = 'en' | 'ko'
-export type VocabCategory = 'toolbox' | 'baby' | 'glue' | 'core' | 'prep'
+export type VocabCategory = 'toolbox' | 'baby' | 'glue' | 'core' | 'prep' | 'dialogue'
 export type VocabSource = 'bundled' | 'generated'
 export type VocabStatus = 'new' | 'learning' | 'known'
 export type MessageRole = 'user' | 'assistant'
@@ -101,6 +101,24 @@ export type DictationProgressRow = {
   created_at: string
 }
 
+export type LessonDialogueRow = {
+  id: string
+  user_id: string
+  lang: Language
+  scene_ja: string
+  title_ja: string
+  dialogue: Array<{ speaker: 'A' | 'B'; text: string; ja: string }>
+  new_expressions: Array<{
+    text: string
+    ja: string
+    note_ja: string
+    turn_index: number
+  }>
+  times_completed: number
+  last_completed_at: string | null
+  created_at: string
+}
+
 export type ProfileInsert = {
   user_id: string
   interests?: string[]
@@ -198,6 +216,19 @@ export type DictationProgressInsert = {
   created_at?: string
 }
 
+export type LessonDialogueInsert = {
+  id?: string
+  user_id: string
+  lang: Language
+  scene_ja: string
+  title_ja: string
+  dialogue: LessonDialogueRow['dialogue']
+  new_expressions: LessonDialogueRow['new_expressions']
+  times_completed?: number
+  last_completed_at?: string | null
+  created_at?: string
+}
+
 type TableDefinition<Row, Insert> = {
   Row: Row
   Insert: Insert
@@ -217,6 +248,7 @@ export type Database = {
       messages: TableDefinition<MessageRow, MessageInsert>
       mixing_progress: TableDefinition<MixingProgressRow, MixingProgressInsert>
       dictation_progress: TableDefinition<DictationProgressRow, DictationProgressInsert>
+      lesson_dialogues: TableDefinition<LessonDialogueRow, LessonDialogueInsert>
     }
     Views: Record<string, never>
     Functions: Record<string, never>

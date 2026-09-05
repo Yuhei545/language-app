@@ -1,4 +1,5 @@
 import type { Interest } from '../settings'
+import type { DialogueIssue } from '../../features/lesson/lessonDialogueSchema'
 import { getPersona, type Lang } from './persona'
 
 export type ParentPromptInput = {
@@ -30,6 +31,17 @@ export type MixingCheckPromptInput = {
   personaName: string
   intendedMeaningJa: string
   learnerText: string
+}
+
+export type DialogueLevel = 'practical-b1' | 'beginner'
+
+export type DialoguePromptInput = {
+  lang: Lang
+  sceneJa: string
+  interests: Interest[]
+  knownWords: string[]
+  level: DialogueLevel
+  retryIssues?: DialogueIssue[]
 }
 
 const languageNames: Record<Lang, string> = {
@@ -126,4 +138,31 @@ Decide only whether the intended meaning was communicated.
 2. If the meaning came through, set understood=true and restate what you understood as one natural, correct ${language} sentence in recast.
 3. If the meaning did not come through, set understood=false and write one gentle ${language} question in recast that says what you heard and checks the learner's intent.
 4. Put a Japanese translation of recast in ja.`
+}
+
+export function buildDialoguePrompt(input: DialoguePromptInput): string {
+  const language = languageNames[input.lang]
+  const lineLimit = input.lang === 'en'
+    ? 'Keep every English line within 14 words.'
+    : 'Keep every Korean line within 30 characters.'
+  const level = input.level === 'practical-b1'
+    ? 'Use practical everyday English at CEFR B1.'
+    : 'Use beginner Korean, polite -요 forms.'
+  const retry = input.retryIssues?.length
+    ? `\nYour previous attempt had these problems:\n${input.retryIssues.map((issue) => `- ${issue.message}`).join('\n')}\nFix every problem in the new result.`
+    : ''
+
+  return `Create a natural ${language} dialogue for this scene: ${input.sceneJa}
+Learner interests: ${listInterests(input.interests)}.
+${level}
+
+Rules:
+1. Write 6 to 8 turns. Speaker A is the scene-appropriate counterpart, such as a clerk or friend. Speaker B is the learner. Start with A and alternate A/B strictly.
+2. ${lineLimit}
+3. Prefer the learner's known words. Use only 4 to 6 new expressions, woven naturally into the dialogue.
+4. Add a Japanese translation in ja for every turn.
+5. For every new expression, add text, its Japanese meaning in ja, one Japanese usage sentence in note_ja, and the zero-based turn_index of the turn containing the exact text.
+6. Return title_ja, scene_ja, turns, and new_expressions in the required JSON structure.
+
+Known words (maximum 300): ${list(input.knownWords.slice(0, 300))}.${retry}`
 }

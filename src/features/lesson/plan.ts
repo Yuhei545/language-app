@@ -2,7 +2,7 @@ import { backChainSteps } from './backChain'
 import type { LessonStep } from './types'
 
 export type LessonAction =
-  | { type: 'speak'; text: string; lang: 'en' | 'ko' | 'ja'; rate?: number }
+  | { type: 'speak'; text: string; lang: 'en' | 'ko' | 'ja'; rate?: number; voice?: 'A' | 'B' | 'narrator' }
   | { type: 'pause'; ms: number; recordable: boolean }
   | { type: 'gap'; ms: number }
 

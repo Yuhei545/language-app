@@ -7,6 +7,7 @@ export type Settings = {
   geminiModel: string
   sttEngine: SttEngine
   ttsVoice: { en: string | null; ko: string | null }
+  ttsVoiceB: { en: string | null; ko: string | null }
   ttsRate: number
   interests: Interest[]
   parentName: { en: string; ko: string }
@@ -28,6 +29,7 @@ const DEFAULT_SETTINGS: Settings = {
   geminiModel: '',
   sttEngine: 'auto',
   ttsVoice: { en: null, ko: null },
+  ttsVoiceB: { en: null, ko: null },
   ttsRate: 0.9,
   interests: [],
   parentName: { en: '', ko: '' },
@@ -41,6 +43,7 @@ function defaultSettings(): Settings {
   return {
     ...DEFAULT_SETTINGS,
     ttsVoice: { ...DEFAULT_SETTINGS.ttsVoice },
+    ttsVoiceB: { ...DEFAULT_SETTINGS.ttsVoiceB },
     interests: [...DEFAULT_SETTINGS.interests],
     parentName: { ...DEFAULT_SETTINGS.parentName },
   }
@@ -55,7 +58,12 @@ function isNullableString(value: unknown): value is string | null {
 }
 
 function isSettings(value: unknown): value is Settings {
-  if (!isRecord(value) || !isRecord(value.ttsVoice) || !isRecord(value.parentName)) {
+  if (
+    !isRecord(value)
+    || !isRecord(value.ttsVoice)
+    || !isRecord(value.ttsVoiceB)
+    || !isRecord(value.parentName)
+  ) {
     return false
   }
 
@@ -66,6 +74,8 @@ function isSettings(value: unknown): value is Settings {
     && STT_ENGINES.includes(value.sttEngine as SttEngine)
     && isNullableString(value.ttsVoice.en)
     && isNullableString(value.ttsVoice.ko)
+    && isNullableString(value.ttsVoiceB.en)
+    && isNullableString(value.ttsVoiceB.ko)
     && typeof value.ttsRate === 'number'
     && Number.isFinite(value.ttsRate)
     && value.ttsRate >= 0.7
@@ -111,6 +121,9 @@ export function getSettings(): Settings {
         lessonRecording: parsed.lessonRecording === undefined
           ? DEFAULT_SETTINGS.lessonRecording
           : parsed.lessonRecording,
+        ttsVoiceB: parsed.ttsVoiceB === undefined
+          ? { ...DEFAULT_SETTINGS.ttsVoiceB }
+          : parsed.ttsVoiceB,
         micDeviceId: parsed.micDeviceId === undefined
           ? DEFAULT_SETTINGS.micDeviceId
           : parsed.micDeviceId,
@@ -125,6 +138,7 @@ export function getSettings(): Settings {
     return {
       ...parsed,
       ttsVoice: { ...parsed.ttsVoice },
+      ttsVoiceB: { ...parsed.ttsVoiceB },
       interests: [...parsed.interests],
       parentName: { ...parsed.parentName },
     }
@@ -140,6 +154,7 @@ export function setSettings(partial: Partial<Settings>): Settings {
     ...current,
     ...partial,
     ttsVoice: partial.ttsVoice ? { ...partial.ttsVoice } : current.ttsVoice,
+    ttsVoiceB: partial.ttsVoiceB ? { ...partial.ttsVoiceB } : current.ttsVoiceB,
     interests: partial.interests ? [...partial.interests] : current.interests,
     parentName: partial.parentName ? { ...partial.parentName } : current.parentName,
   }

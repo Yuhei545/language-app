@@ -6,6 +6,7 @@ const defaults = {
   geminiModel: '',
   sttEngine: 'auto',
   ttsVoice: { en: null, ko: null },
+  ttsVoiceB: { en: null, ko: null },
   ttsRate: 0.9,
   interests: [],
   parentName: { en: '', ko: '' },

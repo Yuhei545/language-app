@@ -43,3 +43,37 @@ export const mixingCheckSchema = {
   },
   required: ['understood', 'recast', 'ja'],
 }
+
+export const dialogueSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title_ja: { type: Type.STRING },
+    scene_ja: { type: Type.STRING },
+    turns: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          speaker: { type: Type.STRING, format: 'enum', enum: ['A', 'B'] },
+          text: { type: Type.STRING },
+          ja: { type: Type.STRING },
+        },
+        required: ['speaker', 'text', 'ja'],
+      },
+    },
+    new_expressions: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          text: { type: Type.STRING },
+          ja: { type: Type.STRING },
+          note_ja: { type: Type.STRING },
+          turn_index: { type: Type.INTEGER },
+        },
+        required: ['text', 'ja', 'note_ja', 'turn_index'],
+      },
+    },
+  },
+  required: ['title_ja', 'scene_ja', 'turns', 'new_expressions'],
+}
