@@ -1,6 +1,8 @@
 import { getSupabaseClient } from './client'
 import type {
   ConversationRow,
+  DictationProgressInsert,
+  DictationProgressRow,
   Language,
   LanguageProgressInsert,
   LanguageProgressRow,
@@ -121,6 +123,67 @@ export async function upsertMixingProgress(
   }
 
   return data
+}
+
+export async function listDictationProgress(
+  userId: string,
+  lang: Language,
+): Promise<DictationProgressRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('dictation_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function upsertDictationProgress(
+  row: DictationProgressInsert,
+): Promise<DictationProgressRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('dictation_progress')
+    .upsert(row, { onConflict: 'user_id,lang,sentence_id' })
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function countDictationToday(
+  userId: string,
+  lang: Language,
+  dayStartIso: string,
+): Promise<number> {
+  const dayStart = new Date(dayStartIso)
+  if (Number.isNaN(dayStart.getTime())) {
+    throw new Error(`今日の開始日時を解釈できません: ${dayStartIso}`)
+  }
+
+  const tomorrowStart = new Date(dayStart)
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
+  const { count, error } = await getSupabaseClient()
+    .from('dictation_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .gte('last_at', dayStart.toISOString())
+    .lt('last_at', tomorrowStart.toISOString())
+
+  if (error) {
+    throw error
+  }
+
+  return count ?? 0
 }
 
 export async function listVocabItems(

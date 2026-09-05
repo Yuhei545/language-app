@@ -4,6 +4,7 @@ import { getSession } from '../../services/supabase/auth'
 import {
   advanceLanguageWeek,
   countConversationsToday,
+  countDictationToday,
   getLanguageProgress,
   getOrCreateProfile,
   getVocabProgress,
@@ -31,6 +32,7 @@ export type HomeData = {
   streak: number
   dueCardCount: number
   conversationComplete: boolean
+  dictationComplete: boolean
   knownWordCount: number
   weekWordCount: number
   masteredWeekWordCount: number
@@ -74,12 +76,20 @@ export function useHomeData(lang: 'en' | 'ko') {
         const userId = authSession.user.id
         const now = new Date()
         const today = localDateString(now)
-        const [, existingProgress, vocabItems, prepEvents, conversationCount] = await Promise.all([
+        const [
+          ,
+          existingProgress,
+          vocabItems,
+          prepEvents,
+          conversationCount,
+          dictationCount,
+        ] = await Promise.all([
           getOrCreateProfile(userId),
           getLanguageProgress(userId, lang),
           listVocabItems(userId, lang),
           listPrepEvents(userId, lang),
           countConversationsToday(userId, lang, localDayStartIso(now)),
+          countDictationToday(userId, lang, localDayStartIso(now)),
         ])
         const vocabProgress = await getVocabProgress(
           userId,
@@ -154,6 +164,7 @@ export function useHomeData(lang: 'en' | 'ko') {
             streak: languageProgress.streak,
             dueCardCount: selectDueCards(vocabItems, srsProgress, now, 10).length,
             conversationComplete: conversationCount > 0,
+            dictationComplete: dictationCount >= 5,
             knownWordCount: vocabItems.filter(
               (item) => progressById.get(item.id)?.status === 'known',
             ).length,

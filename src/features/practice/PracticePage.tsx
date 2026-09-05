@@ -16,6 +16,7 @@ const practices = [
   {
     title: '聞いて書く',
     description: '短い文を聞き取り、音と文字をつなげます。',
+    to: '/dictation',
     emoji: '✍️',
   },
   {

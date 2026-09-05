@@ -121,7 +121,7 @@ export function HomePage() {
       <section className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900">今日のタスク</h2>
-          <p className="text-xs font-bold text-slate-400">2つ</p>
+          <p className="text-xs font-bold text-slate-400">3つ</p>
         </div>
         <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <Link to="/cards" className="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
@@ -133,13 +133,22 @@ export function HomePage() {
               {data.dueCardCount === 0 ? '完了' : `${data.dueCardCount}枚`}
             </span>
           </Link>
-          <Link to="/talk" className="flex items-center gap-3 px-4 py-4">
+          <Link to="/talk" className="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
             <span className={`grid size-7 place-items-center rounded-full text-sm font-bold ${data.conversationComplete ? 'bg-teal-600 text-white' : 'border-2 border-slate-300 text-transparent'}`}>
               {data.conversationComplete ? '✓' : '•'}
             </span>
             <span className="flex-1 font-bold text-slate-700">会話</span>
             <span className="text-sm font-bold text-slate-500">
               {data.conversationComplete ? '完了' : '1回'}
+            </span>
+          </Link>
+          <Link to="/dictation" className="flex items-center gap-3 px-4 py-4">
+            <span className={`grid size-7 place-items-center rounded-full text-sm font-bold ${data.dictationComplete ? 'bg-teal-600 text-white' : 'border-2 border-slate-300 text-transparent'}`}>
+              {data.dictationComplete ? '✓' : '・'}
+            </span>
+            <span className="flex-1 font-bold text-slate-700">聞いて書く</span>
+            <span className="text-sm font-bold text-slate-500">
+              {data.dictationComplete ? '完了' : '5文'}
             </span>
           </Link>
         </div>

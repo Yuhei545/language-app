@@ -4,6 +4,7 @@ import { RequireAuth } from './app/RequireAuth'
 import { LoginPage } from './features/auth/LoginPage'
 import { CardsPage } from './features/cards/CardsPage'
 import { CurriculumPage } from './features/curriculum/CurriculumPage'
+import { DictationPage } from './features/dictation/DictationPage'
 import { HomePage } from './features/home/HomePage'
 import { MixingPage } from './features/mixing/MixingPage'
 import { PrepPage } from './features/prep/PrepPage'
@@ -22,6 +23,7 @@ function App() {
           <Route path="/cards" element={<CardsPage />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/mixing" element={<MixingPage />} />
+          <Route path="/dictation" element={<DictationPage />} />
           <Route path="/curriculum" element={<CurriculumPage />} />
           <Route path="/prep" element={<PrepPage />} />
           <Route path="/settings" element={<SettingsPage />} />
