@@ -339,6 +339,25 @@ export function LessonPage() {
               言えた {matchedCount}/{lesson.recallResults.length}
             </p>
           ) : null}
+          {settings.lessonRecording && lesson.promptAccuracy && lesson.promptAccuracy.total > 0 ? (
+            <div
+              className={`mt-3 rounded-2xl px-4 py-3 text-left ${
+                lesson.promptAccuracy.matched / lesson.promptAccuracy.total >= 0.8
+                  ? 'bg-emerald-50 text-emerald-900'
+                  : 'bg-amber-50 text-amber-900'
+              }`}
+            >
+              <p className="font-bold">
+                応用の合図 {lesson.promptAccuracy.matched}/{lesson.promptAccuracy.total}
+                （{Math.round((lesson.promptAccuracy.matched / lesson.promptAccuracy.total) * 100)}%）
+              </p>
+              <p className="mt-1 text-sm">
+                {lesson.promptAccuracy.matched / lesson.promptAccuracy.total >= 0.8
+                  ? '8 割を超えました。次の会話に進んで大丈夫です。'
+                  : 'Pimsleur の目安は 8 割です。明日この会話をもう一度やってから、次へ進みましょう。'}
+              </p>
+            </div>
+          ) : null}
           {lesson.mode === 'dialogue' && lesson.dialogue ? (
             <div className="mt-7 text-left">
               <h3 className="font-bold text-slate-900">会話全文</h3>

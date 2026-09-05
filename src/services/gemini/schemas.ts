@@ -57,8 +57,29 @@ export const dialogueSchema = {
           speaker: { type: Type.STRING, format: 'enum', enum: ['A', 'B'] },
           text: { type: Type.STRING },
           ja: { type: Type.STRING },
+          key: {
+            type: Type.OBJECT,
+            properties: {
+              text: { type: Type.STRING },
+              ja: { type: Type.STRING },
+            },
+            required: ['text', 'ja'],
+          },
+          note_ja: { type: Type.STRING },
+          prompts: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                cue_ja: { type: Type.STRING },
+                answer: { type: Type.STRING },
+                ja: { type: Type.STRING },
+              },
+              required: ['cue_ja', 'answer', 'ja'],
+            },
+          },
         },
-        required: ['speaker', 'text', 'ja'],
+        required: ['speaker', 'text', 'ja', 'key', 'note_ja', 'prompts'],
       },
     },
     new_expressions: {

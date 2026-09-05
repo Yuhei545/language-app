@@ -31,7 +31,7 @@ import { scorePronunciation } from '../cards/scoring'
 import { selectDueCards, type SrsState } from '../cards/srs'
 import { comboKey } from '../mixing/deal'
 import { slotPool } from '../mixing/combinations'
-import { buildDialogueLesson, type DialogueLessonStep } from './dialoguePlan'
+import { buildDialogueLesson, PROMPT_ITEM_PREFIX, type DialogueLessonStep } from './dialoguePlan'
 import type { LessonDialogue } from './lessonDialogueSchema'
 import { buildLessonItems } from './material'
 import { planStep, type LessonAction } from './plan'
@@ -768,6 +768,12 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     return Math.max(1, Math.ceil(seconds / 60))
   }, [settings.lessonPauseSeconds, steps.length])
 
+  // 応用の合図(組み替え練習)だけの正答率。Pimsleur の「8 割できたら次へ」の判断に使う。
+  const promptResults = recallResults.filter((result) => result.itemId.startsWith(PROMPT_ITEM_PREFIX))
+  const promptAccuracy = promptResults.length > 0
+    ? { matched: promptResults.filter((result) => result.matched).length, total: promptResults.length }
+    : null
+
   return {
     mode,
     status,
@@ -794,6 +800,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     skip,
     stop,
     recallResults,
+    promptAccuracy,
     warnings,
     error,
     clearError: () => setError(null),

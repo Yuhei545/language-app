@@ -161,8 +161,11 @@ Rules:
 2. ${lineLimit}
 3. Prefer the learner's known words. Use only 4 to 6 new expressions, woven naturally into the dialogue.
 4. Add a Japanese translation in ja for every turn.
-5. For every new expression, add text, its Japanese meaning in ja, one Japanese usage sentence in note_ja, and the zero-based turn_index of the turn containing the exact text.
-6. Return title_ja, scene_ja, turns, and new_expressions in the required JSON structure.
+5. For every turn add key: the core chunk of that line (a short phrase that appears verbatim in the line) as text, with its Japanese meaning in ja.
+6. For every turn add note_ja: one or two short Japanese sentences ONLY when a learner would want an explanation right there (grammar, politeness level, nuance, culture). Otherwise use an empty string.
+7. For every turn add exactly 2 prompts. Each prompt recombines pieces of this line with the learner's known words into a new, natural sentence within the line limit: cue_ja is a Japanese instruction such as 「『水をお願いします』と言ってください」 or 「相手に『他に何か要りますか』と聞いてください」, answer is the ${language} sentence, ja is its Japanese meaning. Do not simply repeat the line in both prompts.
+8. For every new expression, add text, its Japanese meaning in ja, one Japanese usage sentence in note_ja, and the zero-based turn_index of the turn containing the exact text.
+9. Return title_ja, scene_ja, turns (with key, note_ja, prompts), and new_expressions in the required JSON structure.
 
 Known words (maximum 300): ${list(input.knownWords.slice(0, 300))}.${retry}`
 }

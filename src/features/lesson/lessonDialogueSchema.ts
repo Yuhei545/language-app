@@ -1,7 +1,19 @@
 import { normalizeText } from '../../services/speech/normalize'
 
 export type DialogueSpeaker = 'A' | 'B'
-export type DialogueTurn = { speaker: DialogueSpeaker; text: string; ja: string }
+export type DialoguePrompt = { cue_ja: string; answer: string; ja: string }
+export type DialogueKey = { text: string; ja: string }
+export type DialogueTurn = {
+  speaker: DialogueSpeaker
+  text: string
+  ja: string
+  /** その行の核となる表現(v3)。無ければ行全体を核として扱う。 */
+  key?: DialogueKey
+  /** 必要な行だけの短い解説(v3)。空文字は解説なし。 */
+  note_ja?: string
+  /** 部品を組み替えて言う応用の合図(v3)。1 行につき 0〜2 個。 */
+  prompts?: DialoguePrompt[]
+}
 export type NewExpression = { text: string; ja: string; note_ja: string; turn_index: number }
 export type LessonDialogue = {
   title_ja: string
@@ -10,7 +22,7 @@ export type LessonDialogue = {
   new_expressions: NewExpression[]
 }
 
-export type DialogueIssueCode = 'turns' | 'alternation' | 'length' | 'expressions' | 'ratio' | 'script'
+export type DialogueIssueCode = 'turns' | 'alternation' | 'length' | 'expressions' | 'ratio' | 'script' | 'key' | 'prompts'
 export type DialogueIssue = { code: DialogueIssueCode; message: string }
 
 export type DialogueValidation =
@@ -19,6 +31,7 @@ export type DialogueValidation =
 
 export const DIALOGUE_TURN_RANGE = { min: 6, max: 8 } as const
 export const NEW_EXPRESSION_RANGE = { min: 4, max: 6 } as const
+export const MAX_PROMPTS_PER_TURN = 2
 export const MAX_LINE_LENGTH = { en: 14, ko: 30 } as const
 /** 既知語比率のしきい値。韓国語は助詞が付いて一致しにくいので緩める。 */
 export const KNOWN_RATIO_THRESHOLD = { en: 0.8, ko: 0.5 } as const
@@ -53,7 +66,36 @@ function parseDialogue(json: unknown): LessonDialogue | string {
       || typeof turn.ja !== 'string' || turn.ja.trim().length === 0) {
       return `turns[${index}] の形が不正です`
     }
-    turns.push({ speaker: turn.speaker, text: turn.text.trim(), ja: turn.ja.trim() })
+    const parsedTurn: DialogueTurn = { speaker: turn.speaker, text: turn.text.trim(), ja: turn.ja.trim() }
+    if (turn.key !== undefined && turn.key !== null) {
+      if (!isRecord(turn.key) || typeof turn.key.text !== 'string' || typeof turn.key.ja !== 'string') {
+        return `turns[${index}].key の形が不正です`
+      }
+      const keyText = turn.key.text.trim()
+      if (keyText.length > 0) {
+        parsedTurn.key = { text: keyText, ja: turn.key.ja.trim() }
+      }
+    }
+    if (turn.note_ja !== undefined && turn.note_ja !== null) {
+      if (typeof turn.note_ja !== 'string') {
+        return `turns[${index}].note_ja が文字列ではありません`
+      }
+      parsedTurn.note_ja = turn.note_ja.trim()
+    }
+    if (turn.prompts !== undefined && turn.prompts !== null) {
+      if (!Array.isArray(turn.prompts)) {
+        return `turns[${index}].prompts が配列ではありません`
+      }
+      const prompts: DialoguePrompt[] = []
+      for (const [promptIndex, prompt] of turn.prompts.entries()) {
+        if (!isRecord(prompt) || typeof prompt.cue_ja !== 'string' || typeof prompt.answer !== 'string' || typeof prompt.ja !== 'string') {
+          return `turns[${index}].prompts[${promptIndex}] の形が不正です`
+        }
+        prompts.push({ cue_ja: prompt.cue_ja.trim(), answer: prompt.answer.trim(), ja: prompt.ja.trim() })
+      }
+      parsedTurn.prompts = prompts
+    }
+    turns.push(parsedTurn)
   }
 
   const expressions: NewExpression[] = []
@@ -161,6 +203,49 @@ export function validateDialogue(
           : `${index + 1} 行目にラテン文字の語が混ざっています`,
       })
     }
+  })
+
+  turns.forEach((turn, index) => {
+    if (turn.key) {
+      const normalizedKey = normalizeText(turn.key.text, lang)
+      if (normalizedKey.length === 0 || !normalizeText(turn.text, lang).includes(normalizedKey)) {
+        issues.push({
+          code: 'key',
+          message: `${index + 1} 行目の核の表現「${turn.key.text}」が、その行にそのまま含まれていません`,
+        })
+      }
+    }
+    const prompts = turn.prompts ?? []
+    if (prompts.length > MAX_PROMPTS_PER_TURN) {
+      issues.push({
+        code: 'prompts',
+        message: `${index + 1} 行目の応用の合図が ${prompts.length} 個あります。${MAX_PROMPTS_PER_TURN} 個以内にしてください`,
+      })
+    }
+    prompts.forEach((prompt, promptIndex) => {
+      if (!prompt.cue_ja || !prompt.answer || !prompt.ja) {
+        issues.push({
+          code: 'prompts',
+          message: `${index + 1} 行目の応用 ${promptIndex + 1} に空の項目があります(cue_ja / answer / ja)`,
+        })
+      }
+      const length = lang === 'en'
+        ? prompt.answer.split(/\s+/).filter((word) => word.length > 0).length
+        : prompt.answer.replace(/\s+/g, '').length
+      if (length > MAX_LINE_LENGTH[lang]) {
+        issues.push({
+          code: 'length',
+          message: `${index + 1} 行目の応用 ${promptIndex + 1} の答えが長すぎます(${length})。${lang === 'en' ? '14 語' : '30 文字'}以内にしてください`,
+        })
+      }
+      const foreign = lang === 'en' ? HANGUL_OR_JAPANESE.test(prompt.answer) : LATIN_WORD.test(prompt.answer)
+      if (foreign) {
+        issues.push({
+          code: 'script',
+          message: `${index + 1} 行目の応用 ${promptIndex + 1} の答えに別の文字種が混ざっています`,
+        })
+      }
+    })
   })
 
   const expressionTokens = new Set(expressions.flatMap((expression) => tokens(expression.text, lang)))
