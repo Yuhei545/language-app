@@ -20,6 +20,7 @@ const card: VocabItemRow = {
   category: 'core',
   source: 'bundled',
   prep_event_id: null,
+  chunk_key: null,
   created_at: '2026-09-05T00:00:00.000Z',
 }
 

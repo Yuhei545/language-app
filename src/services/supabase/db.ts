@@ -1,6 +1,11 @@
 import { getSupabaseClient } from './client'
 import type {
+  ChunkEncounterInsert,
+  ChunkEncounterRow,
+  ChunkEncounterSummaryRow,
   ConversationRow,
+  DailyTargetsInsert,
+  DailyTargetsRow,
   DictationFeatureStatInsert,
   DictationFeatureStatRow,
   DictationProgressInsert,
@@ -580,4 +585,119 @@ export async function getLessonDialogue(id: string): Promise<LessonDialogueRow> 
   }
 
   return data
+}
+
+// ---- チャンクの台帳と今日の狙い(006) ----
+
+export async function insertChunkEncounters(rows: ChunkEncounterInsert[]): Promise<void> {
+  if (rows.length === 0) {
+    return
+  }
+  const { error } = await getSupabaseClient()
+    .from('chunk_encounters')
+    .insert(rows)
+
+  if (error) {
+    throw error
+  }
+}
+
+/** 全期間の集計(ビュー)。行数はチャンク数まで。 */
+export async function listChunkEncounterSummary(
+  userId: string,
+  lang: Language,
+): Promise<ChunkEncounterSummaryRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('chunk_encounter_summary')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+/** 生の行。モードと期間で絞って、新しい順に limit 件まで(既定 500)。 */
+export async function listChunkEncounters(
+  userId: string,
+  lang: Language,
+  opts: { mode?: string; since?: string; limit?: number } = {},
+): Promise<ChunkEncounterRow[]> {
+  let query = getSupabaseClient()
+    .from('chunk_encounters')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+
+  if (opts.mode !== undefined) {
+    query = query.eq('mode', opts.mode)
+  }
+  if (opts.since !== undefined) {
+    query = query.gte('at', opts.since)
+  }
+
+  const { data, error } = await query
+    .order('at', { ascending: false })
+    .limit(opts.limit ?? 500)
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function countChunkEncountersSince(
+  userId: string,
+  lang: Language,
+  mode: string,
+  sinceIso: string,
+): Promise<number> {
+  const { count, error } = await getSupabaseClient()
+    .from('chunk_encounters')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .eq('mode', mode)
+    .gte('at', sinceIso)
+
+  if (error) {
+    throw error
+  }
+
+  return count ?? 0
+}
+
+export async function getDailyTargets(
+  userId: string,
+  lang: Language,
+  day: string,
+): Promise<DailyTargetsRow | null> {
+  const { data, error } = await getSupabaseClient()
+    .from('daily_targets')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .eq('day', day)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+/** 同じ日の行が既にあれば触らない(他端末が先に決めた狙いを守る)。 */
+export async function insertDailyTargets(row: DailyTargetsInsert): Promise<void> {
+  const { error } = await getSupabaseClient()
+    .from('daily_targets')
+    .upsert(row, { onConflict: 'user_id,lang,day', ignoreDuplicates: true })
+
+  if (error) {
+    throw error
+  }
 }

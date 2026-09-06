@@ -37,6 +37,7 @@ function vocab(id: string, category: VocabItemRow['category'] = 'baby'): VocabIt
     category,
     source: 'bundled',
     prep_event_id: null,
+    chunk_key: null,
     created_at: '2026-01-01T00:00:00.000Z',
   }
 }

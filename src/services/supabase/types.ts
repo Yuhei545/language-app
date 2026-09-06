@@ -45,6 +45,8 @@ export type VocabItemRow = {
   source: VocabSource | null
   prep_event_id: string | null
   created_at: string
+  /** 型・句動詞の種まきカードを台帳と結ぶ。 */
+  chunk_key: string | null
 }
 
 export type VocabProgressRow = {
@@ -202,6 +204,7 @@ export type VocabItemInsert = {
   source?: VocabSource | null
   prep_event_id?: string | null
   created_at?: string
+  chunk_key?: string | null
 }
 
 export type VocabProgressInsert = {
@@ -292,6 +295,60 @@ export type LessonDialogueInsert = {
   created_at?: string
 }
 
+export type ChunkEncounterKind = 'seen' | 'said'
+
+export type ChunkEncounterRow = {
+  id: number
+  user_id: string
+  lang: Language
+  chunk_key: string
+  mode: string
+  kind: ChunkEncounterKind
+  context: string
+  at: string
+}
+
+export type ChunkEncounterInsert = {
+  id?: number
+  user_id: string
+  lang: Language
+  chunk_key: string
+  mode: string
+  kind: ChunkEncounterKind
+  context?: string
+  at?: string
+}
+
+/** ビュー chunk_encounter_summary の 1 行(全期間の集計 + 1 週間前の時点の数)。 */
+export type ChunkEncounterSummaryRow = {
+  user_id: string
+  lang: Language
+  chunk_key: string
+  seen: number
+  said: number
+  contexts: number
+  last_at: string
+  seen_before: number
+  said_before: number
+  contexts_before: number
+}
+
+export type DailyTargetsRow = {
+  user_id: string
+  lang: Language
+  day: string
+  chunk_keys: string[]
+  created_at: string
+}
+
+export type DailyTargetsInsert = {
+  user_id: string
+  lang: Language
+  day: string
+  chunk_keys: string[]
+  created_at?: string
+}
+
 type TableDefinition<Row, Insert> = {
   Row: Row
   Insert: Insert
@@ -314,8 +371,12 @@ export type Database = {
       dictation_progress: TableDefinition<DictationProgressRow, DictationProgressInsert>
       dictation_feature_stats: TableDefinition<DictationFeatureStatRow, DictationFeatureStatInsert>
       lesson_dialogues: TableDefinition<LessonDialogueRow, LessonDialogueInsert>
+      chunk_encounters: TableDefinition<ChunkEncounterRow, ChunkEncounterInsert>
+      daily_targets: TableDefinition<DailyTargetsRow, DailyTargetsInsert>
     }
-    Views: Record<string, never>
+    Views: {
+      chunk_encounter_summary: { Row: ChunkEncounterSummaryRow; Relationships: [] }
+    }
     Functions: Record<string, never>
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
