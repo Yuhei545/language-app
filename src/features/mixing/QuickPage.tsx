@@ -1,5 +1,5 @@
 import { Toast } from '../../components/Toast'
-import { QUICK_ROUNDS, useQuickSession } from './useQuickSession'
+import { useQuickSession } from './useQuickSession'
 
 function seconds(milliseconds: number | null): string {
   return milliseconds === null ? '—' : `${(milliseconds / 1000).toFixed(1)}秒`
@@ -8,14 +8,13 @@ function seconds(milliseconds: number | null): string {
 export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
   const session = useQuickSession(lang)
   const { phase, current, summary } = session
-  const selfCheck = session.checkMode === 'self'
 
   return (
     <div>
       <Toast error={session.error} onClose={session.clearError} />
 
       <p className="text-sm font-bold text-slate-500">
-        {phase === 'cue' || phase === 'answering' || phase === 'recording'
+        {phase === 'cue' || phase === 'answering'
           ? `${session.roundIndex + 1}周目 ・ ${session.index + 1}/${session.questions.length} ・ 目標 ${session.targetSeconds}秒`
           : '同じ 8 問を 3 周。だんだん速く答えます。'}
       </p>
@@ -25,10 +24,8 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
           <p className="text-6xl" aria-hidden="true">⏱️</p>
           <h2 className="mt-5 text-xl font-bold text-slate-900">即答</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            質問が終わったらすぐ答えます。短くて構いません。長さより速さです。
-            {selfCheck
-              ? ' 言い終わったら「答えた」を押します。速さだけを記録し、Gemini は質問づくりの 1 回だけ使います。'
-              : ' 言い終わったらボタンを押すと、3 周分をまとめて確かめます。'}
+            質問が終わったらすぐ声に出して答えます。短くて構いません。長さより速さです。
+            言い終わったら「答えた」を押すと、答え始めるまでの時間が記録されます。
           </p>
           <button
             type="button"
@@ -46,7 +43,7 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
         </p>
       ) : null}
 
-      {current && (phase === 'cue' || phase === 'answering' || phase === 'recording') ? (
+      {current && (phase === 'cue' || phase === 'answering') ? (
         <div className="mt-7 rounded-3xl border border-violet-200 bg-gradient-to-b from-violet-50 to-white p-6 shadow-sm">
           <p className="text-center text-xs font-bold tracking-wider text-violet-700">質問</p>
           <h2 className="mt-3 text-center text-2xl font-bold leading-9 text-slate-900">{current.q}</h2>
@@ -66,22 +63,6 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
         >
           答えた
         </button>
-      ) : null}
-
-      {phase === 'recording' ? (
-        <button
-          type="button"
-          onClick={() => void session.stopRecording()}
-          className="mt-5 flex min-h-16 w-full items-center justify-center rounded-2xl bg-amber-500 px-5 text-base font-bold text-white"
-        >
-          ■ 答え終わった
-        </button>
-      ) : null}
-
-      {phase === 'judging' ? (
-        <p className="mt-7 rounded-2xl bg-white px-5 py-8 text-center text-sm font-bold text-slate-500" role="status">
-          {QUICK_ROUNDS} 周分をまとめて確かめています…
-        </p>
       ) : null}
 
       {phase !== 'idle' && phase !== 'finished' ? (
@@ -106,32 +87,9 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
             <p className="mt-1 text-xs font-bold text-slate-500">答え始めるまでの平均</p>
           </div>
 
-          {summary.total > 0 ? (
-            <p className="mt-3 rounded-2xl bg-teal-50 px-4 py-3 text-center font-bold text-teal-900">
-              伝わった {summary.understood}/{summary.total}
-            </p>
-          ) : (
-            <p className="mt-3 text-center text-xs text-slate-500">
-              自分で判定のときは速さだけを記録します。通じたかを確かめたいときは「録音で確かめる」にしてください。
-            </p>
-          )}
-
-          <div className="mt-6 space-y-3">
-            {summary.answers.map((answer, position) => {
-              const judgment = summary.judgments[position]
-              const question = session.questions[answer.index]
-              if (!judgment?.better) {
-                return null
-              }
-              return (
-                <div key={`${answer.round}-${answer.index}`} className="rounded-2xl bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-bold text-slate-500">{question?.ja}</p>
-                  <p className="mt-1 text-sm text-slate-700">あなた: {answer.heardText}</p>
-                  <p className="mt-1 font-bold text-slate-900">より自然に: {judgment.better}</p>
-                </div>
-              )
-            })}
-          </div>
+          <p className="mt-3 text-center text-xs text-slate-500">
+            周を重ねるほど短くなっていれば、口が慣れてきた印です。
+          </p>
 
           <button
             type="button"

@@ -5,15 +5,22 @@ import { useTopicSession } from './useTopicSession'
 export function TopicPage({ lang }: { lang: 'en' | 'ko' }) {
   const session = useTopicSession(lang)
   const [showJapanese, setShowJapanese] = useState(false)
+  const [draft, setDraft] = useState('')
   const { phase, turns } = session
   const last = turns[turns.length - 1] ?? null
+
+  const send = () => {
+    const text = draft
+    setDraft('')
+    void session.submit(text)
+  }
 
   return (
     <div>
       <Toast error={session.error} onClose={session.clearError} />
 
       <p className="text-sm font-bold text-slate-500">
-        お題について自分の言葉で話し、相手の質問に答えます。
+        お題について自分の言葉で言い、相手の質問に答えます。声に出してから打ち込みます。
       </p>
 
       {phase === 'idle' && turns.length === 0 ? (
@@ -21,11 +28,11 @@ export function TopicPage({ lang }: { lang: 'en' | 'ko' }) {
           <p className="text-6xl" aria-hidden="true">💬</p>
           <h2 className="mt-5 text-xl font-bold text-slate-900">お題で言う</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            お題が読み上げられたら録音が始まります。文の数は目安です。伝わることだけを考えましょう。
+            お題が出たら、まず声に出して言ってみます。それを打ち込んで送ると、相手が伝わったかを返し、続きを聞いてきます。
           </p>
           <button
             type="button"
-            onClick={() => void session.startRecording()}
+            onClick={() => void session.beginTopic()}
             className="mt-6 w-full rounded-2xl bg-violet-700 px-5 py-4 font-bold text-white"
           >
             お題をもらう
@@ -44,21 +51,31 @@ export function TopicPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       ) : null}
 
-      {phase === 'recording' ? (
-        <div className="mt-5 text-center">
+      {phase === 'typing' ? (
+        <div className="mt-5 rounded-3xl border border-violet-200 bg-white p-5 shadow-sm">
+          <label htmlFor="topic-answer" className="text-sm font-bold text-slate-800">あなたの答え</label>
+          <p className="mt-1 text-xs text-slate-500">声に出して言ってから、その文を打ち込んでください</p>
+          <textarea
+            id="topic-answer"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            rows={3}
+            className="mt-3 w-full resize-none rounded-2xl border border-slate-300 px-4 py-3 text-base leading-7 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+          />
           <button
             type="button"
-            onClick={() => void session.stopRecording()}
-            className="flex min-h-16 w-full items-center justify-center rounded-2xl bg-amber-500 px-5 text-base font-bold text-white"
+            onClick={send}
+            disabled={draft.trim().length === 0}
+            className="mt-4 w-full rounded-2xl bg-violet-700 px-5 py-4 font-bold text-white disabled:opacity-45"
           >
-            ■ 話し終わった
+            送る
           </button>
         </div>
       ) : null}
 
       {phase === 'checking' ? (
         <div className="mt-5 text-center">
-          <p className="text-sm font-bold text-slate-500" role="status">相手が聞いています…</p>
+          <p className="text-sm font-bold text-slate-500" role="status">相手が読んでいます…</p>
           <button
             type="button"
             onClick={session.cancelChecking}
@@ -75,8 +92,8 @@ export function TopicPage({ lang }: { lang: 'en' | 'ko' }) {
             {last.result.understood ? '伝わりました' : '伝わりませんでした。もう一度どうぞ'}
           </p>
 
-          <p className="mt-4 text-[11px] font-bold tracking-wider text-slate-500">こう聞こえました</p>
-          <p className="mt-1 rounded-2xl bg-white/70 px-4 py-3 font-bold text-slate-800">{last.heardText}</p>
+          <p className="mt-4 text-[11px] font-bold tracking-wider text-slate-500">あなたの文</p>
+          <p className="mt-1 rounded-2xl bg-white/70 px-4 py-3 font-bold text-slate-800">{last.learnerText}</p>
 
           <p className="mt-4 text-[11px] font-bold tracking-wider text-slate-500">
             {last.result.understood ? '相手はこう受け取りました' : '相手の聞き返し'}
@@ -129,7 +146,7 @@ export function TopicPage({ lang }: { lang: 'en' | 'ko' }) {
       {phase === 'feedback' ? (
         <button
           type="button"
-          onClick={() => void session.startRecording()}
+          onClick={session.answerFollowUp}
           className="mt-5 w-full rounded-2xl bg-violet-700 px-5 py-4 font-bold text-white"
         >
           {last?.result.follow_up ? '質問に答える' : 'もう一度言う'}

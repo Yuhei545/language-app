@@ -1,7 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { transcribeAudio } from '../../services/gemini/transcribe'
-import { createSpeechInput, type SpeechInput } from '../../services/speech/stt'
-import { scorePronunciation } from './scoring'
 import { speak, unlockAudio } from '../../services/speech/tts'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
@@ -13,20 +10,7 @@ import {
 import type { VocabItemRow, VocabProgressRow } from '../../services/supabase/types'
 import { nextSrsState, selectDueCards, type Grade, type SrsState } from './srs'
 
-export type CardPhase =
-  | 'presenting'
-  | 'speaking'
-  | 'recording'
-  | 'transcribing'
-  | 'result'
-  | 'saving'
-
-export type CardAttempt = {
-  spokenText: string
-  matched: boolean
-  similarity: number
-  unreliable: boolean
-}
+export type CardPhase = 'presenting' | 'speaking' | 'result' | 'saving'
 
 const EMPTY_SRS_STATE: SrsState = {
   status: 'new',
@@ -71,17 +55,15 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
   const [started, setStarted] = useState(false)
   const [finished, setFinished] = useState(false)
   const [phase, setPhase] = useState<CardPhase>('presenting')
-  const [attempt, setAttempt] = useState<CardAttempt | null>(null)
+  /** 答え(語と例文)を見せているか。音読して「言ってみた」を押したら true。 */
+  const [answerVisible, setAnswerVisible] = useState(false)
   const [hintVisible, setHintVisible] = useState(false)
   const [hintSaving, setHintSaving] = useState(false)
-  const [sttEngine, setSttEngine] = useState<'webspeech' | 'gemini' | null>(null)
   const [todayLearnedCount, setTodayLearnedCount] = useState(0)
   const [tomorrowCount, setTomorrowCount] = useState(0)
   const [error, setError] = useState<unknown>(null)
-  const inputRef = useRef<SpeechInput | null>(null)
   const userIdRef = useRef<string | null>(null)
   const progressRef = useRef(new Map<string, VocabProgressRow>())
-  const processingGenerationRef = useRef(0)
 
   const currentCard = cards[currentIndex] ?? null
   const currentProgress = currentCard
@@ -101,17 +83,13 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
   useEffect(() => {
     let active = true
-    processingGenerationRef.current += 1
-    inputRef.current?.cancel()
-    inputRef.current = null
     setLoading(true)
     setStarted(false)
     setFinished(false)
     setCurrentIndex(0)
     setCards([])
-    setAttempt(null)
+    setAnswerVisible(false)
     setHintVisible(false)
-    setSttEngine(null)
     setTodayLearnedCount(0)
     setTomorrowCount(0)
     setError(null)
@@ -170,8 +148,6 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
     return () => {
       active = false
-      inputRef.current?.cancel()
-      inputRef.current = null
     }
   }, [captureError, lang, prepEventId])
 
@@ -189,11 +165,11 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
   }, [cards.length, captureError, loading])
 
   const playExample = useCallback(async () => {
-    if (!currentCard || phase === 'recording' || phase === 'transcribing' || phase === 'saving') {
+    if (!currentCard || phase === 'saving') {
       return
     }
 
-    const returnPhase: CardPhase = attempt ? 'result' : 'presenting'
+    const returnPhase: CardPhase = answerVisible ? 'result' : 'presenting'
     setPhase('speaking')
 
     try {
@@ -207,95 +183,17 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     } finally {
       setPhase(returnPhase)
     }
-  }, [attempt, captureError, currentCard, lang, phase])
+  }, [answerVisible, captureError, currentCard, lang, phase])
 
-  const startRecording = useCallback(async () => {
-    if (
-      !currentCard
-      || inputRef.current
-      || (phase !== 'presenting' && phase !== 'result')
-    ) {
+  /** 音読したら答えを見せる。採点はしない(自分で判定する)。 */
+  const saidIt = useCallback(() => {
+    if (!currentCard || phase !== 'presenting') {
       return
     }
-
     setError(null)
-    setAttempt(null)
-    setPhase('recording')
-    processingGenerationRef.current += 1
-
-    try {
-      const input = createSpeechInput({
-        lang,
-        engine: settingsRef.current.sttEngine,
-        transcribe: transcribeAudio,
-      })
-      inputRef.current = input
-      setSttEngine(input.engine)
-      await input.start()
-    } catch (recordingError) {
-      inputRef.current?.cancel()
-      inputRef.current = null
-      captureError(recordingError)
-      setPhase('presenting')
-    }
-  }, [captureError, currentCard, lang, phase])
-
-  const stopRecording = useCallback(async () => {
-    const input = inputRef.current
-    if (!currentCard || !input || phase !== 'recording') {
-      return
-    }
-
-    setPhase('transcribing')
-    const generation = processingGenerationRef.current
-
-    try {
-      const result = await input.stop()
-      if (processingGenerationRef.current !== generation) {
-        return
-      }
-      inputRef.current = null
-      setSttEngine(result.engine)
-      const spokenText = result.text.trim()
-      if (!spokenText) {
-        throw new Error('音声を聞き取れませんでした。もう一度ゆっくり声に出してみてください')
-      }
-
-      const score = scorePronunciation(
-        spokenText,
-        { text: currentCard.text, example: currentCard.example ?? '' },
-        lang,
-      )
-      setAttempt({
-        spokenText,
-        matched: score.matched,
-        similarity: score.similarity,
-        unreliable: score.unreliable,
-      })
-      setPhase('result')
-    } catch (recordingError) {
-      if (processingGenerationRef.current !== generation) {
-        return
-      }
-      inputRef.current?.cancel()
-      inputRef.current = null
-      captureError(recordingError)
-      setPhase('presenting')
-    }
-  }, [captureError, currentCard, lang, phase])
-
-  const cancelTranscription = useCallback(() => {
-    if (phase !== 'transcribing') {
-      return
-    }
-
-    processingGenerationRef.current += 1
-    inputRef.current?.cancel()
-    inputRef.current = null
-    setError(null)
-    setAttempt(null)
-    setPhase('presenting')
-  }, [phase])
+    setAnswerVisible(true)
+    setPhase('result')
+  }, [currentCard, phase])
 
   const showHint = useCallback(async () => {
     const userId = userIdRef.current
@@ -375,9 +273,8 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
         setFinished(true)
       } else {
         setCurrentIndex((index) => index + 1)
-        setAttempt(null)
+        setAnswerVisible(false)
         setHintVisible(false)
-        setSttEngine(null)
         setPhase('presenting')
       }
     } catch (gradeError) {
@@ -405,18 +302,15 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     totalCards: cards.length,
     progressPercent,
     phase,
-    attempt,
+    answerVisible,
     hintVisible,
     hintSaving,
-    sttEngine,
     todayLearnedCount,
     tomorrowCount,
     error,
     beginSession,
     playExample,
-    startRecording,
-    stopRecording,
-    cancelTranscription,
+    saidIt,
     showHint,
     gradeCard,
     clearError: () => setError(null),

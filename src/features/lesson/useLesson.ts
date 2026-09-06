@@ -2,14 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoreFrame, CoreVocab, CoreWord } from '../../content/coreSchema'
 import { loadCore } from '../../content/coreSchema'
 import { generateDialogue } from '../../services/gemini/dialogue'
-import { transcribeAudio } from '../../services/gemini/transcribe'
 import {
-  createSpeechInput,
   hasVoiceFor,
   prefetchSpeech,
   speak,
   stopSpeaking,
-  type SpeechInput,
 } from '../../services/speech'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
@@ -28,7 +25,6 @@ import type {
   MixingProgressRow,
   PrepEventRow,
 } from '../../services/supabase/types'
-import { scorePronunciation } from '../cards/scoring'
 import { selectDueCards, type SrsState } from '../cards/srs'
 import { comboKey } from '../mixing/deal'
 import { slotPool } from '../mixing/combinations'
@@ -180,7 +176,6 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const actionIndexRef = useRef(0)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resolveTimeoutRef = useRef<(() => void) | null>(null)
-  const inputRef = useRef<SpeechInput | null>(null)
   const startedAtRef = useRef<number | null>(null)
   const lessonRunRef = useRef(0)
   const mountedRef = useRef(true)
@@ -216,8 +211,6 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     resolveTimeoutRef.current = null
     resolveTimeout?.()
 
-    inputRef.current?.cancel()
-    inputRef.current = null
   }, [])
 
   const wait = useCallback((milliseconds: number): Promise<void> => (
@@ -377,65 +370,8 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     const runId = lessonRunRef.current
 
     const runPause = async (action: Extract<LessonAction, { type: 'pause' }>) => {
-      let input: SpeechInput | null = null
-      if (action.recordable && settingsRef.current.lessonRecording) {
-        try {
-          input = createSpeechInput({
-            lang,
-            engine: settingsRef.current.sttEngine,
-            transcribe: transcribeAudio,
-          })
-          inputRef.current = input
-          await input.start()
-          if (generationRef.current !== generation) {
-            input.cancel()
-            return
-          }
-        } catch (recordingError) {
-          inputRef.current?.cancel()
-          inputRef.current = null
-          input = null
-          console.error('音声レッスンの録音を開始できませんでした', recordingError)
-        }
-      }
-
-      if (generationRef.current !== generation) {
-        return
-      }
+      // 間は声に出すための時間。録音はしない(自分で音読する)。
       await wait(action.ms)
-      if (generationRef.current !== generation) {
-        return
-      }
-
-      if (input) {
-        inputRef.current = null
-        try {
-          const transcription = input.stop()
-          void transcription.then((result) => {
-            const item = currentStep.item
-            const stage = currentStep.stage
-            if (!item || stage === undefined) {
-              return
-            }
-            const score = scorePronunciation(
-              result.text,
-              { text: item.answer, example: '' },
-              lang,
-            )
-            if (mountedRef.current && lessonRunRef.current === runId) {
-              setRecallResults((current) => [...current, {
-                itemId: item.id,
-                stage,
-                matched: score.matched,
-              }])
-            }
-          }).catch((recordingError) => {
-            console.error('音声レッスンの録音を確認できませんでした', recordingError)
-          })
-        } catch (recordingError) {
-          console.error('音声レッスンの録音を停止できませんでした', recordingError)
-        }
-      }
     }
 
     const run = async () => {

@@ -69,7 +69,6 @@ export function LessonPage() {
     () => new Set(lesson.steps.flatMap((step) => step.item ? [step.item.id] : [])).size,
     [lesson.steps],
   )
-  const matchedCount = lesson.recallResults.filter(({ matched }) => matched).length
   const warnings = lesson.warnings ?? []
   const progress = lesson.steps.length === 0
     ? 0
@@ -206,22 +205,6 @@ export function LessonPage() {
               className="mt-4 w-full accent-indigo-700"
             />
 
-            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
-              <input
-                type="checkbox"
-                checked={settings.lessonRecording}
-                onChange={(event) => updateSettings({ lessonRecording: event.target.checked })}
-                className="mt-0.5 size-5 rounded accent-indigo-700"
-              />
-              <span>
-                <span className="block text-sm font-bold text-slate-800">
-                  聞いた後に自分の声を録音して確かめる
-                </span>
-                <span className="mt-1 block text-xs leading-5 text-slate-500">
-                  終了時に、声に出せた回数だけをまとめます。
-                </span>
-              </span>
-            </label>
           </div>
 
           <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
@@ -287,11 +270,7 @@ export function LessonPage() {
 
             {lesson.currentAction === 'pause' ? (
               <div className="mt-5 rounded-2xl bg-amber-50 px-4 py-4 text-sm font-bold text-amber-900" role="status">
-                {settings.lessonRecording ? (
-                  <span className="inline-flex items-center gap-2"><span aria-hidden="true">🎤</span> 声を聞いています</span>
-                ) : (
-                  '声に出してみましょう'
-                )}
+                声に出してみましょう
               </div>
             ) : null}
           </div>
@@ -334,30 +313,6 @@ export function LessonPage() {
               <p className="mt-1 text-xs font-bold text-slate-500">経過時間</p>
             </div>
           </div>
-          {settings.lessonRecording ? (
-            <p className="mt-5 rounded-2xl bg-teal-50 px-4 py-3 font-bold text-teal-900">
-              言えた {matchedCount}/{lesson.recallResults.length}
-            </p>
-          ) : null}
-          {settings.lessonRecording && lesson.promptAccuracy && lesson.promptAccuracy.total > 0 ? (
-            <div
-              className={`mt-3 rounded-2xl px-4 py-3 text-left ${
-                lesson.promptAccuracy.matched / lesson.promptAccuracy.total >= 0.8
-                  ? 'bg-emerald-50 text-emerald-900'
-                  : 'bg-amber-50 text-amber-900'
-              }`}
-            >
-              <p className="font-bold">
-                応用の合図 {lesson.promptAccuracy.matched}/{lesson.promptAccuracy.total}
-                （{Math.round((lesson.promptAccuracy.matched / lesson.promptAccuracy.total) * 100)}%）
-              </p>
-              <p className="mt-1 text-sm">
-                {lesson.promptAccuracy.matched / lesson.promptAccuracy.total >= 0.8
-                  ? '8 割を超えました。次の会話に進んで大丈夫です。'
-                  : 'Pimsleur の目安は 8 割です。明日この会話をもう一度やってから、次へ進みましょう。'}
-              </p>
-            </div>
-          ) : null}
           {lesson.mode === 'dialogue' && lesson.dialogue ? (
             <div className="mt-7 text-left">
               <h3 className="font-bold text-slate-900">会話全文</h3>

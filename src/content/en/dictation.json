@@ -1,62 +1,929 @@
 [
-  { "id": "en-001", "text": "I want to go to the station.", "focus": ["want to は wanna のように聞こえる", "to の弱形 tə"] },
-  { "id": "en-002", "text": "Do you have water?", "focus": ["do you は dya のように短くなる"] },
-  { "id": "en-003", "text": "I'm going to eat now.", "focus": ["going to は gonna のように聞こえる", "I'm の短縮"] },
-  { "id": "en-004", "text": "Did you see my phone?", "focus": ["did you は didja のように聞こえる"] },
-  { "id": "en-005", "text": "What are you doing today?", "focus": ["what are you は whaddaya のように聞こえる"] },
-  { "id": "en-006", "text": "Can I have a little water?", "focus": ["can の弱形 kən", "have a がつながる"] },
-  { "id": "en-007", "text": "I don't know.", "focus": ["don't know は dunno のように聞こえる"] },
-  { "id": "en-008", "text": "This coffee is too hot.", "focus": ["is too がつながる"] },
-  { "id": "en-009", "text": "I like it a lot.", "focus": ["like it a がひとつながりに聞こえる", "t が弱くなる"] },
-  { "id": "en-010", "text": "Wait a moment, please.", "focus": ["wait a の t が d のように聞こえる(フラップ)"] },
-  { "id": "en-011", "text": "I want it now.", "focus": ["want it の t がつながる", "now が強く残る"] },
-  { "id": "en-012", "text": "Is it expensive?", "focus": ["is it が izit のように聞こえる"] },
-  { "id": "en-013", "text": "I have a ticket for tomorrow.", "focus": ["have a がつながる", "for の弱形 fər"] },
-  { "id": "en-014", "text": "Come here and see this.", "focus": ["and の弱形 n", "here and がつながる"] },
-  { "id": "en-015", "text": "I'm a little cold.", "focus": ["I'm a がつながる", "little の t がフラップ"] },
-  { "id": "en-016", "text": "Give me one more, please.", "focus": ["give me が gimme のように聞こえる"] },
-  { "id": "en-017", "text": "I go out with my friend.", "focus": ["go out の母音がつながる", "with my の th"] },
-  { "id": "en-018", "text": "Where is the toilet?", "focus": ["where is が where's のように短くなる"] },
-  { "id": "en-019", "text": "I get up at seven.", "focus": ["get up の t がつながって gedup のように聞こえる"] },
-  { "id": "en-020", "text": "It's not that expensive.", "focus": ["it's not の t が弱い", "that の弱形"] },
-  { "id": "en-021", "text": "I want to buy a new phone.", "focus": ["want to は wanna", "buy a がつながる"] },
-  { "id": "en-022", "text": "Do you like it here?", "focus": ["do you の弱形", "like it がつながる"] },
-  { "id": "en-023", "text": "I can't see it.", "focus": ["can't は t が消えて母音で区別する"] },
-  { "id": "en-024", "text": "I think it's good.", "focus": ["think it's がつながる", "it's の s"] },
-  { "id": "en-025", "text": "Come back tomorrow, please.", "focus": ["back tomorrow で k が飲み込まれる"] },
-  { "id": "en-026", "text": "What time is it now?", "focus": ["time is it がひとつながり", "what の t が弱い"] },
-  { "id": "en-027", "text": "I'm looking for the station.", "focus": ["looking for の for が弱形", "the の弱形"] },
-  { "id": "en-028", "text": "Turn off the phone, please.", "focus": ["turn off の n と o がつながる"] },
-  { "id": "en-029", "text": "I already have one.", "focus": ["have one がつながる", "already の d が弱い"] },
-  { "id": "en-030", "text": "I really like this room.", "focus": ["really like の l がつながる"] },
-  { "id": "en-031", "text": "Do you want coffee or water?", "focus": ["or の弱形 ər", "coffee or がつながる"] },
-  { "id": "en-032", "text": "Put it on the table.", "focus": ["put it on が pudidon のように聞こえる"] },
-  { "id": "en-033", "text": "I'm not sure about that.", "focus": ["not sure の t が消える", "about that がつながる"] },
-  { "id": "en-034", "text": "Pick up the ticket at the station.", "focus": ["pick up がつながる", "at the の t が弱い"] },
-  { "id": "en-035", "text": "I have to go now.", "focus": ["have to は hafta のように聞こえる"] },
-  { "id": "en-036", "text": "It's a little too big for me.", "focus": ["it's a がつながる", "for me の弱形"] },
-  { "id": "en-037", "text": "Can you say that again?", "focus": ["can you が kənyə のように聞こえる", "that again がつながる"] },
-  { "id": "en-038", "text": "I don't have money today.", "focus": ["don't have の t が消える"] },
-  { "id": "en-039", "text": "Is this yours?", "focus": ["is this の s と th", "yours の語尾"] },
-  { "id": "en-040", "text": "I want to see you again.", "focus": ["want to は wanna", "see you がつながる"] },
-  { "id": "en-041", "text": "Let's eat here.", "focus": ["let's eat の ts がつながる"] },
-  { "id": "en-042", "text": "It was really delicious.", "focus": ["it was の t が弱い", "was の弱形 wəz"] },
-  { "id": "en-043", "text": "Wake up, it's already ten.", "focus": ["wake up がつながる", "it's already がつながる"] },
-  { "id": "en-044", "text": "I know that place.", "focus": ["know that の t が弱い"] },
-  { "id": "en-045", "text": "Do you know where it is?", "focus": ["where it is がひとつながり"] },
-  { "id": "en-046", "text": "Take off your coat.", "focus": ["take off がつながる", "your の弱形 yər"] },
-  { "id": "en-047", "text": "I want a big one.", "focus": ["want a が wanna に聞こえる(want to と同じ音)"] },
-  { "id": "en-048", "text": "Maybe I'll come tomorrow.", "focus": ["I'll の l が短い", "come tomorrow の m"] },
-  { "id": "en-049", "text": "It's cheap but good.", "focus": ["but good で t が飲み込まれる"] },
-  { "id": "en-050", "text": "I always drink coffee before that.", "focus": ["drink coffee の k が重なる", "before that の th"] },
-  { "id": "en-051", "text": "Sorry, I didn't see it.", "focus": ["didn't の t が消える", "see it がつながる"] },
-  { "id": "en-052", "text": "Can we go now?", "focus": ["can we の弱形", "go now の母音"] },
-  { "id": "en-053", "text": "There is a cafe over there.", "focus": ["there is a がひとつながり", "over there の r"] },
-  { "id": "en-054", "text": "I'm still a little hot.", "focus": ["still a がつながる", "little のフラップ"] },
-  { "id": "en-055", "text": "Do you want to come with us?", "focus": ["want to は wanna", "with us がつながる"] },
-  { "id": "en-056", "text": "What do you want?", "focus": ["what do you が whaddaya のように聞こえる"] },
-  { "id": "en-057", "text": "I got it, thank you.", "focus": ["got it が godit のように聞こえる"] },
-  { "id": "en-058", "text": "It's too cold today.", "focus": ["too cold の t と k", "today の t が弱い"] },
-  { "id": "en-059", "text": "Turn on the light, please.", "focus": ["turn on がつながる", "the の弱形"] },
-  { "id": "en-060", "text": "I'm looking for a cheap room.", "focus": ["for a が fəra のように聞こえる"] }
+  {
+    "id": "en-001",
+    "text": "I want to go to the station.",
+    "focus": [
+      "want to は wanna のように聞こえる",
+      "to の弱形 tə"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "want to"
+      },
+      {
+        "id": "weak-form",
+        "span": "to the"
+      }
+    ]
+  },
+  {
+    "id": "en-002",
+    "text": "Do you have water?",
+    "focus": [
+      "do you は dya のように短くなる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "Do you"
+      }
+    ]
+  },
+  {
+    "id": "en-003",
+    "text": "I'm going to eat now.",
+    "focus": [
+      "going to は gonna のように聞こえる",
+      "I'm の短縮"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "going to"
+      },
+      {
+        "id": "contraction",
+        "span": "I'm"
+      }
+    ]
+  },
+  {
+    "id": "en-004",
+    "text": "Did you see my phone?",
+    "focus": [
+      "did you は didja のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "assimilation",
+        "span": "Did you"
+      }
+    ]
+  },
+  {
+    "id": "en-005",
+    "text": "What are you doing today?",
+    "focus": [
+      "what are you は whaddaya のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "What are you"
+      }
+    ]
+  },
+  {
+    "id": "en-006",
+    "text": "Can I have a little water?",
+    "focus": [
+      "can の弱形 kən",
+      "have a がつながる"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "Can I"
+      },
+      {
+        "id": "linking",
+        "span": "have a"
+      }
+    ]
+  },
+  {
+    "id": "en-007",
+    "text": "I don't know.",
+    "focus": [
+      "don't know は dunno のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "don't know"
+      }
+    ]
+  },
+  {
+    "id": "en-008",
+    "text": "This coffee is too hot.",
+    "focus": [
+      "is too がつながる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "is too"
+      }
+    ]
+  },
+  {
+    "id": "en-009",
+    "text": "I like it a lot.",
+    "focus": [
+      "like it a がひとつながりに聞こえる",
+      "t が弱くなる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "like it a"
+      },
+      {
+        "id": "flap",
+        "span": "it a"
+      }
+    ]
+  },
+  {
+    "id": "en-010",
+    "text": "Wait a moment, please.",
+    "focus": [
+      "wait a の t が d のように聞こえる(フラップ)"
+    ],
+    "features": [
+      {
+        "id": "flap",
+        "span": "Wait a"
+      }
+    ]
+  },
+  {
+    "id": "en-011",
+    "text": "I want it now.",
+    "focus": [
+      "want it の t がつながる",
+      "now が強く残る"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "want it"
+      }
+    ]
+  },
+  {
+    "id": "en-012",
+    "text": "Is it expensive?",
+    "focus": [
+      "is it が izit のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Is it"
+      }
+    ]
+  },
+  {
+    "id": "en-013",
+    "text": "I have a ticket for tomorrow.",
+    "focus": [
+      "have a がつながる",
+      "for の弱形 fər"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "have a"
+      },
+      {
+        "id": "weak-form",
+        "span": "for"
+      }
+    ]
+  },
+  {
+    "id": "en-014",
+    "text": "Come here and see this.",
+    "focus": [
+      "and の弱形 n",
+      "here and がつながる"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "and"
+      },
+      {
+        "id": "linking",
+        "span": "here and"
+      }
+    ]
+  },
+  {
+    "id": "en-015",
+    "text": "I'm a little cold.",
+    "focus": [
+      "I'm a がつながる",
+      "little の t がフラップ"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "I'm a"
+      },
+      {
+        "id": "flap",
+        "span": "little"
+      }
+    ]
+  },
+  {
+    "id": "en-016",
+    "text": "Give me one more, please.",
+    "focus": [
+      "give me が gimme のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "Give me"
+      }
+    ]
+  },
+  {
+    "id": "en-017",
+    "text": "I go out with my friend.",
+    "focus": [
+      "go out の母音がつながる",
+      "with my の th"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "go out"
+      }
+    ]
+  },
+  {
+    "id": "en-018",
+    "text": "Where is the toilet?",
+    "focus": [
+      "where is が where's のように短くなる"
+    ],
+    "features": [
+      {
+        "id": "contraction",
+        "span": "Where is"
+      }
+    ]
+  },
+  {
+    "id": "en-019",
+    "text": "I get up at seven.",
+    "focus": [
+      "get up の t がつながって gedup のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "flap",
+        "span": "get up"
+      },
+      {
+        "id": "linking",
+        "span": "get up"
+      }
+    ]
+  },
+  {
+    "id": "en-020",
+    "text": "It's not that expensive.",
+    "focus": [
+      "it's not の t が弱い",
+      "that の弱形"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "It's not"
+      },
+      {
+        "id": "weak-form",
+        "span": "that"
+      }
+    ]
+  },
+  {
+    "id": "en-021",
+    "text": "I want to buy a new phone.",
+    "focus": [
+      "want to は wanna",
+      "buy a がつながる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "want to"
+      },
+      {
+        "id": "linking",
+        "span": "buy a"
+      }
+    ]
+  },
+  {
+    "id": "en-022",
+    "text": "Do you like it here?",
+    "focus": [
+      "do you の弱形",
+      "like it がつながる"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "Do you"
+      },
+      {
+        "id": "linking",
+        "span": "like it"
+      }
+    ]
+  },
+  {
+    "id": "en-023",
+    "text": "I can't see it.",
+    "focus": [
+      "can't は t が消えて母音で区別する"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "can't"
+      }
+    ]
+  },
+  {
+    "id": "en-024",
+    "text": "I think it's good.",
+    "focus": [
+      "think it's がつながる",
+      "it's の s"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "think it's"
+      }
+    ]
+  },
+  {
+    "id": "en-025",
+    "text": "Come back tomorrow, please.",
+    "focus": [
+      "back tomorrow で k が飲み込まれる"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "back tomorrow"
+      }
+    ]
+  },
+  {
+    "id": "en-026",
+    "text": "What time is it now?",
+    "focus": [
+      "time is it がひとつながり",
+      "what の t が弱い"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "time is it"
+      },
+      {
+        "id": "elision",
+        "span": "What"
+      }
+    ]
+  },
+  {
+    "id": "en-027",
+    "text": "I'm looking for the station.",
+    "focus": [
+      "looking for の for が弱形",
+      "the の弱形"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "for the"
+      }
+    ]
+  },
+  {
+    "id": "en-028",
+    "text": "Turn off the phone, please.",
+    "focus": [
+      "turn off の n と o がつながる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Turn off"
+      }
+    ]
+  },
+  {
+    "id": "en-029",
+    "text": "I already have one.",
+    "focus": [
+      "have one がつながる",
+      "already の d が弱い"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "have one"
+      },
+      {
+        "id": "elision",
+        "span": "already"
+      }
+    ]
+  },
+  {
+    "id": "en-030",
+    "text": "I really like this room.",
+    "focus": [
+      "really like の l がつながる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "really like"
+      }
+    ]
+  },
+  {
+    "id": "en-031",
+    "text": "Do you want coffee or water?",
+    "focus": [
+      "or の弱形 ər",
+      "coffee or がつながる"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "or"
+      },
+      {
+        "id": "linking",
+        "span": "coffee or"
+      }
+    ]
+  },
+  {
+    "id": "en-032",
+    "text": "Put it on the table.",
+    "focus": [
+      "put it on が pudidon のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "flap",
+        "span": "Put it on"
+      },
+      {
+        "id": "linking",
+        "span": "it on"
+      }
+    ]
+  },
+  {
+    "id": "en-033",
+    "text": "I'm not sure about that.",
+    "focus": [
+      "not sure の t が消える",
+      "about that がつながる"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "not sure"
+      },
+      {
+        "id": "linking",
+        "span": "about that"
+      }
+    ]
+  },
+  {
+    "id": "en-034",
+    "text": "Pick up the ticket at the station.",
+    "focus": [
+      "pick up がつながる",
+      "at the の t が弱い"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Pick up"
+      },
+      {
+        "id": "weak-form",
+        "span": "at the"
+      }
+    ]
+  },
+  {
+    "id": "en-035",
+    "text": "I have to go now.",
+    "focus": [
+      "have to は hafta のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "have to"
+      }
+    ]
+  },
+  {
+    "id": "en-036",
+    "text": "It's a little too big for me.",
+    "focus": [
+      "it's a がつながる",
+      "for me の弱形"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "It's a"
+      },
+      {
+        "id": "weak-form",
+        "span": "for me"
+      }
+    ]
+  },
+  {
+    "id": "en-037",
+    "text": "Can you say that again?",
+    "focus": [
+      "can you が kənyə のように聞こえる",
+      "that again がつながる"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "Can you"
+      },
+      {
+        "id": "linking",
+        "span": "that again"
+      }
+    ]
+  },
+  {
+    "id": "en-038",
+    "text": "I don't have money today.",
+    "focus": [
+      "don't have の t が消える"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "don't have"
+      }
+    ]
+  },
+  {
+    "id": "en-039",
+    "text": "Is this yours?",
+    "focus": [
+      "is this の s と th",
+      "yours の語尾"
+    ],
+    "features": [
+      {
+        "id": "assimilation",
+        "span": "Is this"
+      }
+    ]
+  },
+  {
+    "id": "en-040",
+    "text": "I want to see you again.",
+    "focus": [
+      "want to は wanna",
+      "see you がつながる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "want to"
+      },
+      {
+        "id": "linking",
+        "span": "see you"
+      }
+    ]
+  },
+  {
+    "id": "en-041",
+    "text": "Let's eat here.",
+    "focus": [
+      "let's eat の ts がつながる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Let's eat"
+      }
+    ]
+  },
+  {
+    "id": "en-042",
+    "text": "It was really delicious.",
+    "focus": [
+      "it was の t が弱い",
+      "was の弱形 wəz"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "was"
+      },
+      {
+        "id": "elision",
+        "span": "It was"
+      }
+    ]
+  },
+  {
+    "id": "en-043",
+    "text": "Wake up, it's already ten.",
+    "focus": [
+      "wake up がつながる",
+      "it's already がつながる"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Wake up"
+      },
+      {
+        "id": "linking",
+        "span": "it's already"
+      }
+    ]
+  },
+  {
+    "id": "en-044",
+    "text": "I know that place.",
+    "focus": [
+      "know that の t が弱い"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "know that"
+      }
+    ]
+  },
+  {
+    "id": "en-045",
+    "text": "Do you know where it is?",
+    "focus": [
+      "where it is がひとつながり"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "where it is"
+      }
+    ]
+  },
+  {
+    "id": "en-046",
+    "text": "Take off your coat.",
+    "focus": [
+      "take off がつながる",
+      "your の弱形 yər"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Take off"
+      },
+      {
+        "id": "weak-form",
+        "span": "your"
+      }
+    ]
+  },
+  {
+    "id": "en-047",
+    "text": "I want a big one.",
+    "focus": [
+      "want a が wanna に聞こえる(want to と同じ音)"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "want a"
+      }
+    ]
+  },
+  {
+    "id": "en-048",
+    "text": "Maybe I'll come tomorrow.",
+    "focus": [
+      "I'll の l が短い",
+      "come tomorrow の m"
+    ],
+    "features": [
+      {
+        "id": "contraction",
+        "span": "I'll"
+      }
+    ]
+  },
+  {
+    "id": "en-049",
+    "text": "It's cheap but good.",
+    "focus": [
+      "but good で t が飲み込まれる"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "but good"
+      }
+    ]
+  },
+  {
+    "id": "en-050",
+    "text": "I always drink coffee before that.",
+    "focus": [
+      "drink coffee の k が重なる",
+      "before that の th"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "drink coffee"
+      }
+    ]
+  },
+  {
+    "id": "en-051",
+    "text": "Sorry, I didn't see it.",
+    "focus": [
+      "didn't の t が消える",
+      "see it がつながる"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "didn't"
+      },
+      {
+        "id": "linking",
+        "span": "see it"
+      }
+    ]
+  },
+  {
+    "id": "en-052",
+    "text": "Can we go now?",
+    "focus": [
+      "can we の弱形",
+      "go now の母音"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "Can we"
+      }
+    ]
+  },
+  {
+    "id": "en-053",
+    "text": "There is a cafe over there.",
+    "focus": [
+      "there is a がひとつながり",
+      "over there の r"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "There is a"
+      }
+    ]
+  },
+  {
+    "id": "en-054",
+    "text": "I'm still a little hot.",
+    "focus": [
+      "still a がつながる",
+      "little のフラップ"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "still a"
+      },
+      {
+        "id": "flap",
+        "span": "little"
+      }
+    ]
+  },
+  {
+    "id": "en-055",
+    "text": "Do you want to come with us?",
+    "focus": [
+      "want to は wanna",
+      "with us がつながる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "want to"
+      },
+      {
+        "id": "linking",
+        "span": "with us"
+      }
+    ]
+  },
+  {
+    "id": "en-056",
+    "text": "What do you want?",
+    "focus": [
+      "what do you が whaddaya のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "reduction",
+        "span": "What do you"
+      }
+    ]
+  },
+  {
+    "id": "en-057",
+    "text": "I got it, thank you.",
+    "focus": [
+      "got it が godit のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "flap",
+        "span": "got it"
+      }
+    ]
+  },
+  {
+    "id": "en-058",
+    "text": "It's too cold today.",
+    "focus": [
+      "too cold の t と k",
+      "today の t が弱い"
+    ],
+    "features": [
+      {
+        "id": "elision",
+        "span": "too cold"
+      }
+    ]
+  },
+  {
+    "id": "en-059",
+    "text": "Turn on the light, please.",
+    "focus": [
+      "turn on がつながる",
+      "the の弱形"
+    ],
+    "features": [
+      {
+        "id": "linking",
+        "span": "Turn on"
+      },
+      {
+        "id": "weak-form",
+        "span": "the"
+      }
+    ]
+  },
+  {
+    "id": "en-060",
+    "text": "I'm looking for a cheap room.",
+    "focus": [
+      "for a が fəra のように聞こえる"
+    ],
+    "features": [
+      {
+        "id": "weak-form",
+        "span": "for a"
+      },
+      {
+        "id": "linking",
+        "span": "for a"
+      }
+    ]
+  }
 ]

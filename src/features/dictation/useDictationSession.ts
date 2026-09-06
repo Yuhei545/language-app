@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { loadDictation, type DictationSentence } from '../../content/dictationSchema'
-import { transcribeAudio } from '../../services/gemini/transcribe'
-import {
-  createSpeechInput,
-  speak,
-  unlockAudio,
-  type SpeechInput,
-} from '../../services/speech'
+import { speak, unlockAudio } from '../../services/speech'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import {
@@ -39,13 +33,9 @@ export function useDictationSession(lang: 'en' | 'ko') {
   const [ratios, setRatios] = useState<number[]>([])
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDictating, setIsDictating] = useState(false)
-  const [isTranscribing, setIsTranscribing] = useState(false)
-  const [sttEngine, setSttEngine] = useState<'webspeech' | 'gemini' | null>(null)
   const [error, setError] = useState<unknown>(null)
   const userIdRef = useRef<string | null>(null)
   const progressRef = useRef(new Map<string, DictationProgressRow>())
-  const inputRef = useRef<SpeechInput | null>(null)
 
   const currentSentence = sentences[currentIndex] ?? null
 
@@ -60,8 +50,6 @@ export function useDictationSession(lang: 'en' | 'ko') {
 
   useEffect(() => {
     let active = true
-    inputRef.current?.cancel()
-    inputRef.current = null
     userIdRef.current = null
     progressRef.current = new Map()
     playsRemainingRef.current = MAX_INITIAL_PLAYS
@@ -74,9 +62,6 @@ export function useDictationSession(lang: 'en' | 'ko') {
     setRatios([])
     setIsSpeaking(false)
     setIsSubmitting(false)
-    setIsDictating(false)
-    setIsTranscribing(false)
-    setSttEngine(null)
     setError(null)
 
     const load = async () => {
@@ -110,8 +95,6 @@ export function useDictationSession(lang: 'en' | 'ko') {
     void load()
     return () => {
       active = false
-      inputRef.current?.cancel()
-      inputRef.current = null
     }
   }, [captureError, lang])
 
@@ -119,8 +102,6 @@ export function useDictationSession(lang: 'en' | 'ko') {
     if (
       !currentSentence
       || isSpeaking
-      || isDictating
-      || isTranscribing
       || (status !== 'listening' && status !== 'typing' && status !== 'result')
     ) {
       return
@@ -150,7 +131,7 @@ export function useDictationSession(lang: 'en' | 'ko') {
     } finally {
       setIsSpeaking(false)
     }
-  }, [captureError, currentSentence, isDictating, isSpeaking, isTranscribing, lang, status])
+  }, [captureError, currentSentence, isSpeaking, lang, status])
 
   const beginTyping = useCallback(() => {
     if (status !== 'listening') {
@@ -197,53 +178,6 @@ export function useDictationSession(lang: 'en' | 'ko') {
     }
   }, [captureError, currentSentence, isSubmitting, lang, status])
 
-  const startDictating = useCallback(async () => {
-    if (status !== 'typing' || inputRef.current || isSpeaking || isTranscribing) {
-      return
-    }
-
-    setError(null)
-    setIsDictating(true)
-    try {
-      unlockAudio()
-      const input = createSpeechInput({
-        lang,
-        engine: settingsRef.current.sttEngine,
-        transcribe: transcribeAudio,
-      })
-      inputRef.current = input
-      setSttEngine(input.engine)
-      await input.start()
-    } catch (recordingError) {
-      inputRef.current?.cancel()
-      inputRef.current = null
-      setIsDictating(false)
-      captureError(recordingError)
-    }
-  }, [captureError, isSpeaking, isTranscribing, lang, status])
-
-  const stopDictating = useCallback(async () => {
-    const input = inputRef.current
-    if (!input || status !== 'typing' || !isDictating) {
-      return
-    }
-
-    setIsDictating(false)
-    setIsTranscribing(true)
-    try {
-      const transcription = await input.stop()
-      inputRef.current = null
-      setSttEngine(transcription.engine)
-      setTypedText(transcription.text.trim())
-    } catch (recordingError) {
-      inputRef.current?.cancel()
-      inputRef.current = null
-      captureError(recordingError)
-    } finally {
-      setIsTranscribing(false)
-    }
-  }, [captureError, isDictating, status])
-
   const next = useCallback(() => {
     if (status !== 'result' || isSpeaking) {
       return
@@ -259,7 +193,6 @@ export function useDictationSession(lang: 'en' | 'ko') {
     setPlaysRemaining(MAX_INITIAL_PLAYS)
     setTypedText('')
     setResult(null)
-    setSttEngine(null)
     setStatus('listening')
   }, [currentIndex, isSpeaking, sentences.length, status])
 
@@ -280,16 +213,11 @@ export function useDictationSession(lang: 'en' | 'ko') {
     averageRatio,
     isSpeaking,
     isSubmitting,
-    isDictating,
-    isTranscribing,
-    sttEngine,
     error,
     play,
     beginTyping,
     setTypedText,
     submit,
-    startDictating,
-    stopDictating,
     next,
     clearError: () => setError(null),
   }

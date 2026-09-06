@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 const practices = [
   {
     title: '声で覚えるカード',
-    description: '絵と音を結びつけて、声に出して覚えます。',
+    description: '絵と音を結びつけ、音読して自分で判定します。',
     to: '/cards',
     emoji: '🗣️',
   },

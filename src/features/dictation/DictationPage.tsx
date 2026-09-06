@@ -4,16 +4,6 @@ import { Toast } from '../../components/Toast'
 import type { DiffToken } from './diff'
 import { useDictationSession } from './useDictationSession'
 
-function engineLabel(engine: 'webspeech' | 'gemini' | null): string {
-  if (engine === 'webspeech') {
-    return 'Web Speech'
-  }
-  if (engine === 'gemini') {
-    return 'Gemini'
-  }
-  return '開始後に表示'
-}
-
 function Token({ token }: { token: DiffToken }) {
   if (token.kind === 'match') {
     return <span className="leading-10 text-slate-900">{token.text}</span>
@@ -47,16 +37,9 @@ export function DictationPage() {
       <Toast error={session.error} onClose={session.clearError} />
 
       <p className="text-sm font-bold text-sky-700">LISTEN &amp; WRITE</p>
-      <div className="mt-2 flex items-end justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          聞いて書く {displayNumber}/{session.totalSentences || 5}
-        </h1>
-        {session.status !== 'loading' && session.status !== 'finished' ? (
-          <p className="text-xs font-bold text-slate-500">
-            音声入力: {engineLabel(session.sttEngine)}
-          </p>
-        ) : null}
-      </div>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+        聞いて書く {displayNumber}/{session.totalSentences || 5}
+      </h1>
       <div
         className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200"
         role="progressbar"
@@ -133,38 +116,19 @@ export function DictationPage() {
                 className="mt-3 w-full resize-none rounded-2xl border border-slate-300 px-4 py-3 text-base leading-7 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
               />
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => void (
-                    session.isDictating
-                      ? session.stopDictating()
-                      : session.startDictating()
-                  )}
-                  disabled={session.isTranscribing || session.isSpeaking}
-                  aria-pressed={session.isDictating}
-                  className={`rounded-2xl px-3 py-3 text-sm font-bold text-white disabled:opacity-45 ${session.isDictating ? 'bg-amber-500' : 'bg-sky-700'}`}
-                >
-                  {session.isDictating
-                    ? '■ 録音を止める'
-                    : session.isTranscribing
-                      ? '文字にしています…'
-                      : '🎤 声で入力'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void session.play(1)}
-                  disabled={session.playsRemaining === 0 || session.isSpeaking || session.isDictating || session.isTranscribing}
-                  className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-bold text-sky-900 disabled:opacity-45"
-                >
-                  🔊 もう一度（あと {session.playsRemaining} 回）
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => void session.play(1)}
+                disabled={session.playsRemaining === 0 || session.isSpeaking}
+                className="mt-4 w-full rounded-2xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-bold text-sky-900 disabled:opacity-45"
+              >
+                🔊 もう一度（あと {session.playsRemaining} 回）
+              </button>
 
               <button
                 type="button"
                 onClick={() => void session.submit(session.typedText)}
-                disabled={session.isSubmitting || session.isDictating || session.isTranscribing}
+                disabled={session.isSubmitting}
                 className="mt-4 w-full rounded-2xl bg-slate-900 px-5 py-4 font-bold text-white disabled:opacity-45"
               >
                 {session.isSubmitting ? '保存しています…' : '答え合わせ'}

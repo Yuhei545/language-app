@@ -4,11 +4,7 @@ import { QuickPage } from './QuickPage'
 
 const useQuickSession = vi.hoisted(() => vi.fn())
 
-vi.mock('./useQuickSession', () => ({
-  useQuickSession,
-  QUICK_ROUNDS: 3,
-  QUICK_TARGET_SECONDS: [3, 2, 1.5],
-}))
+vi.mock('./useQuickSession', () => ({ useQuickSession, QUICK_ROUNDS: 3 }))
 
 const questions = [
   { q: 'Where are you going this weekend?', ja: '今週末はどこへ行きますか?' },
@@ -18,7 +14,6 @@ const questions = [
 function session(overrides: Record<string, unknown> = {}) {
   return {
     phase: 'cue',
-    checkMode: 'record',
     questions,
     current: questions[0],
     roundIndex: 0,
@@ -28,7 +23,6 @@ function session(overrides: Record<string, unknown> = {}) {
     error: null,
     start: vi.fn(),
     answered: vi.fn(),
-    stopRecording: vi.fn(),
     stop: vi.fn(),
     clearError: vi.fn(),
     ...overrides,
@@ -53,59 +47,25 @@ describe('QuickPage', () => {
     expect(screen.queryByText(/目標 3秒/)).not.toBeNull()
   })
 
-  it('自分で判定: 質問のあとに「答えた」ボタンを出し、まとめは速さだけ', () => {
-    useQuickSession.mockReturnValue(session({ phase: 'answering', checkMode: 'self' }))
-    const { unmount } = render(<QuickPage lang="en" />)
+  it('質問のあとは「答えた」ボタンを出す(録音はしない)', () => {
+    useQuickSession.mockReturnValue(session({ phase: 'answering' }))
+
+    render(<QuickPage lang="en" />)
 
     expect(screen.queryByRole('button', { name: '答えた' })).not.toBeNull()
-    unmount()
-
-    useQuickSession.mockReturnValue(session({
-      phase: 'finished',
-      checkMode: 'self',
-      current: null,
-      summary: { roundLatencyMs: [2400, 1800, 1300], understood: 0, total: 0, judgments: [], answers: [] },
-    }))
-    render(<QuickPage lang="en" />)
-
-    expect(screen.queryByText('2.4秒 → 1.8秒 → 1.3秒')).not.toBeNull()
-    expect(screen.queryByText(/速さだけを記録します/)).not.toBeNull()
-    expect(screen.queryByText(/伝わった/)).toBeNull()
+    expect(screen.queryByText(/録音/)).toBeNull()
   })
 
-  it('録音中は答え終わったボタンを出す', () => {
-    useQuickSession.mockReturnValue(session({ phase: 'recording' }))
-
-    render(<QuickPage lang="en" />)
-
-    expect(screen.queryByRole('button', { name: '■ 答え終わった' })).not.toBeNull()
-  })
-
-  it('まとめに周ごとの応答時間と、より自然な言い方を出す', () => {
+  it('まとめは周ごとの応答時間を出す', () => {
     useQuickSession.mockReturnValue(session({
       phase: 'finished',
       current: null,
-      summary: {
-        roundLatencyMs: [2400, 1800, 1300],
-        understood: 5,
-        total: 6,
-        judgments: [
-          { understood: true, better: 'I am going to the station.' },
-          { understood: true, better: '' },
-        ],
-        answers: [
-          { round: 0, index: 0, heardText: 'I go station', latencyMs: 2400 },
-          { round: 0, index: 1, heardText: 'Bread and coffee', latencyMs: 1800 },
-        ],
-      },
+      summary: { roundLatencyMs: [2400, 1800, 1300], answers: [] },
     }))
 
     render(<QuickPage lang="en" />)
 
-    expect(screen.queryByText('3 周終わりました')).not.toBeNull()
     expect(screen.queryByText('2.4秒 → 1.8秒 → 1.3秒')).not.toBeNull()
-    expect(screen.queryByText('伝わった 5/6')).not.toBeNull()
-    expect(screen.queryByText(/I am going to the station/)).not.toBeNull()
-    expect(screen.queryByText(/間違|不正解/)).toBeNull()
+    expect(screen.queryByText(/口が慣れてきた印/)).not.toBeNull()
   })
 })

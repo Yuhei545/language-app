@@ -5,14 +5,9 @@ import { usePatternSession } from './usePatternSession'
 
 const LEVELS: MixingLevel[] = [1, 2, 3]
 
-function seconds(milliseconds: number | null): string {
-  return milliseconds === null ? '—' : `${(milliseconds / 1000).toFixed(1)}秒`
-}
-
 export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
   const session = usePatternSession(lang)
-  const { phase, currentItem, summary, checkMode } = session
-  const selfCheck = checkMode === 'self'
+  const { phase, currentItem, summary } = session
 
   const say = (text: string) => {
     const settings = getSettings()
@@ -45,30 +40,6 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2" role="group" aria-label="確かめ方">
-        <button
-          type="button"
-          aria-pressed={selfCheck}
-          onClick={() => session.setCheckMode('self')}
-          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${selfCheck ? 'bg-violet-700 text-white' : 'bg-white text-slate-600'}`}
-        >
-          👆 自分で判定
-        </button>
-        <button
-          type="button"
-          aria-pressed={!selfCheck}
-          onClick={() => session.setCheckMode('record')}
-          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${!selfCheck ? 'bg-violet-700 text-white' : 'bg-white text-slate-600'}`}
-        >
-          🎙 録音で確かめる
-        </button>
-        <span className="text-[11px] text-slate-500">
-          {selfCheck
-            ? 'Gemini は使いません'
-            : session.webSpeechAvailable ? 'ブラウザの音声認識' : 'この端末では Gemini を使います'}
-        </span>
-      </div>
-
       {phase === 'loading' ? (
         <p className="mt-7 rounded-2xl bg-white px-5 py-8 text-center text-sm font-bold text-slate-500" role="status">
           成績を読み込んでいます…
@@ -81,10 +52,7 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
           <h2 className="mt-5 text-xl font-bold text-slate-900">型を回す</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             型ごとに、意味と例文を先に見せます。そのあと日本語が出たら、すぐ声に出してください。
-            {selfCheck
-              ? ' 数秒後に答えが出るので、言えたかどうかを自分で押します。'
-              : ' 言い終わったらボタンを押すと、聞き取った文を答えと照らします。'}
-            3 つの型を 4 組ずつ、2 周します。
+            数秒後に答えが出るので、言えたかどうかを自分で押します。3 つの型を 4 組ずつ、2 周します。
           </p>
           <button
             type="button"
@@ -134,7 +102,7 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       ) : null}
 
-      {currentItem && (phase === 'starting' || phase === 'thinking' || phase === 'recording' || phase === 'checking' || phase === 'hint' || phase === 'model') ? (
+      {currentItem && (phase === 'thinking' || phase === 'model') ? (
         <div className="mt-7 rounded-3xl border border-violet-200 bg-gradient-to-b from-violet-50 to-white p-6 shadow-sm">
           <p className="text-center text-xs font-bold tracking-wider text-violet-700">こう伝えてください</p>
           <h2 className="mt-3 text-center text-2xl font-bold leading-9 text-slate-900">
@@ -151,29 +119,9 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
             </div>
           ) : null}
 
-          {session.hint && phase === 'hint' ? (
-            <p className="mt-5 rounded-2xl bg-sky-50 px-4 py-3 text-center font-bold text-sky-900">
-              💡 {session.hint.textJa}
-            </p>
-          ) : null}
-
           {phase === 'model' ? (
             <div className="mt-5 space-y-3">
-              {selfCheck ? (
-                <p className="text-center text-sm font-bold text-slate-600">声に出せましたか?</p>
-              ) : (
-                <p className={`text-center text-sm font-bold ${session.matched ? 'text-teal-700' : 'text-slate-600'}`}>
-                  {session.matched ? '言えました' : 'ひとつの言い方を見てみましょう'}
-                </p>
-              )}
-              {!selfCheck && session.heardText ? (
-                <div>
-                  <p className="text-[11px] font-bold tracking-wider text-slate-500">こう聞こえました</p>
-                  <p className="mt-1 rounded-2xl bg-white/70 px-4 py-3 font-bold text-slate-800">
-                    {session.heardText}
-                  </p>
-                </div>
-              ) : null}
+              <p className="text-center text-sm font-bold text-slate-600">声に出せましたか?</p>
               <div>
                 <p className="text-[11px] font-bold tracking-wider text-slate-500">答え</p>
                 <div className="mt-1 flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
@@ -205,12 +153,6 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       ) : null}
 
-      {phase === 'starting' ? (
-        <p className="mt-5 text-center text-sm font-bold text-slate-500" role="status">
-          録音の準備をしています…
-        </p>
-      ) : null}
-
       {phase === 'thinking' ? (
         <button
           type="button"
@@ -221,39 +163,7 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </button>
       ) : null}
 
-      {phase === 'recording' ? (
-        <div className="mt-5 text-center">
-          <button
-            type="button"
-            onClick={() => void session.stopRecording()}
-            className="flex min-h-16 w-full items-center justify-center rounded-2xl bg-amber-500 px-5 text-base font-bold text-white"
-          >
-            ■ 言い終わった
-          </button>
-          <p className="mt-2 text-[11px] text-slate-500">
-            聞いています。言い終えたらタップ
-            {session.sttEngine ? `（音声入力：${session.sttEngine === 'webspeech' ? 'ブラウザ' : 'Gemini'}）` : ''}
-          </p>
-        </div>
-      ) : null}
-
-      {phase === 'checking' ? (
-        <p className="mt-5 text-center text-sm font-bold text-slate-500" role="status">
-          確かめています…
-        </p>
-      ) : null}
-
-      {phase === 'hint' ? (
-        <button
-          type="button"
-          onClick={session.retry}
-          className="mt-5 w-full rounded-2xl bg-violet-700 px-5 py-4 font-bold text-white"
-        >
-          もう一度言う
-        </button>
-      ) : null}
-
-      {phase === 'model' && selfCheck ? (
+      {phase === 'model' ? (
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -272,16 +182,6 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       ) : null}
 
-      {phase === 'model' && !selfCheck ? (
-        <button
-          type="button"
-          onClick={session.next}
-          className="mt-5 w-full rounded-2xl bg-violet-700 px-5 py-4 font-bold text-white"
-        >
-          次へ
-        </button>
-      ) : null}
-
       {phase !== 'idle' && phase !== 'loading' && phase !== 'finished' ? (
         <button
           type="button"
@@ -296,21 +196,11 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         <div className="mt-7 rounded-3xl border border-violet-200 bg-white p-6 text-center shadow-sm">
           <p className="text-5xl" aria-hidden="true">⚡</p>
           <h2 className="mt-4 text-xl font-bold text-slate-900">2 周終わりました</h2>
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-2xl font-bold tabular-nums text-violet-900">
-                {summary.firstTry}/{summary.total}
-              </p>
-              <p className="mt-1 text-xs font-bold text-slate-500">{selfCheck ? '言えた' : '一度で言えた'}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-lg font-bold tabular-nums text-violet-900">
-                {selfCheck ? '—' : summary.roundLatencyMs.map((latency) => seconds(latency)).join(' → ')}
-              </p>
-              <p className="mt-1 text-xs font-bold text-slate-500">
-                {selfCheck ? '応答時間は録音のときだけ' : '言い出すまでの平均'}
-              </p>
-            </div>
+          <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+            <p className="text-2xl font-bold tabular-nums text-violet-900">
+              {summary.said}/{summary.total}
+            </p>
+            <p className="mt-1 text-xs font-bold text-slate-500">言えた</p>
           </div>
           {summary.nextLevel ? (
             <p className="mt-5 rounded-2xl bg-teal-50 px-4 py-3 font-bold text-teal-900">

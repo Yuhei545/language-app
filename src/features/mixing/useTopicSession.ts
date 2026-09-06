@@ -2,14 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadCore } from '../../content/coreSchema'
 import { loadTopics, type Topic } from '../../content/topicsSchema'
 import { checkTopicTurn, type TopicCheckResult } from '../../services/gemini/speaking'
-import { transcribeAudio } from '../../services/gemini/transcribe'
-import {
-  createSpeechInput,
-  speak,
-  stopSpeaking,
-  unlockAudio,
-  type SpeechInput,
-} from '../../services/speech'
+import { speak, stopSpeaking, unlockAudio } from '../../services/speech'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import { insertSpeakingSession } from '../../services/supabase/db'
@@ -17,7 +10,8 @@ import { fillTopic } from './personal'
 
 export type TopicPhase =
   | 'idle'
-  | 'recording'
+  /** お題(または相手の質問)に対して、声に出してから文を打ち込む。 */
+  | 'typing'
   | 'checking'
   | 'feedback'
   | 'finished'
@@ -26,7 +20,7 @@ export type TopicTurn = {
   /** 1 ターン目はお題、2 ターン目は相手の質問。 */
   promptJa: string
   prompt: string
-  heardText: string
+  learnerText: string
   result: TopicCheckResult
 }
 
@@ -47,7 +41,6 @@ export function useTopicSession(lang: 'en' | 'ko') {
   const [turns, setTurns] = useState<TopicTurn[]>([])
   const [error, setError] = useState<unknown>(null)
 
-  const inputRef = useRef<SpeechInput | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const generationRef = useRef(0)
   const mountedRef = useRef(true)
@@ -89,8 +82,6 @@ export function useTopicSession(lang: 'en' | 'ko') {
   const cancelActive = useCallback(() => {
     generationRef.current += 1
     stopSpeaking()
-    inputRef.current?.cancel()
-    inputRef.current = null
     abortRef.current?.abort()
     abortRef.current = null
   }, [])
@@ -112,8 +103,9 @@ export function useTopicSession(lang: 'en' | 'ko') {
     ? ''
     : turns[turns.length - 1].result.follow_up
 
-  const startRecording = useCallback(async () => {
-    if (phase !== 'idle' && phase !== 'feedback') {
+  /** お題を 1 つ選んで読み上げ、打ち込める状態にする。 */
+  const beginTopic = useCallback(async () => {
+    if (phase !== 'idle') {
       return
     }
     generationRef.current += 1
@@ -123,79 +115,55 @@ export function useTopicSession(lang: 'en' | 'ko') {
     try {
       unlockAudio()
       stopSpeaking()
-
-      let prompt = currentPromptJa
-      if (turns.length === 0) {
-        const core = loadCore(lang)
-        const topic = pickTopic(loadTopics(lang), settingsRef.current.mixingLevel)
-        const filled = fillTopic(topic, settingsRef.current.personalWords, core, lang)
-        prompt = filled.text
-        setTopicJa(filled.text)
-        await speak(filled.text, {
-          lang: 'ja',
-          rate: 1,
-          voiceURI: settingsRef.current.ttsVoiceJa ?? undefined,
-        })
-      }
-      if (generationRef.current !== generation || !mountedRef.current) {
-        return
-      }
-      if (!prompt) {
-        throw new Error('お題を用意できませんでした')
-      }
-
-      const input = createSpeechInput({
-        lang,
-        engine: settingsRef.current.sttEngine,
-        transcribe: transcribeAudio,
+      const core = loadCore(lang)
+      const topic = pickTopic(loadTopics(lang), settingsRef.current.mixingLevel)
+      const filled = fillTopic(topic, settingsRef.current.personalWords, core, lang)
+      setTopicJa(filled.text)
+      setPhase('typing')
+      await speak(filled.text, {
+        lang: 'ja',
+        rate: 1,
+        voiceURI: settingsRef.current.ttsVoiceJa ?? undefined,
       })
-      inputRef.current = input
-      await input.start()
-      if (generationRef.current !== generation || !mountedRef.current) {
-        input.cancel()
-        inputRef.current = null
-        return
-      }
-      setPhase('recording')
     } catch (startError) {
       if (generationRef.current === generation && mountedRef.current) {
-        inputRef.current?.cancel()
-        inputRef.current = null
         captureError(startError)
-        setPhase(turns.length === 0 ? 'idle' : 'feedback')
+        setPhase('idle')
       }
     }
-  }, [captureError, currentPromptJa, lang, phase, turns.length])
+  }, [captureError, lang, phase])
 
-  const stopRecording = useCallback(async () => {
-    const input = inputRef.current
-    if (!input || phase !== 'recording') {
+  /** 相手の質問に答える(打ち込みに戻る)。 */
+  const answerFollowUp = useCallback(() => {
+    if (phase !== 'feedback') {
+      return
+    }
+    stopSpeaking()
+    setPhase('typing')
+  }, [phase])
+
+  /** 打ち込んだ文を送り、伝わったかと続きの質問をもらう。 */
+  const submit = useCallback(async (text: string) => {
+    const learnerText = text.trim()
+    if (phase !== 'typing' || learnerText.length === 0) {
       return
     }
     generationRef.current += 1
     const generation = generationRef.current
     const controller = new AbortController()
     abortRef.current = controller
+    setError(null)
     setPhase('checking')
 
     try {
-      const spoken = (await input.stop()).text.trim()
-      inputRef.current = null
-      if (generationRef.current !== generation || !mountedRef.current) {
-        return
-      }
-      if (!spoken) {
-        throw new Error('音声を聞き取れませんでした。もう一度ゆっくり話してみてください')
-      }
-
       const previous = turns[turns.length - 1]
       const result = await checkTopicTurn({
         lang,
         personaName: settingsRef.current.parentName[lang],
         topicJa: topicJa ?? '',
-        learnerText: spoken,
+        learnerText,
         ...(previous
-          ? { previousTurn: { question: previous.result.follow_up, answer: previous.heardText } }
+          ? { previousTurn: { question: previous.result.follow_up, answer: previous.learnerText } }
           : {}),
       }, { signal: controller.signal })
       if (generationRef.current !== generation || !mountedRef.current) {
@@ -205,7 +173,7 @@ export function useTopicSession(lang: 'en' | 'ko') {
       const turn: TopicTurn = {
         promptJa: currentPromptJa ?? '',
         prompt: currentPrompt,
-        heardText: spoken,
+        learnerText,
         result,
       }
       const nextTurns = [...turns, turn]
@@ -226,6 +194,7 @@ export function useTopicSession(lang: 'en' | 'ko') {
           lang,
           rate: settingsRef.current.ttsRate,
           voiceURI: settingsRef.current.ttsVoice[lang],
+          speaker: 'B',
         })
       }
 
@@ -238,7 +207,7 @@ export function useTopicSession(lang: 'en' | 'ko') {
             rounds: nextTurns.map((item, index) => ({
               turn: index,
               prompt_ja: item.promptJa,
-              heard: item.heardText,
+              text: item.learnerText,
               understood: item.result.understood,
             })),
             understood_ratio: nextTurns.filter((item) => item.result.understood).length / nextTurns.length,
@@ -248,12 +217,10 @@ export function useTopicSession(lang: 'en' | 'ko') {
           captureError(saveError)
         }
       }
-    } catch (stopError) {
+    } catch (submitError) {
       if (generationRef.current === generation && mountedRef.current) {
-        inputRef.current?.cancel()
-        inputRef.current = null
-        captureError(stopError)
-        setPhase(turns.length === 0 ? 'idle' : 'feedback')
+        captureError(submitError)
+        setPhase('typing')
       }
     } finally {
       if (abortRef.current === controller) {
@@ -267,8 +234,8 @@ export function useTopicSession(lang: 'en' | 'ko') {
       return
     }
     cancelActive()
-    setPhase(turns.length === 0 ? 'idle' : 'feedback')
-  }, [cancelActive, phase, turns.length])
+    setPhase('typing')
+  }, [cancelActive, phase])
 
   const reset = useCallback(() => {
     cancelActive()
@@ -295,8 +262,9 @@ export function useTopicSession(lang: 'en' | 'ko') {
     turns,
     currentPromptJa,
     error,
-    startRecording,
-    stopRecording,
+    beginTopic,
+    answerFollowUp,
+    submit,
     cancelChecking,
     reset,
     speakText,

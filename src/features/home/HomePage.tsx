@@ -111,8 +111,8 @@ export function HomePage() {
         <p className="text-xs font-bold tracking-[0.16em] text-teal-100">LANGUAGE PARENT</p>
         <div className="mt-3 flex items-end justify-between gap-4">
           <div>
-            <p className="text-3xl font-bold">会話する</p>
-            <p className="mt-2 text-sm leading-6 text-teal-50/80">短いひとことから、今日の言葉を始めましょう。</p>
+            <p className="text-3xl font-bold">ChatGPT で会話</p>
+            <p className="mt-2 text-sm leading-6 text-teal-50/80">今週の語を入れたプロンプトをコピーして、音読しながら会話します。</p>
           </div>
           <span className="mb-1 text-3xl transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
         </div>
@@ -137,7 +137,7 @@ export function HomePage() {
             <span className={`grid size-7 place-items-center rounded-full text-sm font-bold ${data.conversationComplete ? 'bg-teal-600 text-white' : 'border-2 border-slate-300 text-transparent'}`}>
               {data.conversationComplete ? '✓' : '•'}
             </span>
-            <span className="flex-1 font-bold text-slate-700">会話</span>
+            <span className="flex-1 font-bold text-slate-700">ChatGPT で会話</span>
             <span className="text-sm font-bold text-slate-500">
               {data.conversationComplete ? '完了' : '1回'}
             </span>

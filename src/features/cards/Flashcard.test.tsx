@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { VocabItemRow } from '../../services/supabase/types'
 import { Flashcard } from './Flashcard'
@@ -23,21 +23,23 @@ const card: VocabItemRow = {
   created_at: '2026-09-05T00:00:00.000Z',
 }
 
-function renderFlashcard(isFirstEncounter: boolean) {
+function renderFlashcard(
+  isFirstEncounter: boolean,
+  overrides: Partial<Parameters<typeof Flashcard>[0]> = {},
+) {
   return render(
     <Flashcard
       card={card}
       isFirstEncounter={isFirstEncounter}
       phase="presenting"
-      attempt={null}
+      answerVisible={false}
       hintVisible={false}
       hintSaving={false}
-      sttEngine={null}
       onListen={vi.fn(async () => undefined)}
-      onStartRecording={vi.fn(async () => undefined)}
-      onStopRecording={vi.fn(async () => undefined)}
+      onSaidIt={vi.fn()}
       onShowHint={vi.fn(async () => undefined)}
       onGrade={vi.fn(async () => undefined)}
+      {...overrides}
     />,
   )
 }
@@ -59,12 +61,27 @@ describe('Flashcard', () => {
     renderFlashcard(false)
 
     expect(screen.queryByText('りんご')).toBeNull()
-    expect(screen.queryByRole('button', { name: /ヒント/ })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '🇯🇵 ヒント' })).not.toBeNull()
   })
 
-  it('初めて出会う語の提示中はヒントボタンを表示しない', () => {
-    renderFlashcard(true)
+  it('音読したら「言ってみた」を押す(録音はしない)', () => {
+    const onSaidIt = vi.fn()
+    renderFlashcard(false, { onSaidIt })
 
-    expect(screen.queryByRole('button', { name: /ヒント/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '🗣️ 言ってみた' }))
+
+    expect(onSaidIt).toHaveBeenCalledOnce()
+    expect(screen.queryByText(/録音/)).toBeNull()
+  })
+
+  it('答えを見せるときは語・例文・意味と、自分で判定するボタンを出す', () => {
+    renderFlashcard(false, { answerVisible: true, phase: 'result' })
+
+    expect(screen.queryByText('apple')).not.toBeNull()
+    expect(screen.queryByText('I eat an apple.')).not.toBeNull()
+    expect(screen.queryByText('りんご')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '言えた' })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'まだ' })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '🗣️ 言ってみた' })).toBeNull()
   })
 })

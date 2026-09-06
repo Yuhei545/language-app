@@ -5,6 +5,7 @@ import { PatternPage } from './PatternPage'
 const usePatternSession = vi.hoisted(() => vi.fn())
 
 vi.mock('./usePatternSession', () => ({ usePatternSession }))
+vi.mock('../../services/speech', () => ({ speak: vi.fn(async () => undefined) }))
 
 const item = {
   id: 'frame|coffee',
@@ -27,31 +28,21 @@ const item = {
 
 function session(overrides: Record<string, unknown> = {}) {
   return {
-    phase: 'starting',
+    phase: 'thinking',
     level: 1,
-    session: { frames: [], items: [item], rounds: [[item], [item]] },
+    session: null,
     currentItem: item,
     roundIndex: 0,
     roundCount: 2,
     itemIndex: 0,
     itemCount: 4,
-    hint: null,
-    heardText: null,
-    matched: false,
-    checkMode: 'record',
-    webSpeechAvailable: true,
-    secondsLeft: 0,
+    secondsLeft: 3,
     summary: null,
-    sttEngine: 'webspeech',
     error: null,
     start: vi.fn(),
     beginItems: vi.fn(),
     reveal: vi.fn(),
     judgeSelf: vi.fn(),
-    setCheckMode: vi.fn(),
-    stopRecording: vi.fn(),
-    retry: vi.fn(),
-    next: vi.fn(),
     stop: vi.fn(),
     setLevel: vi.fn(),
     clearError: vi.fn(),
@@ -90,98 +81,38 @@ describe('PatternPage', () => {
     expect(screen.queryByRole('button', { name: 'この型で練習する' })).not.toBeNull()
   })
 
-  it('外れたときはヒントを見せ、言い直せる', () => {
-    usePatternSession.mockReturnValue(session({
-      phase: 'hint',
-      hint: { kind: 'missing', token: 'please', textJa: '「please」が抜けています。もう一度言ってみましょう' },
-    }))
-
+  it('声に出す残り秒数と「答えを見る」を出す(録音はしない)', () => {
     render(<PatternPage lang="en" />)
-
-    expect(screen.queryByText(/please.*もう一度言ってみましょう/)).not.toBeNull()
-    expect(screen.queryByRole('button', { name: 'もう一度言う' })).not.toBeNull()
-    expect(screen.queryByText(/間違|不正解/)).toBeNull()
-  })
-
-  it('言えても言えなくても、答えと聞こえた文を毎回見せる', () => {
-    usePatternSession.mockReturnValue(session({ phase: 'model', heardText: 'coffee', matched: true }))
-
-    render(<PatternPage lang="en" />)
-
-    expect(screen.queryByText('言えました')).not.toBeNull()
-    expect(screen.queryByText('こう聞こえました')).not.toBeNull()
-    expect(screen.queryByText('coffee')).not.toBeNull()
-    expect(screen.queryByText('答え')).not.toBeNull()
-    expect(screen.queryByText('Coffee, please.')).not.toBeNull()
-    expect(screen.queryByRole('button', { name: '答えを聞く' })).not.toBeNull()
-    expect(screen.queryByText('この型をもう一度見る')).not.toBeNull()
-    expect(screen.queryByRole('button', { name: '次へ' })).not.toBeNull()
-  })
-
-  it('自分で判定: 声に出す残り秒数と「答えを見る」を出し、答えのあとに言えた/言えなかったを押せる', () => {
-    usePatternSession.mockReturnValue(session({ phase: 'thinking', checkMode: 'self', secondsLeft: 3 }))
-    const { unmount } = render(<PatternPage lang="en" />)
 
     expect(screen.queryByText('あと 3 秒')).not.toBeNull()
     expect(screen.queryByRole('button', { name: '答えを見る' })).not.toBeNull()
-    expect(screen.queryByRole('button', { name: '👆 自分で判定' })?.getAttribute('aria-pressed')).toBe('true')
-    unmount()
+    expect(screen.queryByText(/録音/)).toBeNull()
+  })
 
-    usePatternSession.mockReturnValue(session({ phase: 'model', checkMode: 'self' }))
+  it('答えのあとに言えた/言えなかったを押せる', () => {
+    usePatternSession.mockReturnValue(session({ phase: 'model' }))
+
     render(<PatternPage lang="en" />)
 
     expect(screen.queryByText('声に出せましたか?')).not.toBeNull()
     expect(screen.queryByText('Coffee, please.')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '答えを聞く' })).not.toBeNull()
     expect(screen.queryByRole('button', { name: '言えた' })).not.toBeNull()
     expect(screen.queryByRole('button', { name: '言えなかった' })).not.toBeNull()
-    expect(screen.queryByRole('button', { name: '次へ' })).toBeNull()
-  })
-
-  it('言えなかったときも同じ画面で答えを見せる', () => {
-    usePatternSession.mockReturnValue(session({ phase: 'model', heardText: 'coffee', matched: false }))
-
-    render(<PatternPage lang="en" />)
-
-    expect(screen.queryByText('ひとつの言い方を見てみましょう')).not.toBeNull()
-    expect(screen.queryByText('Coffee, please.')).not.toBeNull()
+    expect(screen.queryByText('この型をもう一度見る')).not.toBeNull()
     expect(screen.queryByText(/間違|不正解/)).toBeNull()
   })
 
-  it('録音中は止めるボタンと、使っている音声入力を出す', () => {
-    usePatternSession.mockReturnValue(session({ phase: 'recording' }))
-
-    render(<PatternPage lang="en" />)
-
-    expect(screen.queryByRole('button', { name: '■ 言い終わった' })).not.toBeNull()
-    expect(screen.queryByText(/音声入力：ブラウザ/)).not.toBeNull()
-  })
-
-  it('Gemini を使っているときは、そう表示する', () => {
-    usePatternSession.mockReturnValue(session({ phase: 'recording', sttEngine: 'gemini' }))
-
-    render(<PatternPage lang="en" />)
-
-    expect(screen.queryByText(/音声入力：Gemini/)).not.toBeNull()
-  })
-
-  it('まとめに一度で言えた数と、周ごとの応答時間を出す', () => {
+  it('まとめに言えた数を出す', () => {
     usePatternSession.mockReturnValue(session({
       phase: 'finished',
       currentItem: null,
-      summary: {
-        total: 8,
-        firstTry: 7,
-        withHint: 1,
-        roundLatencyMs: [2200, 1400],
-        nextLevel: 2,
-      },
+      summary: { total: 8, said: 7, nextLevel: 2 },
     }))
 
     render(<PatternPage lang="en" />)
 
-    expect(screen.queryByText('2 周終わりました')).not.toBeNull()
     expect(screen.queryByText('7/8')).not.toBeNull()
-    expect(screen.queryByText('2.2秒 → 1.4秒')).not.toBeNull()
-    expect(screen.queryByText(/レベル 2 に上げてみましょう/)).not.toBeNull()
+    expect(screen.queryByText(/レベル 2 に上げて/)).not.toBeNull()
   })
 })

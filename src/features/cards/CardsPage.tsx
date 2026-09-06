@@ -137,14 +137,11 @@ export function CardsPage() {
           card={session.currentCard}
           isFirstEncounter={session.isFirstEncounter}
           phase={session.phase}
-          attempt={session.attempt}
+          answerVisible={session.answerVisible}
           hintVisible={session.hintVisible}
           hintSaving={session.hintSaving}
-          sttEngine={session.sttEngine}
           onListen={session.playExample}
-          onStartRecording={session.startRecording}
-          onStopRecording={session.stopRecording}
-          onCancelTranscription={session.cancelTranscription}
+          onSaidIt={session.saidIt}
           onShowHint={session.showHint}
           onGrade={session.gradeCard}
         />

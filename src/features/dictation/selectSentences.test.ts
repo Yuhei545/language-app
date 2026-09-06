@@ -5,7 +5,7 @@ import { selectSentences } from './selectSentences'
 const sentences: DictationSentence[] = ['001', '002', '003', '004'].map((number) => ({
   id: `en-${number}`,
   text: `sentence ${number}`,
-  focus: ['point'],
+  focus: ['point'], features: [],
 }))
 
 describe('selectSentences', () => {
