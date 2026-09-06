@@ -27,6 +27,7 @@ function session(overrides: Record<string, unknown> = {}) {
     hint: null,
     heardText: null,
     summary: null,
+    sttEngine: 'webspeech',
     error: null,
     start: vi.fn(),
     stopRecording: vi.fn(),
@@ -82,12 +83,21 @@ describe('PatternPage', () => {
     expect(screen.queryByRole('button', { name: '次へ' })).not.toBeNull()
   })
 
-  it('録音中は止めるボタンを出す', () => {
+  it('録音中は止めるボタンと、使っている音声入力を出す', () => {
     usePatternSession.mockReturnValue(session({ phase: 'recording' }))
 
     render(<PatternPage lang="en" />)
 
     expect(screen.queryByRole('button', { name: '■ 言い終わった' })).not.toBeNull()
+    expect(screen.queryByText(/音声入力：ブラウザ/)).not.toBeNull()
+  })
+
+  it('Gemini を使っているときは、そう表示する', () => {
+    usePatternSession.mockReturnValue(session({ phase: 'recording', sttEngine: 'gemini' }))
+
+    render(<PatternPage lang="en" />)
+
+    expect(screen.queryByText(/音声入力：Gemini/)).not.toBeNull()
   })
 
   it('まとめに一度で言えた数と、周ごとの応答時間を出す', () => {

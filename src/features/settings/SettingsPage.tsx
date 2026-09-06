@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Toast } from '../../components/Toast'
 import { listAvailableModels, type AvailableModel } from '../../services/gemini/models'
+import { getGeminiUsage } from '../../services/gemini/usage'
 import { translatePersonalWord } from '../../services/gemini/speaking'
 import {
   getSettings,
@@ -15,10 +16,10 @@ import {
 import { MicTest } from './MicTest'
 import { VoiceSelect } from './VoiceSelect'
 
-const sttOptions: Array<{ value: SttEngine; label: string }> = [
-  { value: 'auto', label: '自動' },
-  { value: 'webspeech', label: 'Web Speech' },
-  { value: 'gemini', label: 'Gemini' },
+const sttOptions: Array<{ value: SttEngine; label: string; note: string }> = [
+  { value: 'auto', label: '自動', note: 'PC ではブラウザ、iPhone では Gemini。無料枠を使わずに済みます' },
+  { value: 'webspeech', label: 'Web Speech', note: 'ブラウザの音声認識。Gemini の回数を消費しません' },
+  { value: 'gemini', label: 'Gemini', note: '1 回話すごとに Gemini を 1 回使います。上限に達しやすいです' },
 ]
 
 const interestOptions: Array<{ value: Interest; label: string }> = [
@@ -127,6 +128,8 @@ export function SettingsPage() {
       }
     }
   }
+
+  const usage = getGeminiUsage()
 
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'))
   const koreanVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('ko'))
@@ -335,10 +338,25 @@ export function SettingsPage() {
                   onChange={() => update({ sttEngine: option.value })}
                   className="size-4 accent-teal-700"
                 />
-                {option.label}
+                <span className="min-w-0">
+                  <span className="block font-bold">{option.label}</span>
+                  <span className="mt-0.5 block text-xs leading-5 text-slate-500">{option.note}</span>
+                </span>
               </label>
             ))}
           </div>
+
+          <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-xs font-bold text-slate-500">Gemini の呼び出し回数</p>
+            <p className="mt-1 font-bold tabular-nums text-slate-900">
+              今日 {usage.today} 回 ・ 直近 1 分 {usage.lastMinute} 回
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              無料枠は 1 分あたりと 1 日あたりで別々に上限があります。音声入力を Web Speech にすると、
+              練習中の呼び出しはゼロになります。
+            </p>
+          </div>
+
           <MicTest />
         </fieldset>
 

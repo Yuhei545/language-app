@@ -1,6 +1,8 @@
 import { GoogleGenAI, type HttpRetryOptions } from '@google/genai'
 import { getSettings } from '../settings'
 import { GeminiError } from './errors'
+import { scheduleGeminiRequest } from './throttle'
+import { recordGeminiRequest } from './usage'
 
 let cachedApiKey: string | null = null
 let cachedClient: GoogleGenAI | null = null
@@ -24,6 +26,22 @@ export const TRANSIENT_RETRY: HttpRetryOptions = {
   httpStatusCodes: [500, 502, 503],
 }
 
+/**
+ * 呼び出しを 1 本の列に通し、回数を数える。
+ * 無料枠は 1 分あたりの上限が小さいので、まとめて投げないようにするのが目的。
+ */
+function withThrottleAndUsage(client: GoogleGenAI): GoogleGenAI {
+  const models = client.models
+  const original = models.generateContent.bind(models)
+  models.generateContent = ((params: Parameters<typeof original>[0]) => (
+    scheduleGeminiRequest(() => {
+      recordGeminiRequest()
+      return original(params)
+    })
+  )) as typeof models.generateContent
+  return client
+}
+
 export function getGeminiClient(): GoogleGenAI {
   const apiKey = getSettings().geminiApiKey.trim()
 
@@ -32,10 +50,10 @@ export function getGeminiClient(): GoogleGenAI {
   }
 
   if (!cachedClient || cachedApiKey !== apiKey) {
-    cachedClient = new GoogleGenAI({
+    cachedClient = withThrottleAndUsage(new GoogleGenAI({
       apiKey,
       httpOptions: { timeout: GEMINI_TIMEOUT_MS, retryOptions: TRANSIENT_RETRY },
-    })
+    }))
     cachedApiKey = apiKey
   }
 

@@ -43,3 +43,32 @@ describe('toGeminiError', () => {
     expect(error.kind).toBe('parse')
   })
 })
+
+describe('429 の説明', () => {
+  it('retryDelay があれば待つ秒数を伝える', () => {
+    const error = toGeminiError(apiError(429, {
+      error: {
+        code: 429,
+        status: 'RESOURCE_EXHAUSTED',
+        details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '27s' }],
+      },
+    }))
+    expect(error.kind).toBe('quota')
+    expect(error.message).toContain('27 秒')
+  })
+
+  it('1 分あたりの上限なら、その旨を伝える', () => {
+    const error = toGeminiError(apiError(429, {
+      error: { status: 'RESOURCE_EXHAUSTED', message: 'GenerateRequestsPerMinutePerProjectPerModel' },
+    }))
+    expect(error.message).toContain('1 分あたり')
+  })
+
+  it('1 日あたりの上限なら、節約の方法まで伝える', () => {
+    const error = toGeminiError(apiError(429, {
+      error: { status: 'RESOURCE_EXHAUSTED', message: 'GenerateRequestsPerDayPerProjectPerModel' },
+    }))
+    expect(error.message).toContain('1 日あたり')
+    expect(error.message).toContain('Web Speech')
+  })
+})

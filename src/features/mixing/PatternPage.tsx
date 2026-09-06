@@ -110,7 +110,10 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
           >
             ■ 言い終わった
           </button>
-          <p className="mt-2 text-[11px] text-slate-500">聞いています。言い終えたらタップ</p>
+          <p className="mt-2 text-[11px] text-slate-500">
+            聞いています。言い終えたらタップ
+            {session.sttEngine ? `（音声入力：${session.sttEngine === 'webspeech' ? 'ブラウザ' : 'Gemini'}）` : ''}
+          </p>
         </div>
       ) : null}
 

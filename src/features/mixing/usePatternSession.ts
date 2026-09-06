@@ -81,6 +81,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
   const [attempts, setAttempts] = useState<PatternAttempt[]>([])
   const [summary, setSummary] = useState<PatternSummary | null>(null)
   const [error, setError] = useState<unknown>(null)
+  const [sttEngine, setSttEngine] = useState<'webspeech' | 'gemini' | null>(null)
 
   const userIdRef = useRef<string | null>(null)
   const rowsRef = useRef(new Map<string, MixingProgressRow>())
@@ -319,6 +320,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
           transcribe: transcribeAudio,
         })
         inputRef.current = input
+        setSttEngine(input.engine)
         await input.start()
         if (cancelled || generationRef.current !== generation || !mountedRef.current) {
           input.cancel()
@@ -487,6 +489,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
     hint,
     heardText,
     summary,
+    sttEngine,
     error,
     start,
     stopRecording,

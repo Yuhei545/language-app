@@ -49,6 +49,24 @@ function getName(error: unknown): string {
   return String((error as { name: unknown }).name)
 }
 
+/** 429 の本文から、待ち時間と「1 分あたり」か「1 日あたり」かを読み取って伝える。 */
+function quotaMessage(body: string): string {
+  const retrySeconds = /"?retryDelay"?[":\s]+"?(\d+(?:\.\d+)?)s/i.exec(body)?.[1]
+  const perDay = /PerDay|per day|daily/i.test(body)
+  const perMinute = /PerMinute|per minute/i.test(body)
+
+  if (retrySeconds) {
+    return `Gemini の利用上限に達しました。${Math.ceil(Number(retrySeconds))} 秒ほど待つと再開できます`
+  }
+  if (perMinute) {
+    return 'Gemini の 1 分あたりの上限に達しました。1 分ほど待ってから続けてください'
+  }
+  if (perDay) {
+    return 'Gemini の 1 日あたりの上限に達しました。明日また使えます。設定で音声入力を Web Speech にすると節約できます'
+  }
+  return '無料枠の上限に達しました。設定で今日の呼び出し回数を確認できます'
+}
+
 export function toGeminiError(error: unknown): GeminiError {
   if (error instanceof GeminiError) {
     return new GeminiError(error.message, error, error.kind)
@@ -83,11 +101,7 @@ export function toGeminiError(error: unknown): GeminiError {
   }
 
   if (status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(message)) {
-    return new GeminiError(
-      '無料枠の上限に達しました。しばらく待ってから試してください',
-      error,
-      'quota',
-    )
+    return new GeminiError(quotaMessage(message), error, 'quota')
   }
 
   if (status === 401 || status === 403 || /API[_ ]?KEY/i.test(message)) {

@@ -91,20 +91,23 @@ function getRecognitionConstructor(): RecognitionConstructor | undefined {
  */
 const WEB_SPEECH_ENGINE_FAILURES = new Set(['network', 'service-not-allowed'])
 
-let webSpeechDisabledForSession = false
+/** ブラウザの音声認識が失敗したあと、Gemini に切り替えておく時間。過ぎたらまた試す。 */
+export const WEB_SPEECH_COOLDOWN_MS = 5 * 60_000
 
-/** Web Speech をこのセッションで使わない状態にする。 */
+let webSpeechDisabledUntil = 0
+
+/**
+ * Web Speech を一定時間だけ使わない状態にする。
+ * 以前はセッション中ずっと Gemini に切り替わったままで、無料枠を大量に消費していた。
+ */
 function disableWebSpeechForSession(reason: string): void {
-  if (webSpeechDisabledForSession) {
-    return
-  }
-  webSpeechDisabledForSession = true
-  console.warn(`Web Speech音声認識が使えないため、Gemini音声入力に切り替えます (${reason})`)
+  webSpeechDisabledUntil = Date.now() + WEB_SPEECH_COOLDOWN_MS
+  console.warn(`Web Speech音声認識が使えないため、しばらくGemini音声入力に切り替えます (${reason})`)
 }
 
-/** テスト用。セッションの無効化状態を戻す。 */
+/** テスト用。無効化状態を戻す。 */
 export function resetWebSpeechSessionState(): void {
-  webSpeechDisabledForSession = false
+  webSpeechDisabledUntil = 0
 }
 
 function recognitionError(error: string): Error {
@@ -552,7 +555,7 @@ export function isIos(): boolean {
 }
 
 export function isWebSpeechAvailable(): boolean {
-  if (webSpeechDisabledForSession) {
+  if (Date.now() < webSpeechDisabledUntil) {
     return false
   }
   return !isIos() && getRecognitionConstructor() !== undefined
