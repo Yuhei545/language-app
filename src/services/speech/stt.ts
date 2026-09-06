@@ -93,6 +93,10 @@ const WEB_SPEECH_ENGINE_FAILURES = new Set(['network', 'service-not-allowed'])
 
 /** ブラウザの音声認識が失敗したあと、Gemini に切り替えておく時間。過ぎたらまた試す。 */
 export const WEB_SPEECH_COOLDOWN_MS = 5 * 60_000
+/** iPhone の Safari が結果を返さなかったあと、Gemini で聞き取る時間。端末側の不具合なので半日は戻さない。 */
+export const IOS_EMPTY_RESULT_COOLDOWN_MS = 12 * 60 * 60_000
+export const IOS_EMPTY_RESULT_MESSAGE = 'iPhone の音声認識が結果を返しませんでした。次からは録音して Gemini で聞き取ります。'
+  + 'もう一度「言ってみる」を押し、1 秒ほど待ってから話してください'
 
 let webSpeechDisabledUntil = 0
 
@@ -100,8 +104,8 @@ let webSpeechDisabledUntil = 0
  * Web Speech を一定時間だけ使わない状態にする。
  * 以前はセッション中ずっと Gemini に切り替わったままで、無料枠を大量に消費していた。
  */
-function disableWebSpeechForSession(reason: string): void {
-  webSpeechDisabledUntil = Date.now() + WEB_SPEECH_COOLDOWN_MS
+function disableWebSpeechForSession(reason: string, cooldownMs: number = WEB_SPEECH_COOLDOWN_MS): void {
+  webSpeechDisabledUntil = Date.now() + cooldownMs
   console.warn(`Web Speech音声認識が使えないため、しばらくGemini音声入力に切り替えます (${reason})`)
 }
 
@@ -131,6 +135,8 @@ export class WebSpeechInput implements SpeechInput {
   readonly engine = 'webspeech' as const
   private readonly recognition: Recognition
   private finalText = ''
+  /** 確定していない途中の結果。iPhone の Safari は確定結果を返さないことがあるので、最後の手段として使う。 */
+  private interimText = ''
   private started = false
   private ended = false
   private terminalError: Error | null = null
@@ -148,7 +154,7 @@ export class WebSpeechInput implements SpeechInput {
 
     this.recognition = new RecognitionClass()
     this.recognition.lang = recognitionLanguages[lang]
-    this.recognition.interimResults = false
+    this.recognition.interimResults = true
     this.recognition.continuous = false
     this.recognition.onresult = (event) => this.handleResult(event)
     this.recognition.onerror = (event) => this.handleError(event)
@@ -163,6 +169,7 @@ export class WebSpeechInput implements SpeechInput {
     }
 
     this.finalText = ''
+    this.interimText = ''
     this.ended = false
     this.terminalError = null
     this.stopPromise = null
@@ -232,11 +239,22 @@ export class WebSpeechInput implements SpeechInput {
       this.onsetMs = Math.max(0, performance.now() - this.startedAtMs)
     }
 
-    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+    let interim = ''
+    for (let index = 0; index < event.results.length; index += 1) {
       const result = event.results[index]
-      if (result.isFinal && result.length > 0) {
-        this.finalText += `${result[0].transcript} `
+      if (result.length === 0) {
+        continue
       }
+      if (result.isFinal) {
+        if (index >= event.resultIndex) {
+          this.finalText += `${result[0].transcript} `
+        }
+      } else {
+        interim += `${result[0].transcript} `
+      }
+    }
+    if (interim.trim().length > 0) {
+      this.interimText = interim
     }
   }
 
@@ -250,6 +268,13 @@ export class WebSpeechInput implements SpeechInput {
   private handleEnd(): void {
     this.started = false
     this.ended = true
+
+    if (!this.terminalError && this.result().text.length === 0 && isIos()) {
+      // iPhone の Safari は、マイクが動いていても結果を返さないことがある(既知の不具合)。
+      // 以後は録音して Gemini で聞き取る経路に切り替える。
+      disableWebSpeechForSession('empty-result-on-ios', IOS_EMPTY_RESULT_COOLDOWN_MS)
+      this.terminalError = new Error(IOS_EMPTY_RESULT_MESSAGE)
+    }
 
     if (this.terminalError) {
       this.rejectStop?.(this.terminalError)
@@ -267,7 +292,7 @@ export class WebSpeechInput implements SpeechInput {
 
   private result(): SttResult {
     return {
-      text: this.finalText.trim(),
+      text: this.finalText.trim() || this.interimText.trim(),
       engine: this.engine,
       ...(this.onsetMs === undefined ? {} : { onsetMs: this.onsetMs }),
     }

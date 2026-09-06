@@ -158,3 +158,70 @@ describe('Web Speechが実行中に壊れたときのフォールバック', () 
     expect(second.engine).toBe('webspeech')
   })
 })
+
+/** テストから結果と終了を起こせる認識器。作られた最新のものを控える。 */
+class ScriptedRecognition extends FakeRecognition {
+  static latest: ScriptedRecognition | null = null
+
+  constructor() {
+    super()
+    ScriptedRecognition.latest = this
+  }
+
+  emitResult(transcript: string, isFinal: boolean) {
+    const handler = this.onresult as ((event: unknown) => void) | null
+    const result = { isFinal, length: 1, 0: { transcript } }
+    handler?.({ resultIndex: 0, results: { length: 1, 0: result } })
+  }
+
+  end() {
+    const handler = this.onend as (() => void) | null
+    handler?.()
+  }
+
+  override stop() {}
+}
+
+describe('WebSpeechInput の結果の扱い', () => {
+  it('確定結果が無くても、途中の結果があればそれを返す', async () => {
+    stubNavigator()
+    vi.stubGlobal('window', { webkitSpeechRecognition: ScriptedRecognition })
+    const input = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    await input.start()
+    ScriptedRecognition.latest!.emitResult('coffee please', false)
+    const pending = input.stop()
+    ScriptedRecognition.latest!.end()
+
+    await expect(pending).resolves.toMatchObject({ text: 'coffee please', engine: 'webspeech' })
+  })
+
+  it('iPhone で結果が空なら、理由を伝えて次からは Gemini に切り替える', async () => {
+    stubNavigator({
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    })
+    vi.stubGlobal('window', { webkitSpeechRecognition: ScriptedRecognition })
+    const input = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    expect(input.engine).toBe('webspeech')
+    await input.start()
+    const pending = input.stop()
+    ScriptedRecognition.latest!.end()
+
+    await expect(pending).rejects.toThrow(/Gemini/)
+    expect(isWebSpeechAvailable()).toBe(false)
+    expect(createSpeechInput({ lang: 'en', engine: 'auto', transcribe }).engine).toBe('gemini')
+  })
+
+  it('PC で結果が空なら、そのまま空の文を返し、Web Speech は使えるまま', async () => {
+    stubNavigator()
+    vi.stubGlobal('window', { webkitSpeechRecognition: ScriptedRecognition })
+    const input = createSpeechInput({ lang: 'en', engine: 'auto', transcribe })
+    await input.start()
+    const pending = input.stop()
+    ScriptedRecognition.latest!.end()
+
+    await expect(pending).resolves.toMatchObject({ text: '' })
+    expect(isWebSpeechAvailable()).toBe(true)
+  })
+})
