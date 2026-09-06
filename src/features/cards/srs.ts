@@ -4,6 +4,13 @@ export type SrsState = {
   status: 'new' | 'learning' | 'known'
   correct_count: number
   next_review_at: string | null
+  /** 今日すでに見たカードを狙いとして出し直さないために使う(省略可)。 */
+  last_reviewed_at?: string | null
+}
+
+export type SelectDueCardsOptions = {
+  /** 今日の狙いのカード。期限前でも、期限切れの次に出す(今日すでに見たものは除く)。順番はこのまま。 */
+  prioritizeIds?: readonly string[]
 }
 
 export const INTERVALS_DAYS = [1, 3, 7, 14, 30] as const
@@ -46,6 +53,16 @@ export function nextSrsState(current: SrsState, grade: Grade, now: Date): SrsSta
   }
 }
 
+function isSameLocalDay(iso: string, now: Date): boolean {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) {
+    return false
+  }
+  return date.getFullYear() === now.getFullYear()
+    && date.getMonth() === now.getMonth()
+    && date.getDate() === now.getDate()
+}
+
 function compareIds(a: string, b: string): number {
   if (a === b) {
     return 0
@@ -59,6 +76,7 @@ export function selectDueCards<T extends { id: string }>(
   progress: Map<string, SrsState>,
   now: Date,
   limit: number,
+  opts: SelectDueCardsOptions = {},
 ): T[] {
   if (limit <= 0) {
     return []
@@ -81,9 +99,24 @@ export function selectDueCards<T extends { id: string }>(
     .sort((a, b) => a.reviewTime - b.reviewTime || compareIds(a.item.id, b.item.id))
     .map(({ item }) => item)
 
+  const overdueIds = new Set(overdue.map((item) => item.id))
+  const byId = new Map(items.map((item) => [item.id, item]))
+  const prioritized = (opts.prioritizeIds ?? []).flatMap((id) => {
+    const item = byId.get(id)
+    if (!item || overdueIds.has(id)) {
+      return []
+    }
+    const state = progress.get(id)
+    if (state?.last_reviewed_at && isSameLocalDay(state.last_reviewed_at, now)) {
+      return []
+    }
+    return [item]
+  })
+  const prioritizedIds = new Set(prioritized.map((item) => item.id))
+
   const newItems = items
-    .filter((item) => !progress.has(item.id))
+    .filter((item) => !progress.has(item.id) && !prioritizedIds.has(item.id))
     .sort((a, b) => compareIds(a.id, b.id))
 
-  return [...overdue, ...newItems].slice(0, limit)
+  return [...overdue, ...prioritized, ...newItems].slice(0, limit)
 }

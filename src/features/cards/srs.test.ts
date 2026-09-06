@@ -93,3 +93,35 @@ describe('selectDueCards', () => {
     expect(selected.some(({ id }) => id === 'future')).toBe(false)
   })
 })
+
+describe('selectDueCards の狙い優先', () => {
+  const now = new Date('2026-09-06T12:00:00.000Z')
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
+
+  it('期限切れ → 狙い → 新規 の順に並び、狙いは期限前でも出す', () => {
+    const progress = new Map<string, SrsState>([
+      ['a', { status: 'learning', correct_count: 1, next_review_at: '2026-09-05T00:00:00.000Z' }],
+      ['c', { status: 'known', correct_count: 5, next_review_at: '2026-10-01T00:00:00.000Z' }],
+    ])
+
+    const selected = selectDueCards(items, progress, now, 10, { prioritizeIds: ['c', 'd'] })
+
+    expect(selected.map((item) => item.id)).toEqual(['a', 'c', 'd', 'b'])
+  })
+
+  it('狙いが期限切れでも重複せず、今日すでに見た狙いは出さない', () => {
+    const progress = new Map<string, SrsState>([
+      ['a', { status: 'learning', correct_count: 1, next_review_at: '2026-09-05T00:00:00.000Z' }],
+      ['b', { status: 'learning', correct_count: 2, next_review_at: '2026-09-09T00:00:00.000Z', last_reviewed_at: '2026-09-06T09:00:00.000Z' }],
+    ])
+
+    const selected = selectDueCards(items, progress, now, 10, { prioritizeIds: ['a', 'b'] })
+
+    expect(selected.map((item) => item.id)).toEqual(['a', 'c', 'd'])
+  })
+
+  it('opts を省略すれば従来どおり', () => {
+    const selected = selectDueCards(items, new Map(), now, 2)
+    expect(selected.map((item) => item.id)).toEqual(['a', 'b'])
+  })
+})

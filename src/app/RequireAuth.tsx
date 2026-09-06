@@ -4,6 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { getSession, onAuthStateChange } from '../services/supabase/auth'
 import { retireOutdatedEnglish } from '../services/supabase/retire'
 import { seedBundledVocab } from '../services/supabase/seed'
+import { seedCoreChunks } from '../features/chunks/seedChunks'
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '不明なエラーが発生しました'
@@ -69,6 +70,9 @@ export function RequireAuth() {
     Promise.all([
       seedBundledVocab(userId, 'en'),
       seedBundledVocab(userId, 'ko'),
+      // 型・句動詞もカードにする(週 0。台帳と chunk_key で結ぶ)
+      seedCoreChunks(userId, 'en'),
+      seedCoreChunks(userId, 'ko'),
     ])
       // 英語の旧・基礎語(2026-09-05 に実践フレーズへ差し替え)を「知っている」扱いにして復習に出さない
       .then(() => retireOutdatedEnglish(userId))

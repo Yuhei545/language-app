@@ -71,10 +71,12 @@ export function selectDailyTargets(params: {
   const newCap = Math.max(1, Math.floor(quota.total * NEW_SHARE))
   const chosen: Scored[] = []
   const chosenKeys = new Set<string>()
+  const chosenDisplays = new Set<string>()
   let newCount = 0
 
   const take = (candidate: Scored, allowExtraNew = false): boolean => {
-    if (chosenKeys.has(candidate.chunk.key)) {
+    // 同じ見せ方の型(___ was ___. が 2 つ)は同じ日に 1 つだけ
+    if (chosenKeys.has(candidate.chunk.key) || chosenDisplays.has(candidate.chunk.display)) {
       return false
     }
     if (candidate.seen === 0 && newCount >= newCap && !allowExtraNew) {
@@ -82,6 +84,7 @@ export function selectDailyTargets(params: {
     }
     chosen.push(candidate)
     chosenKeys.add(candidate.chunk.key)
+    chosenDisplays.add(candidate.chunk.display)
     if (candidate.seen === 0) {
       newCount += 1
     }

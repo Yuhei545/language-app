@@ -8,9 +8,16 @@ import {
   upsertVocabProgress,
 } from '../../services/supabase/db'
 import type { VocabItemRow, VocabProgressRow } from '../../services/supabase/types'
+import type { EncounterEntry } from '../chunks/ledger'
+import { recordEncounters, reportLedgerFailure } from '../chunks/record'
+import type { Chunk } from '../chunks/registry'
+import { loadChunkContext } from '../chunks/targetsStore'
 import { nextSrsState, selectDueCards, type Grade, type SrsState } from './srs'
 
 export type CardPhase = 'presenting' | 'speaking' | 'result' | 'saving'
+
+/** カードは 1 種類の文脈として数える(台帳の context)。 */
+export const CARD_CONTEXT = 'card'
 
 const EMPTY_SRS_STATE: SrsState = {
   status: 'new',
@@ -23,6 +30,7 @@ function toSrsState(progress: VocabProgressRow): SrsState {
     status: progress.status,
     correct_count: progress.correct_count,
     next_review_at: progress.next_review_at,
+    last_reviewed_at: progress.last_reviewed_at,
   }
 }
 
@@ -61,9 +69,17 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
   const [hintSaving, setHintSaving] = useState(false)
   const [todayLearnedCount, setTodayLearnedCount] = useState(0)
   const [tomorrowCount, setTomorrowCount] = useState(0)
+  /** 今日の狙いのうち、このセッションのカードにあるもの / 触れたもの。 */
+  const [targetTotal, setTargetTotal] = useState(0)
+  const [targetTouched, setTargetTouched] = useState(0)
   const [error, setError] = useState<unknown>(null)
   const userIdRef = useRef<string | null>(null)
   const progressRef = useRef(new Map<string, VocabProgressRow>())
+  const chunkByItemIdRef = useRef(new Map<string, Chunk>())
+  const targetKeysRef = useRef(new Set<string>())
+  const touchedKeysRef = useRef(new Set<string>())
+  const pendingRef = useRef<EncounterEntry[]>([])
+  const ledgerWarnedRef = useRef({ current: false })
 
   const currentCard = cards[currentIndex] ?? null
   const currentProgress = currentCard
@@ -74,6 +90,30 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
   const captureError = useCallback((caught: unknown) => {
     setError(caught ?? new Error('不明なエラーが発生しました'))
+  }, [])
+
+  /** ためた出会いを台帳にまとめて書く。失敗しても練習は止めない。 */
+  const flushLedger = useCallback(() => {
+    const userId = userIdRef.current
+    const entries = pendingRef.current.splice(0)
+    if (!userId || entries.length === 0) {
+      return
+    }
+    void recordEncounters(userId, lang, entries).catch((ledgerError: unknown) => {
+      reportLedgerFailure(ledgerError, ledgerWarnedRef.current, captureError)
+    })
+  }, [captureError, lang])
+
+  const noteEncounter = useCallback((card: VocabItemRow, kind: EncounterEntry['kind']) => {
+    const chunk = chunkByItemIdRef.current.get(card.id)
+    if (!chunk) {
+      return
+    }
+    pendingRef.current.push({ chunkKey: chunk.key, mode: 'cards', kind, context: CARD_CONTEXT })
+    if (targetKeysRef.current.has(chunk.key) && !touchedKeysRef.current.has(chunk.key)) {
+      touchedKeysRef.current.add(chunk.key)
+      setTargetTouched(touchedKeysRef.current.size)
+    }
   }, [])
 
   useEffect(() => subscribe((nextSettings) => {
@@ -92,10 +132,16 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     setHintVisible(false)
     setTodayLearnedCount(0)
     setTomorrowCount(0)
+    setTargetTotal(0)
+    setTargetTouched(0)
     setError(null)
     setPhase('presenting')
     userIdRef.current = null
     progressRef.current = new Map()
+    chunkByItemIdRef.current = new Map()
+    targetKeysRef.current = new Set()
+    touchedKeysRef.current = new Set()
+    pendingRef.current = []
 
     const loadCards = async () => {
       try {
@@ -117,6 +163,20 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
         const progressById = new Map(
           vocabProgress.map((progress) => [progress.vocab_item_id, progress]),
         )
+
+        // 今日の狙い(型・句動詞・表現)を先に出す。準備モードは全件なので使わない
+        const chunkContext = prepEventId
+          ? null
+          : await loadChunkContext({ userId, lang, vocabItems })
+        const chunkByItemId = new Map<string, Chunk>()
+        for (const chunk of chunkContext?.registry ?? []) {
+          if (chunk.vocabItemId) {
+            chunkByItemId.set(chunk.vocabItemId, chunk)
+          }
+        }
+        const targets = chunkContext?.targets ?? []
+        const prioritizeIds = targets.flatMap((chunk) => (chunk.vocabItemId ? [chunk.vocabItemId] : []))
+
         const selectedCards = prepEventId
           ? vocabItems
           : selectDueCards(
@@ -126,12 +186,26 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
             ),
             new Date(),
             10,
+            { prioritizeIds },
           )
+        const selectedIds = new Set(selectedCards.map((card) => card.id))
+        const targetKeys = new Set(
+          targets
+            .filter((chunk) => chunk.vocabItemId && selectedIds.has(chunk.vocabItemId))
+            .map((chunk) => chunk.key),
+        )
 
         if (active) {
           userIdRef.current = userId
           progressRef.current = progressById
+          chunkByItemIdRef.current = chunkByItemId
+          targetKeysRef.current = targetKeys
+          setTargetTotal(targetKeys.size)
           setCards(selectedCards)
+          if (chunkContext?.error && !ledgerWarnedRef.current.current) {
+            ledgerWarnedRef.current.current = true
+            captureError(chunkContext.error)
+          }
         }
       } catch (loadError) {
         if (active) {
@@ -148,8 +222,10 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
     return () => {
       active = false
+      // 途中でやめても、ここまでの出会いは書く
+      flushLedger()
     }
-  }, [captureError, lang, prepEventId])
+  }, [captureError, flushLedger, lang, prepEventId])
 
   const beginSession = useCallback(() => {
     if (loading || cards.length === 0) {
@@ -193,7 +269,8 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     setError(null)
     setAnswerVisible(true)
     setPhase('result')
-  }, [currentCard, phase])
+    noteEncounter(currentCard, 'seen')
+  }, [currentCard, noteEncounter, phase])
 
   const showHint = useCallback(async () => {
     const userId = userIdRef.current
@@ -264,6 +341,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
       if (grade === 'good') {
         setTodayLearnedCount((count) => count + 1)
+        noteEncounter(currentCard, 'said')
       }
       if (isTomorrow(next.next_review_at, now)) {
         setTomorrowCount((count) => count + 1)
@@ -271,6 +349,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
 
       if (currentIndex + 1 >= cards.length) {
         setFinished(true)
+        flushLedger()
       } else {
         setCurrentIndex((index) => index + 1)
         setAnswerVisible(false)
@@ -281,7 +360,7 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
       captureError(gradeError)
       setPhase('result')
     }
-  }, [cards.length, captureError, currentCard, currentIndex, phase])
+  }, [cards.length, captureError, currentCard, currentIndex, flushLedger, noteEncounter, phase])
 
   const progressPercent = useMemo(() => {
     if (cards.length === 0) {
@@ -307,6 +386,8 @@ export function useCardSession(lang: 'en' | 'ko', prepEventId?: string) {
     hintSaving,
     todayLearnedCount,
     tomorrowCount,
+    targetTotal,
+    targetTouched,
     error,
     beginSession,
     playExample,

@@ -186,6 +186,16 @@ export function buildChunkRegistry(
   const itemsByChunkKey = new Map(
     vocabItems.filter((item) => item.chunk_key).map((item) => [item.chunk_key as string, item]),
   )
+  // chunk_key の無い既存カードでも、text が型の見せ方や句動詞と同じなら結びつける
+  const itemsByText = new Map(
+    vocabItems.filter((item) => !item.chunk_key).map((item) => [normalizeForMatch(item.text, lang), item]),
+  )
+  const reservedTexts = new Set<string>()
+  const linkedItem = (key: string, text: string): VocabItemRow | undefined => {
+    const normalized = normalizeForMatch(text, lang)
+    reservedTexts.add(normalized)
+    return itemsByChunkKey.get(key) ?? itemsByText.get(normalized)
+  }
 
   for (const frame of core.frames) {
     const key = chunkKeyForFrame(frame)
@@ -198,7 +208,7 @@ export function buildChunkRegistry(
       anchor: frameAnchor(frame, lang),
       variants: [],
       frameId: frame.id,
-      vocabItemId: itemsByChunkKey.get(key)?.id,
+      vocabItemId: linkedItem(key, frameDisplay(frame))?.id,
     })
   }
 
@@ -212,12 +222,12 @@ export function buildChunkRegistry(
       hintJa: word.hint_ja,
       anchor: normalizeForMatch(word.text, lang),
       variants: phrasalVariants(word.text, lang),
-      vocabItemId: itemsByChunkKey.get(key)?.id,
+      vocabItemId: linkedItem(key, word.text)?.id,
     })
   }
 
   for (const item of vocabItems) {
-    if (!isExpressionItem(item, lang)) {
+    if (!isExpressionItem(item, lang) || reservedTexts.has(normalizeForMatch(item.text, lang))) {
       continue
     }
     push({

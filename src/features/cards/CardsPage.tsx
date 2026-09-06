@@ -89,6 +89,11 @@ export function CardsPage() {
               <p className="mt-1 text-xs font-bold text-amber-900/70">明日また出る語</p>
             </div>
           </div>
+          {session.targetTotal > 0 ? (
+            <p className="mt-4 text-center text-xs font-bold text-teal-900/70">
+              今日の狙い {session.targetTouched} / {session.targetTotal} に触れました
+            </p>
+          ) : null}
           <Link
             to="/talk"
             className="mt-6 flex w-full items-center justify-center rounded-2xl border border-teal-200 bg-teal-50 px-5 py-3 text-sm font-bold text-teal-800"

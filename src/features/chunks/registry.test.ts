@@ -111,6 +111,16 @@ describe('buildChunkRegistry', () => {
   })
 })
 
+describe('既存カードとの結びつき', () => {
+  it('chunk_key が無くても text が句動詞と同じカードは句動詞に結び、表現として二重登録しない', () => {
+    const registry = buildChunkRegistry(enCore, [item({ id: 'old-pick-up', text: 'pick up', category: 'baby' })], 'en')
+    const phrasal = registry.find((chunk) => chunk.key === 'phrasal:pick up')!
+
+    expect(phrasal.vocabItemId).toBe('old-pick-up')
+    expect(registry.some((chunk) => chunk.key === 'expr:pick up')).toBe(false)
+  })
+})
+
 describe('文との照合', () => {
   const registry = buildChunkRegistry(enCore, [item({ id: 'g', text: 'to be honest', category: 'glue' })], 'en')
 

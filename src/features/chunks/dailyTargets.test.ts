@@ -68,6 +68,18 @@ describe('selectDailyTargets', () => {
     expect(targets.map((item) => item.key)).toEqual(['kf1', 'ke1'])
   })
 
+  it('同じ見せ方の型は同じ日に 1 つだけ', () => {
+    const twins: Chunk[] = [
+      { ...chunk('f-thing-was', 'frame'), display: '___ was ___.' },
+      { ...chunk('f-media-was', 'frame'), display: '___ was ___.' },
+      chunk('f-other', 'frame'),
+    ]
+    const targets = selectDailyTargets({ registry: twins, summaries: new Map(), lang: 'en', now: NOW, rng })
+
+    expect(targets.filter((item) => item.display === '___ was ___.')).toHaveLength(1)
+    expect(targets.map((item) => item.key)).toContain('f-other')
+  })
+
   it('同じ入力なら同じ狙いになる', () => {
     const rows = registry.flatMap((item) => encounters(item.key, 1))
     const first = selectDailyTargets({ registry, summaries: summarizeEncounters(rows), lang: 'en', now: NOW, rng })
