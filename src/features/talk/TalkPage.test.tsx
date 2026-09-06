@@ -14,6 +14,10 @@ function state(overrides: Record<string, unknown> = {}) {
     error: null,
     sceneJa: '',
     setSceneJa: vi.fn(),
+    targets: [],
+    recordedKeys: [],
+    recording: false,
+    recordUsed: vi.fn(async () => true),
     reload: vi.fn(),
     clearError: vi.fn(),
     ...overrides,
@@ -63,6 +67,26 @@ describe('TalkPage (ChatGPT で会話)', () => {
     fireEvent.change(screen.getByLabelText('今日の場面(任意)'), { target: { value: 'カフェで注文する' } })
 
     expect(setSceneJa).toHaveBeenCalledWith('カフェで注文する')
+  })
+
+  it('今日の狙いにチェックして記録すると、選んだ表現をフックに渡す', async () => {
+    const recordUsed = vi.fn(async () => true)
+    useChatGptPromptMock.mockReturnValue(state({
+      recordUsed,
+      targets: [
+        { key: 'phrasal:pick up', kind: 'phrasal', lang: 'en', display: 'pick up', hintJa: '受け取る', anchor: 'pick up', variants: [] },
+        { key: 'frame:en-could-i-get', kind: 'frame', lang: 'en', display: 'Could I get ___?', hintJa: '〜をもらえますか', anchor: 'could i get', variants: [] },
+      ],
+      recordedKeys: ['frame:en-could-i-get'],
+    }))
+    renderPage()
+
+    expect(screen.getByText('記録済み')).toBeTruthy()
+    fireEvent.click(screen.getByRole('checkbox', { name: /pick up/ }))
+    fireEvent.click(screen.getByRole('button', { name: '記録する' }))
+
+    await waitFor(() => expect(recordUsed).toHaveBeenCalledWith(['phrasal:pick up']))
+    expect(await screen.findByText('記録しました')).toBeTruthy()
   })
 
   it('読み込み中はその旨を出す', () => {

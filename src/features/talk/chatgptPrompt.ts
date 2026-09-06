@@ -8,6 +8,8 @@ export type ChatGptPromptInput = {
   knownWords: string[]
   /** 会話の中で自然に使わせたい語(ヒントを使った語や学習中の語)。 */
   targetWords: string[]
+  /** 今日の狙い(型は ___ 入り)。会話の中で使わせ、終わりに使えたものを列挙してもらう。 */
+  targetExpressions?: string[]
   personalWords: PersonalWord[]
   interests: Interest[]
   personaName: string
@@ -52,6 +54,7 @@ export function buildChatGptPrompt(input: ChatGptPromptInput): string {
     .map((word) => `${word[input.lang]}(${KIND_JA[word.kind]}: ${word.ja})`)
   const interests = input.interests.map((interest) => INTEREST_JA[interest])
   const scene = input.sceneJa?.trim()
+  const targets = (input.targetExpressions ?? []).map((text) => text.trim()).filter((text) => text.length > 0)
 
   return [
     `あなたは私の「${language}の親」です。名前は ${persona}。私は日本語話者で、${language}を話せるようになりたい学習者です。`,
@@ -66,11 +69,17 @@ export function buildChatGptPrompt(input: ChatGptPromptInput): string {
     '6. 私が「?」だけを送ったら、直前のあなたの発言を日本語で短く説明してから、同じ質問を繰り返す。',
     `7. 私が「🇯🇵」のあとに日本語を送ったら、それを${language}でどう言うかを 1 つ教え、私に音読させてから会話に戻る。`,
     '8. 10 往復ごとに、私が使えた表現 2 つと、次に使えそうな表現 1 つを日本語の説明つきで短くまとめる(まとめは日本語でよい)。',
+    ...(targets.length > 0
+      ? ['9. 会話の終わり、または私が「まとめ」と送ったら、下の「今日の狙い」のうち私が実際に使えたものを「使えた: a, b」の 1 行で書く。']
+      : []),
     '',
     '## 私の語彙',
     `- 今週の語: ${list(input.weekWords)}`,
     `- 知っている語: ${list(input.knownWords)}`,
     `- 会話の中で自然に使う場面を作ってほしい語(直接は問わない): ${list(input.targetWords)}`,
+    ...(targets.length > 0
+      ? [`- 今日の狙い(私が使う場面を作ってほしい表現。___ には合う語が入る): ${list(targets)}`]
+      : []),
     '',
     '## 私のこと',
     `- 興味: ${list(interests, '日常の場面')}`,

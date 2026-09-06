@@ -47,3 +47,19 @@ describe('buildChatGptPrompt', () => {
     expect(prompt).toContain('-요 体')
   })
 })
+
+describe('buildChatGptPrompt: 今日の狙い', () => {
+  it('狙いを渡すと、使う場面を作る指示と「使えた:」のまとめのルールを含む', () => {
+    const prompt = buildChatGptPrompt({ ...base, targetExpressions: ['Could I get ___?', 'pick up'] })
+
+    expect(prompt).toContain('今日の狙い(私が使う場面を作ってほしい表現。___ には合う語が入る): Could I get ___?, pick up')
+    expect(prompt).toContain('「使えた: a, b」の 1 行で書く')
+  })
+
+  it('狙いが無ければその行とルールは出さない', () => {
+    const prompt = buildChatGptPrompt(base)
+
+    expect(prompt).not.toContain('今日の狙い')
+    expect(prompt).not.toContain('使えた: a, b')
+  })
+})
