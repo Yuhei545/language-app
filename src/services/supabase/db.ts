@@ -1,6 +1,8 @@
 import { getSupabaseClient } from './client'
 import type {
   ConversationRow,
+  DictationFeatureStatInsert,
+  DictationFeatureStatRow,
   DictationProgressInsert,
   DictationProgressRow,
   Language,
@@ -191,6 +193,39 @@ export async function upsertDictationProgress(
   const { data, error } = await getSupabaseClient()
     .from('dictation_progress')
     .upsert(row, { onConflict: 'user_id,lang,sentence_id' })
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function listDictationFeatureStats(
+  userId: string,
+  lang: Language,
+): Promise<DictationFeatureStatRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('dictation_feature_stats')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function upsertDictationFeatureStat(
+  row: DictationFeatureStatInsert,
+): Promise<DictationFeatureStatRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('dictation_feature_stats')
+    .upsert(row, { onConflict: 'user_id,lang,feature_id' })
     .select('*')
     .single()
 

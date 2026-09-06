@@ -116,6 +116,33 @@ export type DictationProgressRow = {
   attempts: number
   last_at: string | null
   created_at: string
+  /** 出題の段階。cloze は音の現象の箇所だけ穴埋め、full は全文書き取り。 */
+  stage: 'cloze' | 'full'
+  /** 忘却曲線の箱。上がるほど次までの間隔が長い。 */
+  box: number
+  correct_streak: number
+  next_review_at: string | null
+}
+
+/** 音の現象ごとの成績。苦手な現象を優先して出すために使う。 */
+export type DictationFeatureStatRow = {
+  user_id: string
+  lang: Language
+  feature_id: string
+  attempts: number
+  correct: number
+  last_at: string | null
+  created_at: string
+}
+
+export type DictationFeatureStatInsert = {
+  user_id: string
+  lang: Language
+  feature_id: string
+  attempts?: number
+  correct?: number
+  last_at?: string | null
+  created_at?: string
 }
 
 export type LessonDialogueRow = {
@@ -246,6 +273,10 @@ export type DictationProgressInsert = {
   attempts?: number
   last_at?: string | null
   created_at?: string
+  stage?: 'cloze' | 'full'
+  box?: number
+  correct_streak?: number
+  next_review_at?: string | null
 }
 
 export type LessonDialogueInsert = {
@@ -281,6 +312,7 @@ export type Database = {
       mixing_progress: TableDefinition<MixingProgressRow, MixingProgressInsert>
       speaking_sessions: TableDefinition<SpeakingSessionRow, SpeakingSessionInsert>
       dictation_progress: TableDefinition<DictationProgressRow, DictationProgressInsert>
+      dictation_feature_stats: TableDefinition<DictationFeatureStatRow, DictationFeatureStatInsert>
       lesson_dialogues: TableDefinition<LessonDialogueRow, LessonDialogueInsert>
     }
     Views: Record<string, never>

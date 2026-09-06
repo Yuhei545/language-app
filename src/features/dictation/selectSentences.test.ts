@@ -1,50 +1,80 @@
 import { describe, expect, it } from 'vitest'
 import type { DictationSentence } from '../../content/dictationSchema'
-import { selectSentences } from './selectSentences'
+import type { DictationFeatureId } from '../../content/dictationFeatures'
+import { selectSentences, type DictationSelectionProgress, type FeatureAccuracy } from './selectSentences'
 
-const sentences: DictationSentence[] = ['001', '002', '003', '004'].map((number) => ({
-  id: `en-${number}`,
-  text: `sentence ${number}`,
-  focus: ['point'], features: [],
-}))
+const NOW = new Date('2026-09-06T12:00:00.000Z')
+
+function sentence(id: string, features: DictationFeatureId[] = []): DictationSentence {
+  return {
+    id,
+    text: `${id} text`,
+    focus: ['ポイント'],
+    features: features.map((feature) => ({ id: feature, span: 'text' })),
+  }
+}
+
+/** 常に同じ値を返す rng。並び順を決定的にする。 */
+const rng = () => 0.5
+
+function progress(entries: Array<[string, Partial<DictationSelectionProgress>]>) {
+  return new Map<string, DictationSelectionProgress>(
+    entries.map(([id, row]) => [id, { best_ratio: 0, attempts: 1, ...row }]),
+  )
+}
 
 describe('selectSentences', () => {
-  it('0.9 未満は ratio の低い順にする', () => {
-    const progress = new Map([
-      ['en-001', { best_ratio: 0.8, attempts: 1 }],
-      ['en-002', { best_ratio: 0.2, attempts: 2 }],
-      ['en-003', { best_ratio: 0.5, attempts: 1 }],
-      ['en-004', { best_ratio: 1, attempts: 1 }],
+  it('予定日が来た文を、期限の古い順に先に出す', () => {
+    const all = [sentence('en-001'), sentence('en-002'), sentence('en-003')]
+    const rows = progress([
+      ['en-001', { next_review_at: '2026-09-06T00:00:00.000Z' }],
+      ['en-002', { next_review_at: '2026-09-01T00:00:00.000Z' }],
+      ['en-003', { next_review_at: '2026-09-30T00:00:00.000Z' }],
     ])
 
-    expect(selectSentences(sentences, progress, 4, () => 0.5).map(({ id }) => id))
-      .toEqual(['en-002', 'en-003', 'en-001', 'en-004'])
+    const selected = selectSentences(all, rows, 3, rng, [], NOW)
+
+    expect(selected.map((item) => item.id)).toEqual(['en-002', 'en-001', 'en-003'])
   })
 
-  it('未経験を 0.9 以上の文より先にする', () => {
-    const progress = new Map([
-      ['en-001', { best_ratio: 0.95, attempts: 1 }],
-      ['en-002', { best_ratio: 1, attempts: 2 }],
-      ['en-004', { best_ratio: 0.9, attempts: 1 }],
+  it('まだ出していない文は、苦手な現象を含むものを先に出す', () => {
+    const all = [sentence('en-001', ['linking']), sentence('en-002', ['flap']), sentence('en-003', ['weak-form'])]
+    const stats: FeatureAccuracy[] = [
+      { featureId: 'linking', attempts: 10, correct: 9 },
+      { featureId: 'flap', attempts: 10, correct: 2 },
+      { featureId: 'weak-form', attempts: 10, correct: 6 },
+    ]
+
+    const selected = selectSentences(all, new Map(), 3, rng, stats, NOW)
+
+    expect(selected.map((item) => item.id)).toEqual(['en-002', 'en-003', 'en-001'])
+  })
+
+  it('予定日が来ていない文は最後に回し、正答率の低い順に出す', () => {
+    const all = [sentence('en-001'), sentence('en-002')]
+    const rows = progress([
+      ['en-001', { next_review_at: '2026-09-30T00:00:00.000Z', best_ratio: 0.95 }],
+      ['en-002', { next_review_at: '2026-09-30T00:00:00.000Z', best_ratio: 0.4 }],
     ])
 
-    expect(selectSentences(sentences, progress, 4, () => 0.5)[0].id).toBe('en-003')
+    const selected = selectSentences(all, rows, 2, rng, [], NOW)
+
+    expect(selected.map((item) => item.id)).toEqual(['en-002', 'en-001'])
   })
 
-  it('count を超えず、重複しない', () => {
-    const duplicated = [...sentences, sentences[0]]
-    const selected = selectSentences(duplicated, new Map(), 3, () => 0.5)
+  it('予定日の来た文を、まだ出していない文より先に出す', () => {
+    const all = [sentence('en-001'), sentence('en-002', ['flap'])]
+    const rows = progress([['en-001', { next_review_at: '2026-09-01T00:00:00.000Z' }]])
 
-    expect(selected).toHaveLength(3)
-    expect(new Set(selected.map(({ id }) => id)).size).toBe(3)
+    const selected = selectSentences(all, rows, 1, rng, [{ featureId: 'flap', attempts: 5, correct: 0 }], NOW)
+
+    expect(selected.map((item) => item.id)).toEqual(['en-001'])
   })
 
-  it('すべて 0.9 以上でも count 件を返す', () => {
-    const progress = new Map(sentences.map((sentence) => [
-      sentence.id,
-      { best_ratio: 0.9, attempts: 1 },
-    ]))
+  it('件数を守り、重複する id は 1 つにする', () => {
+    const all = [sentence('en-001'), sentence('en-001'), sentence('en-002')]
 
-    expect(selectSentences(sentences, progress, 3, () => 0.5)).toHaveLength(3)
+    expect(selectSentences(all, new Map(), 5, rng, [], NOW)).toHaveLength(2)
+    expect(selectSentences(all, new Map(), 0, rng, [], NOW)).toHaveLength(0)
   })
 })
