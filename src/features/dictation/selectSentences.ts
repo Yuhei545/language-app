@@ -37,8 +37,8 @@ function sentenceWeakness(
 /**
  * 今日の文を選ぶ。
  * 1. 予定日が来た文(忘却曲線)を古い順に
- * 2. 足りなければ、まだ出していない文を「苦手な現象を含む順」に
- * 3. それでも足りなければ、正答率の低い順に
+ * 2. 足りなければ、まだ出していない文を「今日の狙いを含む → 苦手な現象を含む」順に
+ * 3. それでも足りなければ、「今日の狙いを含む → 正答率の低い」順に
  */
 export function selectSentences(
   all: DictationSentence[],
@@ -47,6 +47,8 @@ export function selectSentences(
   rng: () => number = Math.random,
   featureStats: FeatureAccuracy[] = [],
   now: Date = new Date(),
+  /** 今日の狙い(型・句動詞・表現)を含む文の id。 */
+  targetIds: ReadonlySet<string> = new Set(),
 ): DictationSentence[] {
   if (count <= 0) {
     return []
@@ -86,12 +88,17 @@ export function selectSentences(
     return Number.isNaN(time) ? 0 : time
   }
 
+  const hasTarget = (sentence: DictationSentence): number => (targetIds.has(sentence.id) ? 1 : 0)
+
   due.sort((left, right) => dueTime(left) - dueTime(right) || rng() - 0.5)
   fresh.sort((left, right) => (
-    sentenceWeakness(right, stats) - sentenceWeakness(left, stats) || rng() - 0.5
+    hasTarget(right) - hasTarget(left)
+    || sentenceWeakness(right, stats) - sentenceWeakness(left, stats)
+    || rng() - 0.5
   ))
   rest.sort((left, right) => (
-    (progress.get(left.id)?.best_ratio ?? 0) - (progress.get(right.id)?.best_ratio ?? 0)
+    hasTarget(right) - hasTarget(left)
+    || (progress.get(left.id)?.best_ratio ?? 0) - (progress.get(right.id)?.best_ratio ?? 0)
     || rng() - 0.5
   ))
 

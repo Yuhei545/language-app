@@ -11,6 +11,11 @@ import {
   upsertDictationProgress,
 } from '../../services/supabase/db'
 import type { DictationFeatureStatRow, DictationProgressRow } from '../../services/supabase/types'
+import type { EncounterEntry } from '../chunks/ledger'
+import { recordEncounters, reportLedgerFailure } from '../chunks/record'
+import type { Chunk } from '../chunks/registry'
+import { loadChunkContext } from '../chunks/targetsStore'
+import { dictationEncounters, indexSentenceChunks, sentencesWithTargets } from './chunkEncounters'
 import { buildCloze, checkBlank, type Cloze } from './cloze'
 import { wordDiff, type DiffToken } from './diff'
 import { nextSchedule, type DictationStage } from './schedule'
@@ -49,6 +54,10 @@ export function useDictationSession(lang: 'en' | 'ko') {
   const userIdRef = useRef<string | null>(null)
   const progressRef = useRef(new Map<string, DictationProgressRow>())
   const featureStatsRef = useRef(new Map<string, DictationFeatureStatRow>())
+  /** 文ごとの、含まれるチャンク(型・句動詞・表現)。台帳に書くのに使う。 */
+  const chunkIndexRef = useRef(new Map<string, Chunk[]>())
+  const pendingRef = useRef<EncounterEntry[]>([])
+  const ledgerWarnedRef = useRef({ current: false })
 
   const currentSentence = sentences[currentIndex] ?? null
   /** この文の段階。保存が無ければ穴埋めから。 */
@@ -64,6 +73,18 @@ export function useDictationSession(lang: 'en' | 'ko') {
     setError(caught ?? new Error('予期しないエラーが発生しました'))
   }, [])
 
+  /** ためた出会いを台帳にまとめて書く。失敗しても練習は止めない。 */
+  const flushLedger = useCallback(() => {
+    const userId = userIdRef.current
+    const entries = pendingRef.current.splice(0)
+    if (!userId || entries.length === 0) {
+      return
+    }
+    void recordEncounters(userId, lang, entries).catch((ledgerError: unknown) => {
+      reportLedgerFailure(ledgerError, ledgerWarnedRef.current, setError)
+    })
+  }, [lang])
+
   useEffect(() => subscribe((nextSettings) => {
     settingsRef.current = nextSettings
     setSettingsState(nextSettings)
@@ -74,6 +95,8 @@ export function useDictationSession(lang: 'en' | 'ko') {
     userIdRef.current = null
     progressRef.current = new Map()
     featureStatsRef.current = new Map()
+    chunkIndexRef.current = new Map()
+    pendingRef.current = []
     playsRemainingRef.current = MAX_INITIAL_PLAYS
     setStatus('loading')
     setSentences([])
@@ -94,31 +117,43 @@ export function useDictationSession(lang: 'en' | 'ko') {
         if (!authSession) {
           throw new Error('ログイン情報を確認できませんでした')
         }
+        const userId = authSession.user.id
 
-        const [progressRows, featureRows] = await Promise.all([
-          listDictationProgress(authSession.user.id, lang),
-          listDictationFeatureStats(authSession.user.id, lang),
+        const [progressRows, featureRows, chunkContext] = await Promise.all([
+          listDictationProgress(userId, lang),
+          listDictationFeatureStats(userId, lang),
+          loadChunkContext({ userId, lang }),
         ])
         const featureStats: FeatureAccuracy[] = featureRows.map((row) => ({
           featureId: row.feature_id as DictationFeatureId,
           attempts: row.attempts,
           correct: row.correct,
         }))
+        // 今日の狙いを含む文を、期限の文の次に出す
+        const chunkIndex = indexSentenceChunks(allSentences, chunkContext.registry, lang)
+        const targetIds = sentencesWithTargets(chunkIndex, chunkContext.targets)
         const selected = selectSentences(
           allSentences,
           new Map(progressRows.map((row) => [row.sentence_id, row])),
           5,
           Math.random,
           featureStats,
+          new Date(),
+          targetIds,
         )
 
         if (active) {
-          userIdRef.current = authSession.user.id
+          userIdRef.current = userId
           progressRef.current = new Map(progressRows.map((row) => [row.sentence_id, row]))
           featureStatsRef.current = new Map(featureRows.map((row) => [row.feature_id, row]))
+          chunkIndexRef.current = chunkIndex
           setSentences(selected)
           setBlankInputs([])
           setStatus(selected.length === 0 ? 'finished' : 'listening')
+          if (chunkContext.error && !ledgerWarnedRef.current.current) {
+            ledgerWarnedRef.current.current = true
+            setError(chunkContext.error)
+          }
         }
       } catch (loadError) {
         if (active) {
@@ -130,8 +165,10 @@ export function useDictationSession(lang: 'en' | 'ko') {
     void load()
     return () => {
       active = false
+      // 途中でやめても、ここまでの出会いは書く
+      flushLedger()
     }
-  }, [captureError, lang])
+  }, [captureError, flushLedger, lang])
 
   /** 文全体、または一部(語)を読む。part を渡すとその部分だけ。 */
   const play = useCallback(async (rate: number, part?: string) => {
@@ -225,6 +262,8 @@ export function useDictationSession(lang: 'en' | 'ko') {
     let tokens: DiffToken[]
     let blankResults: boolean[] = []
     let featureResults: Array<{ featureId: DictationFeatureId; correct: boolean }> = []
+    /** 台帳の判定に使う、実際に書いた文(穴埋めは埋めた文)。 */
+    let written = typed
 
     if (cloze) {
       blankResults = cloze.blanks.map((blank, index) => checkBlank(blankInputs[index] ?? '', blank.answer))
@@ -236,6 +275,7 @@ export function useDictationSession(lang: 'en' | 'ko') {
           ? `${text}${segment}${blankInputs[index] ?? ''}`
           : `${text}${segment}`
       ), '')
+      written = filled
       tokens = wordDiff(currentSentence.text, filled, lang).tokens
       featureResults = cloze.blanks.map((blank, index) => ({
         featureId: blank.featureId,
@@ -281,6 +321,14 @@ export function useDictationSession(lang: 'en' | 'ko') {
       })
       progressRef.current.set(currentSentence.id, updated)
       await saveFeatureStats(featureResults)
+      // 文に含まれるチャンクを台帳へ(書けたら said、聞いただけなら seen)
+      pendingRef.current.push(...dictationEncounters({
+        sentence: currentSentence,
+        chunks: chunkIndexRef.current.get(currentSentence.id) ?? [],
+        lang,
+        cloze,
+        written,
+      }))
       setTypedText(typed)
       setResult({ tokens, ratio, blankResults, featureResults })
       setRatios((current) => [...current, ratio])
@@ -299,6 +347,7 @@ export function useDictationSession(lang: 'en' | 'ko') {
 
     if (currentIndex + 1 >= sentences.length) {
       setStatus('finished')
+      flushLedger()
       return
     }
 
@@ -309,7 +358,7 @@ export function useDictationSession(lang: 'en' | 'ko') {
     setBlankInputs([])
     setResult(null)
     setStatus('listening')
-  }, [currentIndex, isSpeaking, sentences.length, status])
+  }, [currentIndex, flushLedger, isSpeaking, sentences.length, status])
 
   const averageRatio = useMemo(() => (
     ratios.length === 0

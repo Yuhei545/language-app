@@ -78,3 +78,30 @@ describe('selectSentences', () => {
     expect(selectSentences(all, new Map(), 0, rng, [], NOW)).toHaveLength(0)
   })
 })
+
+describe('selectSentences: 今日の狙い', () => {
+  it('まだ出していない文は、狙いを含む文を苦手な現象より先に出す', () => {
+    const all = [sentence('en-001', ['flap']), sentence('en-002', ['linking']), sentence('en-003')]
+    const stats: FeatureAccuracy[] = [
+      { featureId: 'flap', attempts: 10, correct: 2 },
+      { featureId: 'linking', attempts: 10, correct: 9 },
+    ]
+
+    const selected = selectSentences(all, new Map(), 3, rng, stats, NOW, new Set(['en-003']))
+
+    expect(selected.map((item) => item.id)).toEqual(['en-003', 'en-001', 'en-002'])
+  })
+
+  it('予定日が来た文は狙いより先。予定日前の文の中でも狙いを含む文が先', () => {
+    const all = [sentence('en-001'), sentence('en-002'), sentence('en-003')]
+    const rows = progress([
+      ['en-001', { next_review_at: '2026-09-01T00:00:00.000Z' }],
+      ['en-002', { next_review_at: '2026-09-30T00:00:00.000Z', best_ratio: 0.2 }],
+      ['en-003', { next_review_at: '2026-09-30T00:00:00.000Z', best_ratio: 0.9 }],
+    ])
+
+    const selected = selectSentences(all, rows, 3, rng, [], NOW, new Set(['en-003']))
+
+    expect(selected.map((item) => item.id)).toEqual(['en-001', 'en-003', 'en-002'])
+  })
+})
