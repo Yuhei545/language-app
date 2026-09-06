@@ -152,11 +152,18 @@ npm run build
 3. Pagesの環境変数へ `VITE_SUPABASE_URL` と `VITE_SUPABASE_ANON_KEY` を登録します。
 4. Direct Uploadの場合は、環境変数を設定したローカル環境でビルドした `dist/` をアップロードします。
 
-### GitHub Pages
+### GitHub Pages(現在の公開先)
 
-GitHub Actionsなどで `npm run build` を実行し、`dist/` をPagesの公開成果物に指定します。ビルド時にはRepository secretsまたはActions variablesから `VITE_SUPABASE_URL` と `VITE_SUPABASE_ANON_KEY` を渡します。
+公開 URL: https://yuhei545.github.io/language-app/
 
-現在のPWA設定はドメイン直下（`/`）での公開を前提にしています。`https://ユーザー名.github.io/リポジトリ名/` のようなサブパスへ公開する場合は、Viteの `base`、manifestの `start_url` と `scope`、アイコンのパスをリポジトリ名に合わせて変更してください。設定変更なしで使う場合は、Cloudflare Pages、独自ドメイン、またはドメイン直下のGitHub Pagesを選びます。
+`main` へ push すると `.github/workflows/deploy.yml` がテスト → ビルド → GitHub Pages への配置を行います。
+ビルド時の `VITE_SUPABASE_URL` と `VITE_SUPABASE_ANON_KEY` はリポジトリの Secrets から渡します(`gh secret set --env-file .env`)。
+
+サブパス公開のため、`vite.config.ts` の `base` と manifest の `start_url` / `scope` は `/language-app/` に、
+アイコンのパスは相対にしてあります。ルーターは `HashRouter` です(Pages は深いパスの直接アクセスで 404 になるため)。
+リポジトリ名を変えるときは、この 3 か所を合わせて変更してください。
+
+スマホで使うときは、公開 URL を Chrome で開き「ホーム画面に追加」します。Gemini の API キーは端末ごとに設定画面で入力します。
 
 ### 環境変数とAPIキー
 
