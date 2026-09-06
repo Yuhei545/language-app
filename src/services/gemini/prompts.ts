@@ -49,6 +49,8 @@ export type QuickQuestionsPromptInput = {
   frames: Array<{ pattern: string; hint_ja: string }>
   personalWords: Array<{ text: string; kind: PersonalWordKind }>
   count?: number
+  /** 今日の狙い(型は ___ 入り)。質問に自然に入れてもらう。 */
+  targetExpressions?: string[]
 }
 
 export type QuickJudgePromptInput = {
@@ -70,6 +72,8 @@ export type DialoguePromptInput = {
   knownWords: string[]
   level: DialogueLevel
   retryIssues?: DialogueIssue[]
+  /** 今日の狙い(型は ___ 入り)。半分以上を台詞にそのまま入れてもらう。 */
+  targetExpressions?: string[]
 }
 
 const languageNames: Record<Lang, string> = {
@@ -197,6 +201,9 @@ export function buildQuickQuestionsPrompt(input: QuickQuestionsPromptInput): str
   const personalWords = input.personalWords.length > 0
     ? input.personalWords.map((word) => `- ${word.text} (${word.kind})`).join('\n')
     : '(none)'
+  const targets = input.targetExpressions?.length
+    ? `\nTarget expressions (use each in at least one question, naturally; fill ___ with a fitting word):\n${input.targetExpressions.map((text) => `- ${text}`).join('\n')}\n`
+    : ''
 
   return `Create exactly ${count} short ${language} questions that a beginner can answer in 1-2 seconds.
 Use and vary the practiced sentence patterns and the learner's personal words when natural.
@@ -208,7 +215,7 @@ ${frames}
 
 Personal words:
 ${personalWords}
-
+${targets}
 Return only a JSON array of exactly ${count} objects. Every object must contain q with the ${language} question and ja with its Japanese translation.`
 }
 
@@ -253,6 +260,10 @@ export function buildDialoguePrompt(input: DialoguePromptInput): string {
   const retry = input.retryIssues?.length
     ? `\nYour previous attempt had these problems:\n${input.retryIssues.map((issue) => `- ${issue.message}`).join('\n')}\nFix every problem in the new result.`
     : ''
+  const targetCount = input.targetExpressions?.length ?? 0
+  const targets = targetCount > 0
+    ? `\n10. Target expressions (count them as known words): weave at least ${Math.ceil(targetCount / 2)} of these into the dialogue verbatim, preferably in Speaker B's lines so the learner says them. For a pattern with ___, keep the fixed words exactly and fill ___ with a fitting word:\n${(input.targetExpressions ?? []).map((text) => `- ${text}`).join('\n')}`
+    : ''
 
   return `Create a natural ${language} dialogue for this scene: ${input.sceneJa}
 Learner interests: ${listInterests(input.interests)}.
@@ -267,7 +278,7 @@ Rules:
 6. For every turn add note_ja: one or two short Japanese sentences ONLY when a learner would want an explanation right there (grammar, politeness level, nuance, culture). Otherwise use an empty string.
 7. For every turn add exactly 2 prompts. Each prompt recombines pieces of this line with the learner's known words into a new, natural sentence within the line limit: cue_ja is a Japanese instruction such as 「『水をお願いします』と言ってください」 or 「相手に『他に何か要りますか』と聞いてください」, answer is the ${language} sentence, ja is its Japanese meaning. Do not simply repeat the line in both prompts.
 8. For every new expression, add text, its Japanese meaning in ja, one Japanese usage sentence in note_ja, and the zero-based turn_index of the turn containing the exact text.
-9. Return title_ja, scene_ja, turns (with key, note_ja, prompts), and new_expressions in the required JSON structure.
+9. Return title_ja, scene_ja, turns (with key, note_ja, prompts), and new_expressions in the required JSON structure.${targets}
 
 Known words (maximum 300): ${list(input.knownWords.slice(0, 300))}.${retry}`
 }

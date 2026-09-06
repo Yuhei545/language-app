@@ -26,6 +26,10 @@ import type {
   PrepEventRow,
 } from '../../services/supabase/types'
 import { selectDueCards, type SrsState } from '../cards/srs'
+import type { EncounterEntry } from '../chunks/ledger'
+import { recordEncounters, reportLedgerFailure } from '../chunks/record'
+import { chunksIn } from '../chunks/registry'
+import { loadChunkContext, type ChunkContext } from '../chunks/targetsStore'
 import { comboKey } from '../mixing/deal'
 import { slotPool } from '../mixing/combinations'
 import { buildDialogueLesson, PROMPT_ITEM_PREFIX, type DialogueLessonStep } from './dialoguePlan'
@@ -188,6 +192,10 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const dialogueIdRef = useRef<string | null>(null)
   const generationAbortRef = useRef<AbortController | null>(null)
   const completionRunRef = useRef<number | null>(null)
+  /** 今日の狙いと登録簿。会話の生成に渡し、台詞に含まれるチャンクを台帳に書く。 */
+  const chunkContextRef = useRef<ChunkContext | null>(null)
+  const pendingRef = useRef<EncounterEntry[]>([])
+  const ledgerWarnedRef = useRef({ current: false })
 
   const currentStep = steps[currentIndex] ?? null
 
@@ -228,6 +236,59 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     settingsRef.current = nextSettings
     setSettingsState(nextSettings)
   }), [])
+
+  /** ためた出会いを台帳にまとめて書く。失敗してもレッスンは止めない。 */
+  const flushLedger = useCallback(() => {
+    const userId = userIdRef.current
+    const entries = pendingRef.current.splice(0)
+    if (!userId || entries.length === 0) {
+      return
+    }
+    void recordEncounters(userId, lang, entries).catch((ledgerError: unknown) => {
+      reportLedgerFailure(ledgerError, ledgerWarnedRef.current, setError)
+    })
+  }, [lang])
+
+  /**
+   * 終えたステップに含まれるチャンクを台帳にためる。
+   * 会話: 台詞・核・思い出しは seen、応用の合図・締めは said。単語レッスン: 1 回目は seen、再出題は said。
+   */
+  const noteStep = useCallback((step: RunnableLessonStep | undefined) => {
+    const registry = chunkContextRef.current?.registry
+    if (!step || !registry || registry.length === 0) {
+      return
+    }
+    let kind: EncounterEntry['kind']
+    let context: string
+    let text: string
+    if (isDialogueStep(step)) {
+      if (!step.item) {
+        return
+      }
+      if (step.kind === 'prompt' || step.kind === 'closing') {
+        kind = 'said'
+      } else if (step.kind === 'breakdown' || step.kind === 'line' || step.kind === 'recall') {
+        kind = 'seen'
+      } else {
+        return
+      }
+      context = `${dialogueIdRef.current ?? 'dialogue'}:${step.item.id}`
+      text = step.item.answer
+    } else {
+      kind = step.stage === 0 ? 'seen' : 'said'
+      context = `words:${step.item.id}`
+      text = step.item.answer
+    }
+    for (const chunk of chunksIn(text, registry, lang)) {
+      pendingRef.current.push({ chunkKey: chunk.key, mode: 'lesson', kind, context })
+    }
+  }, [lang])
+
+  useEffect(() => {
+    if (status === 'finished') {
+      flushLedger()
+    }
+  }, [flushLedger, status])
 
   useEffect(() => {
     mountedRef.current = true
@@ -280,11 +341,12 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
         const upcomingEvents = prepEvents.filter(
           (event) => event.event_date !== null && event.event_date >= localDateString(new Date()),
         )
-        const [vocabProgress, prepGroups] = await Promise.all([
+        const [vocabProgress, prepGroups, chunkContext] = await Promise.all([
           getVocabProgress(userId, vocabItems.map((item) => item.id)),
           Promise.all(upcomingEvents.map(
             (event) => listVocabItems(userId, lang, { prepEventId: event.id }),
           )),
+          loadChunkContext({ userId, lang, vocabItems }),
         ])
         const srsProgress = new Map<string, SrsState>(vocabProgress.map((progress) => [
           progress.vocab_item_id,
@@ -315,6 +377,8 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
             ))
           )).map((item) => item.text),
           ...coreWords,
+          // 今日の狙いは既知語として数える(型の固定部分・句動詞・表現)
+          ...chunkContext.targets.map((chunk) => chunk.display),
         ]))
 
         if (active) {
@@ -322,7 +386,13 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
           currentWeekRef.current = currentWeek
           knownWordsRef.current = knownWords
           wordStepsRef.current = nextSteps
+          chunkContextRef.current = chunkContext
+          pendingRef.current = []
           setUpcomingPrepEvents(upcomingEvents)
+          if (chunkContext.error && !ledgerWarnedRef.current.current) {
+            ledgerWarnedRef.current.current = true
+            setError(chunkContext.error)
+          }
 
           if (initialDialogue) {
             const savedDialogue = rowToDialogue(initialDialogue)
@@ -352,8 +422,10 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     return () => {
       active = false
       cancelActive()
+      // 途中でやめても、ここまでの出会いは書く
+      flushLedger()
     }
-  }, [cancelActive, initialDialogue, lang])
+  }, [cancelActive, flushLedger, initialDialogue, lang])
 
   useEffect(() => {
     if (status !== 'running' || paused || !currentStep) {
@@ -442,6 +514,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
       setCurrentAction(null)
       setCurrentSpokenText(null)
       setCurrentSpeaker(null)
+      noteStep(steps[currentIndex])
       if (currentIndex + 1 >= steps.length) {
         updateElapsed()
         setStatus('finished')
@@ -468,6 +541,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   }, [
     cancelActive,
     currentIndex,
+    noteStep,
     currentStep,
     lang,
     paused,
@@ -553,6 +627,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
         interests: settingsRef.current.interests,
         knownWords: knownWordsRef.current,
         level: lang === 'en' ? 'practical-b1' : 'beginner',
+        targets: chunkContextRef.current?.targets ?? [],
       }, { signal: controller.signal })
       const saved = await saveLessonDialogue({
         user_id: userId,

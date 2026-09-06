@@ -4,6 +4,7 @@ import {
   type DialogueIssue,
   type LessonDialogue,
 } from '../../features/lesson/lessonDialogueSchema'
+import type { Chunk } from '../../features/chunks/registry'
 import type { Interest } from '../settings'
 import { getGeminiClient, getModelId, LONG_GENERATION_TIMEOUT_MS, TRANSIENT_RETRY } from './client'
 import { GeminiError, toGeminiError } from './errors'
@@ -17,6 +18,8 @@ export type GenerateDialogueParams = {
   interests: Interest[]
   knownWords: string[]
   level: DialogueLevel
+  /** 今日の狙い。半分以上を台詞に入れてもらい、検査で数える。 */
+  targets?: Chunk[]
 }
 
 export type GeneratedDialogue = {
@@ -38,7 +41,17 @@ async function requestDialogue(
     model: getModelId(),
     contents: [{
       role: 'user',
-      parts: [{ text: buildDialoguePrompt({ ...params, retryIssues }) }],
+      parts: [{
+        text: buildDialoguePrompt({
+          lang: params.lang,
+          sceneJa: params.sceneJa,
+          interests: params.interests,
+          knownWords: params.knownWords,
+          level: params.level,
+          targetExpressions: params.targets?.map((chunk) => chunk.display),
+          retryIssues,
+        }),
+      }],
     }],
     config: {
       temperature: 0.8,
@@ -68,7 +81,7 @@ async function requestDialogue(
 
 /**
  * 場面と既知語に合わせた会話を生成し、機械検査に通ったものだけ返す。
- * 不合格なら理由を添えて 1 回だけ再生成する。2 回目も比率だけがわずかに不足なら採用し、
+ * 不合格なら理由を添えて 1 回だけ再生成する。2 回目も比率のわずかな不足や狙いの不足だけなら採用し、
  * それ以外は理由を列挙して失敗させる(黙って通さない)。
  */
 export async function generateDialogue(
@@ -80,16 +93,18 @@ export async function generateDialogue(
   try {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
       const json = await requestDialogue(params, previousIssues, opts?.signal)
-      const result = validateDialogue(json, { lang: params.lang, knownWords: params.knownWords })
+      const result = validateDialogue(json, { lang: params.lang, knownWords: params.knownWords, targets: params.targets })
 
       if (result.ok) {
         return { dialogue: result.dialogue, ratio: result.ratio, attempts: attempt }
       }
 
-      const onlyRatio = result.issues.every((issue) => issue.code === 'ratio')
+      // 2 回目に残るのが「比率のわずかな不足」と「狙いの不足」だけなら採用する(狙いは次のレッスンでも出る)
+      const onlySoft = result.issues.every((issue) => issue.code === 'ratio' || issue.code === 'targets')
+      const hasRatioIssue = result.issues.some((issue) => issue.code === 'ratio')
       const shortfall = KNOWN_RATIO_THRESHOLD[params.lang] - result.ratio
-      if (attempt === MAX_ATTEMPTS && onlyRatio && shortfall < RATIO_TOLERANCE) {
-        console.warn('会話の既知語比率がわずかに不足していますが採用します', { ratio: result.ratio })
+      if (attempt === MAX_ATTEMPTS && onlySoft && (!hasRatioIssue || shortfall < RATIO_TOLERANCE)) {
+        console.warn('会話の検査に軽い不足がありますが採用します', { ratio: result.ratio, issues: result.issues })
         return { dialogue: result.dialogue ?? (json as LessonDialogue), ratio: result.ratio, attempts: attempt }
       }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { validateDialogue, type LessonDialogue } from './lessonDialogueSchema'
+import type { Chunk } from '../chunks/registry'
+import { targetCoverage, validateDialogue, type LessonDialogue } from './lessonDialogueSchema'
 
 const enDialogue: LessonDialogue = {
   title_ja: 'カフェで注文する',
@@ -161,5 +162,47 @@ describe('validateDialogue', () => {
     if (!result.ok) {
       expect(result.issues.map((issue) => issue.code)).toContain('turns')
     }
+  })
+})
+
+describe('validateDialogue: 今日の狙い', () => {
+  function chunk(key: string, anchor: string, display = anchor): Chunk {
+    return { key, kind: 'frame', lang: 'en', display, hintJa: '', anchor, variants: [] }
+  }
+  const couldIGet = chunk('frame:en-could-i-get', 'could i get', 'Could I get ___?')
+  const anythingElse = chunk('expr:anything else', 'anything else')
+  const pickUp = chunk('phrasal:pick up', 'pick up')
+  const farFromHere = chunk('frame:en-is-far', 'far from here', 'Is ___ far from here?')
+  const unmatchable = chunk('frame:en-thing-was-adj', '', '___ was ___.')
+
+  it('狙いの半分以上が台詞に入っていれば合格', () => {
+    const result = validateDialogue(enDialogue, {
+      lang: 'en',
+      knownWords: allWords(enDialogue),
+      targets: [couldIGet, pickUp],
+    })
+    expect(result.ok).toBe(true)
+  })
+
+  it('半分未満なら targets の問題を返し、入っていない狙いを列挙する', () => {
+    const result = validateDialogue(enDialogue, {
+      lang: 'en',
+      knownWords: allWords(enDialogue),
+      targets: [pickUp, farFromHere],
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      const issue = result.issues.find((item) => item.code === 'targets')
+      expect(issue?.message).toContain('「pick up」')
+      expect(issue?.message).toContain('「Is ___ far from here?」')
+      expect(issue?.message).toContain('少なくとも 1 個')
+    }
+  })
+
+  it('固定部分の無い狙いは数えない', () => {
+    const coverage = targetCoverage(enDialogue.turns, [couldIGet, anythingElse, unmatchable], 'en')
+    expect(coverage.hit.map((item) => item.key)).toEqual(['frame:en-could-i-get', 'expr:anything else'])
+    expect(coverage.required).toBe(1)
+    expect(validateDialogue(enDialogue, { lang: 'en', knownWords: allWords(enDialogue), targets: [unmatchable] }).ok).toBe(true)
   })
 })

@@ -1,4 +1,5 @@
 import { normalizeText } from '../../services/speech/normalize'
+import { matchChunk, type Chunk } from '../chunks/registry'
 
 export type DialogueSpeaker = 'A' | 'B'
 export type DialoguePrompt = { cue_ja: string; answer: string; ja: string }
@@ -22,7 +23,7 @@ export type LessonDialogue = {
   new_expressions: NewExpression[]
 }
 
-export type DialogueIssueCode = 'turns' | 'alternation' | 'length' | 'expressions' | 'ratio' | 'script' | 'key' | 'prompts'
+export type DialogueIssueCode = 'turns' | 'alternation' | 'length' | 'expressions' | 'ratio' | 'script' | 'key' | 'prompts' | 'targets'
 export type DialogueIssue = { code: DialogueIssueCode; message: string }
 
 export type DialogueValidation =
@@ -131,9 +132,24 @@ const LATIN_WORD = /[A-Za-z]{2,}/
  * Gemini が生成した会話を、レッスンに使える形か機械的に検査する。
  * 形が壊れていても throw せず、理由の一覧を返す(再生成の指示に使う)。
  */
+/** 今日の狙いのうち、少なくともこの割合が台詞に入っていること。 */
+export const TARGET_SHARE = 0.5
+
+/** 台詞に入っている狙いと、入っていない狙い(固定部分が無く照合できない狙いは数えない)。 */
+export function targetCoverage(
+  turns: Array<{ text: string }>,
+  targets: Chunk[],
+  lang: 'en' | 'ko',
+): { hit: Chunk[]; missing: Chunk[]; required: number } {
+  const matchable = targets.filter((chunk) => chunk.anchor.length > 0)
+  const hit = matchable.filter((chunk) => turns.some((turn) => matchChunk(turn.text, chunk, lang)))
+  const missing = matchable.filter((chunk) => !hit.includes(chunk))
+  return { hit, missing, required: Math.ceil(matchable.length * TARGET_SHARE) }
+}
+
 export function validateDialogue(
   json: unknown,
-  opts: { lang: 'en' | 'ko'; knownWords: string[] },
+  opts: { lang: 'en' | 'ko'; knownWords: string[]; targets?: Chunk[] },
 ): DialogueValidation {
   const parsed = parseDialogue(json)
   if (typeof parsed === 'string') {
@@ -247,6 +263,17 @@ export function validateDialogue(
       }
     })
   })
+
+  if (opts.targets && opts.targets.length > 0) {
+    const coverage = targetCoverage(turns, opts.targets, lang)
+    if (coverage.hit.length < coverage.required) {
+      issues.push({
+        code: 'targets',
+        message: `狙いの表現のうち ${coverage.missing.map((chunk) => `「${chunk.display}」`).join('')} が会話に入っていません。`
+          + `少なくとも ${coverage.required} 個を台詞にそのまま入れてください(___ には合う語を入れる)`,
+      })
+    }
+  }
 
   const expressionTokens = new Set(expressions.flatMap((expression) => tokens(expression.text, lang)))
   const knownTokens = new Set(opts.knownWords.flatMap((word) => tokens(word, lang)))

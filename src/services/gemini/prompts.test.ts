@@ -173,6 +173,20 @@ describe('buildQuickQuestionsPrompt', () => {
     expect(prompt).toContain('Asakusa (place)')
     expect(prompt).toContain('consecutive questions do not keep using the same pattern')
     expect(prompt).toContain('"wrong", "mistake", or "incorrect"')
+    expect(prompt).not.toContain('Target expressions')
+  })
+
+  it('今日の狙いを渡すと、各質問に入れる指示を含む', () => {
+    const prompt = buildQuickQuestionsPrompt({
+      lang: 'en',
+      frames: [],
+      personalWords: [],
+      targetExpressions: ['Could I get ___?', 'pick up'],
+    })
+
+    expect(prompt).toContain('Target expressions')
+    expect(prompt).toContain('- Could I get ___?')
+    expect(prompt).toContain('- pick up')
   })
 })
 
@@ -220,6 +234,23 @@ describe('buildDialoguePrompt', () => {
     expect(prompt).toContain('ホテルでチェックインする')
     expect(prompt).toContain('hello, room')
     expect(prompt).toContain('practical everyday English at CEFR B1')
+    expect(prompt).not.toContain('Target expressions')
+  })
+
+  it('今日の狙いを渡すと、半分以上を台詞に入れる指示を含む', () => {
+    const prompt = buildDialoguePrompt({
+      lang: 'en',
+      sceneJa: 'カフェで注文する',
+      interests: [],
+      knownWords: ['hello'],
+      level: 'practical-b1',
+      targetExpressions: ['Could I get ___?', 'pick up', 'to be honest'],
+    })
+
+    expect(prompt).toContain('10. Target expressions')
+    expect(prompt).toContain('at least 2 of these')
+    expect(prompt).toContain('- Could I get ___?')
+    expect(prompt).toContain('- to be honest')
   })
 
   it('韓国語レベルと再試行時の問題を列挙する', () => {

@@ -5,6 +5,10 @@ import { speak, stopSpeaking, unlockAudio } from '../../services/speech'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import { insertSpeakingSession, listMixingProgress } from '../../services/supabase/db'
+import type { EncounterEntry } from '../chunks/ledger'
+import { recordEncounters, reportLedgerFailure } from '../chunks/record'
+import { chunksIn } from '../chunks/registry'
+import { loadChunkContext, localDay, type ChunkContext } from '../chunks/targetsStore'
 import { withPersonalWords } from './personal'
 import { buildFrameStats } from './progress'
 import { frameMastery } from './mastery'
@@ -94,6 +98,9 @@ export function useQuickSession(lang: 'en' | 'ko') {
   const generationRef = useRef(0)
   const mountedRef = useRef(true)
   const userIdRef = useRef<string | null>(null)
+  const chunkContextRef = useRef<ChunkContext | null>(null)
+  const pendingRef = useRef<EncounterEntry[]>([])
+  const ledgerWarnedRef = useRef({ current: false })
 
   useEffect(() => {
     mountedRef.current = true
@@ -135,6 +142,18 @@ export function useQuickSession(lang: 'en' | 'ko') {
     abortRef.current = null
   }, [])
 
+  /** ためた出会いを台帳にまとめて書く。失敗しても練習は止めない。 */
+  const flushLedger = useCallback(() => {
+    const userId = userIdRef.current
+    const entries = pendingRef.current.splice(0)
+    if (!userId || entries.length === 0) {
+      return
+    }
+    void recordEncounters(userId, lang, entries).catch((ledgerError: unknown) => {
+      reportLedgerFailure(ledgerError, ledgerWarnedRef.current, setError)
+    })
+  }, [lang])
+
   useEffect(() => {
     cancelActive()
     setPhase('idle')
@@ -142,8 +161,12 @@ export function useQuickSession(lang: 'en' | 'ko') {
     setAnswers([])
     setSummary(null)
     setError(null)
-    return cancelActive
-  }, [cancelActive, lang])
+    pendingRef.current = []
+    return () => {
+      cancelActive()
+      flushLedger()
+    }
+  }, [cancelActive, flushLedger, lang])
 
   const start = useCallback(async () => {
     if (phase === 'preparing') {
@@ -158,10 +181,21 @@ export function useQuickSession(lang: 'en' | 'ko') {
 
     try {
       unlockAudio()
+      const userId = userIdRef.current
+      // 今日の狙い。質問に入れてもらい、出てきた分を台帳に書く
+      const chunkContext = userId ? await loadChunkContext({ userId, lang }) : null
+      if (generationRef.current !== generation || !mountedRef.current) {
+        return
+      }
+      chunkContextRef.current = chunkContext
+      if (chunkContext?.error && !ledgerWarnedRef.current.current) {
+        ledgerWarnedRef.current.current = true
+        setError(chunkContext.error)
+      }
+
       let list = readCache(lang)
       if (!list) {
         const core = withPersonalWords(loadCore(lang), settingsRef.current.personalWords, lang)
-        const userId = userIdRef.current
         const rows = userId ? await listMixingProgress(userId, lang) : []
         const stats = buildFrameStats(rows)
         const statsById = new Map(stats.map((item) => [item.frameId, item]))
@@ -180,6 +214,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
             .filter((word) => word[lang].trim() !== '')
             .map((word) => ({ text: word[lang], kind: word.kind })),
           count: QUESTION_COUNT,
+          targetExpressions: chunkContext?.targets.map((chunk) => chunk.display) ?? [],
         }, { signal: controller.signal })
         if (generationRef.current !== generation || !mountedRef.current) {
           return
@@ -235,8 +270,9 @@ export function useQuickSession(lang: 'en' | 'ko') {
     ))
     setSummary({ roundLatencyMs, answers: allAnswers })
     setPhase('finished')
+    flushLedger()
     await saveSession(allAnswers, roundLatencyMs)
-  }, [saveSession])
+  }, [flushLedger, saveSession])
 
   // 質問を読み上げ、終わったら答える時間にする
   useEffect(() => {
@@ -297,13 +333,21 @@ export function useQuickSession(lang: 'en' | 'ko') {
     }
     const cueEndedAt = cueEndedAtRef.current
     const latencyMs = cueEndedAt === null ? null : Math.max(0, Date.now() - cueEndedAt)
+    // 質問に含まれる狙いは 1 周目だけ seen に数える(3 周で 3 倍にしない)
+    if (roundIndex === 0 && current) {
+      const registry = chunkContextRef.current?.registry ?? []
+      for (const chunk of chunksIn(current.q, registry, lang)) {
+        pendingRef.current.push({ chunkKey: chunk.key, mode: 'quick', kind: 'seen', context: `${localDay()}:${index}` })
+      }
+    }
     moveOn([...answers, { round: roundIndex, index, latencyMs }])
-  }, [answers, index, moveOn, phase, roundIndex])
+  }, [answers, current, index, lang, moveOn, phase, roundIndex])
 
   const stop = useCallback(() => {
     cancelActive()
+    flushLedger()
     setPhase('idle')
-  }, [cancelActive])
+  }, [cancelActive, flushLedger])
 
   return {
     phase,
