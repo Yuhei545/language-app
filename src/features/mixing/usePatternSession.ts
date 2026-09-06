@@ -11,13 +11,24 @@ import {
 import { getSession } from '../../services/supabase/auth'
 import {
   insertSpeakingSession,
+  listChunkEncounters,
   listMixingProgress,
   upsertMixingProgress,
 } from '../../services/supabase/db'
 import type { MixingProgressRow } from '../../services/supabase/types'
+import { recentContexts, WEEK_MS, type EncounterEntry } from '../chunks/ledger'
+import { recordEncounters, reportLedgerFailure } from '../chunks/record'
+import { chunkKeyForFrame, chunkKeyForPhrasal, type Chunk } from '../chunks/registry'
+import { loadChunkContext, type ChunkContext } from '../chunks/targetsStore'
 import { suggestLevel } from './mastery'
 import { withPersonalWords } from './personal'
-import { buildPatternSession, type PatternItem, type PatternSession } from './patternSession'
+import {
+  buildPatternSession,
+  comboContext,
+  type PatternItem,
+  type PatternSession,
+  type PatternTargets,
+} from './patternSession'
 import { buildComboHistory, buildFrameStats, identityKey, progressIdentity } from './progress'
 
 export type PatternPhase =
@@ -25,7 +36,6 @@ export type PatternPhase =
   | 'idle'
   /** 新しい型に入る前の紹介。解説と例文を見せる。 */
   | 'intro'
-  /** 録音の準備中(合図を表示した直後)。 */
   /** 合図を見て声に出す時間。数秒たつか「答えを見る」で模範へ。 */
   | 'thinking'
   /** 言えても言えなくても、模範を見せる。 */
@@ -45,6 +55,9 @@ export type PatternSummary = {
   nextLevel: MixingLevel | null
 }
 
+/** 同じ型で、直近この回数分の部品の組は避ける。 */
+export const RECENT_COMBOS_TO_AVOID = 3
+
 /**
  * 保存の失敗が「マイグレーション未適用」なら、何をすればよいかを伝える。
  * 列が無いだけなので練習そのものは続けられる。
@@ -60,6 +73,20 @@ function migrationError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error))
 }
 
+/** 今日の狙いから、型を回すに渡す形を作る。 */
+function toPatternTargets(
+  context: ChunkContext | null,
+  recent: ReadonlyMap<string, readonly string[]>,
+): PatternTargets | undefined {
+  if (!context || context.targets.length === 0) {
+    return undefined
+  }
+  return {
+    frameIds: context.targets.flatMap((chunk) => (chunk.frameId ? [chunk.frameId] : [])),
+    phrasal: context.targets.filter((chunk) => chunk.kind === 'phrasal').map((chunk) => chunk.display),
+    recentContexts: recent,
+  }
+}
 
 export function usePatternSession(lang: 'en' | 'ko') {
   const [settings, setSettingsState] = useState<Settings>(getSettings)
@@ -73,9 +100,15 @@ export function usePatternSession(lang: 'en' | 'ko') {
   const [error, setError] = useState<unknown>(null)
   /** 自分で判定するときの、声に出す残り秒数。 */
   const [secondsLeft, setSecondsLeft] = useState(0)
+  /** 今日の狙い(型・句動詞・表現)。idle 画面で見せる。 */
+  const [targets, setTargets] = useState<Chunk[]>([])
 
   const userIdRef = useRef<string | null>(null)
   const rowsRef = useRef(new Map<string, MixingProgressRow>())
+  const chunkContextRef = useRef<ChunkContext | null>(null)
+  const recentRef = useRef<ReadonlyMap<string, readonly string[]>>(new Map())
+  const pendingRef = useRef<EncounterEntry[]>([])
+  const ledgerWarnedRef = useRef({ current: false })
   const generationRef = useRef(0)
   const mountedRef = useRef(true)
 
@@ -101,7 +134,37 @@ export function usePatternSession(lang: 'en' | 'ko') {
     stopSpeaking()
   }, [])
 
-  // 読み込み: 語彙と保存済みの成績
+  /** ためた出会いを台帳にまとめて書く。失敗しても練習は止めない。 */
+  const flushLedger = useCallback(() => {
+    const userId = userIdRef.current
+    const entries = pendingRef.current.splice(0)
+    if (!userId || entries.length === 0) {
+      return
+    }
+    void recordEncounters(userId, lang, entries).catch((ledgerError: unknown) => {
+      reportLedgerFailure(ledgerError, ledgerWarnedRef.current, setError)
+    })
+  }, [lang])
+
+  /** 型と、部品に含まれる句動詞を台帳にためる(登録簿にあるものだけ。自分の語は数えない)。 */
+  const noteEncounter = useCallback((item: PatternItem, said: boolean) => {
+    const registry = chunkContextRef.current?.registry ?? []
+    const known = new Set(registry.map((chunk) => chunk.key))
+    const kind = said ? 'said' : 'seen'
+    const context = comboContext(item.words)
+    const frameKey = chunkKeyForFrame(item.frame)
+    if (known.has(frameKey)) {
+      pendingRef.current.push({ chunkKey: frameKey, mode: 'pattern', kind, context })
+    }
+    for (const word of item.words) {
+      const phrasalKey = chunkKeyForPhrasal(word.text, lang)
+      if (known.has(phrasalKey)) {
+        pendingRef.current.push({ chunkKey: phrasalKey, mode: 'pattern', kind, context: item.frame.id })
+      }
+    }
+  }, [lang])
+
+  // 読み込み: 語彙と保存済みの成績、今日の狙い
   const [ready, setReady] = useState(false)
   useEffect(() => {
     let active = true
@@ -112,6 +175,10 @@ export function usePatternSession(lang: 'en' | 'ko') {
     setSummary(null)
     setAttempts([])
     setError(null)
+    setTargets([])
+    chunkContextRef.current = null
+    recentRef.current = new Map()
+    pendingRef.current = []
 
     const load = async () => {
       try {
@@ -119,16 +186,42 @@ export function usePatternSession(lang: 'en' | 'ko') {
         if (!authSession) {
           throw new Error('ログイン情報を確認できませんでした')
         }
-        const rows = await listMixingProgress(authSession.user.id, lang)
+        const userId = authSession.user.id
+        const rows = await listMixingProgress(userId, lang)
+        const chunkContext = await loadChunkContext({ userId, lang })
+
+        // 狙いの型で最近使った組(1 週間、型を回すの記録だけ)。台帳が無ければ空のまま
+        const recent = new Map<string, readonly string[]>()
+        if (!chunkContext.error) {
+          try {
+            const since = new Date(Date.now() - WEEK_MS).toISOString()
+            const encounters = await listChunkEncounters(userId, lang, { mode: 'pattern', since })
+            for (const chunk of chunkContext.targets) {
+              if (chunk.frameId) {
+                recent.set(chunk.key, recentContexts(encounters, chunk.key, 'pattern', RECENT_COMBOS_TO_AVOID))
+              }
+            }
+          } catch (recentError) {
+            console.error('最近の組を読めませんでした。避けずに出します', recentError)
+          }
+        }
+
         if (!active) {
           return
         }
-        userIdRef.current = authSession.user.id
+        userIdRef.current = userId
         rowsRef.current = new Map(rows.map((row) => [identityKey({
           frameId: row.frame_id,
           verbText: row.verb_text,
           nounText: row.noun_text,
         }), row]))
+        chunkContextRef.current = chunkContext
+        recentRef.current = recent
+        setTargets(chunkContext.targets)
+        if (chunkContext.error && !ledgerWarnedRef.current.current) {
+          ledgerWarnedRef.current.current = true
+          setError(chunkContext.error)
+        }
         setReady(true)
         setPhase('idle')
       } catch (loadError) {
@@ -143,8 +236,10 @@ export function usePatternSession(lang: 'en' | 'ko') {
     return () => {
       active = false
       cancelActive()
+      // 途中でやめても、ここまでの出会いは書く
+      flushLedger()
     }
-  }, [cancelActive, captureError, lang])
+  }, [cancelActive, captureError, flushLedger, lang])
 
   const currentItem: PatternItem | null = session
     ? session.rounds[roundIndex]?.[itemIndex] ?? null
@@ -196,6 +291,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
       nextLevel: suggested !== level ? suggested : null,
     })
     setPhase('finished')
+    flushLedger()
 
     if (!userId || allAttempts.length === 0) {
       return
@@ -217,7 +313,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
       console.error('練習の記録を保存できませんでした', saveError)
       setError(migrationError(saveError))
     }
-  }, [lang, session])
+  }, [flushLedger, lang, session])
 
   const advance = useCallback((allAttempts: PatternAttempt[]) => {
     if (!session) {
@@ -253,6 +349,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
         level: settingsRef.current.mixingLevel,
         stats: buildFrameStats(rows),
         history: buildComboHistory(core, rows),
+        targets: toPatternTargets(chunkContextRef.current, recentRef.current),
       })
       if (built.items.length === 0) {
         throw new Error('練習できる型が見つかりませんでした')
@@ -328,12 +425,13 @@ export function usePatternSession(lang: 'en' | 'ko') {
     const attempt: PatternAttempt = { itemId: item.id, round: roundIndex, said }
     const next = [...attempts, attempt]
     setAttempts(next)
+    noteEncounter(item, said)
     await saveAttempt(item, attempt)
     if (!mountedRef.current) {
       return
     }
     advance(next)
-  }, [advance, attempts, currentItem, phase, roundIndex, saveAttempt])
+  }, [advance, attempts, currentItem, noteEncounter, phase, roundIndex, saveAttempt])
 
   /** 型の紹介を読み終えて、練習に入る。 */
   const beginItems = useCallback(() => {
@@ -345,9 +443,10 @@ export function usePatternSession(lang: 'en' | 'ko') {
 
   const stop = useCallback(() => {
     cancelActive()
+    flushLedger()
     setSession(null)
     setPhase('idle')
-  }, [cancelActive])
+  }, [cancelActive, flushLedger])
 
   const setLevel = useCallback((level: MixingLevel) => {
     try {
@@ -370,6 +469,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
     itemCount: round.length,
     secondsLeft,
     summary,
+    targets,
     error,
     start,
     beginItems,

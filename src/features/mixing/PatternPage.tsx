@@ -54,6 +54,18 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
             型ごとに、意味と例文を先に見せます。そのあと日本語が出たら、すぐ声に出してください。
             数秒後に答えが出るので、言えたかどうかを自分で押します。3 つの型を 4 組ずつ、2 周します。
           </p>
+          {session.targets.length > 0 ? (
+            <div className="mt-4 rounded-2xl bg-violet-50 px-4 py-3 text-left">
+              <p className="text-xs font-bold tracking-wider text-violet-700">今日の狙い(先に出ます)</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {session.targets.map((chunk) => (
+                  <li key={chunk.key} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-violet-900 shadow-sm">
+                    {chunk.display}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={session.start}

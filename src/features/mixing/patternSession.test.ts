@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { loadCore, type CoreFrame, type CoreVocab } from '../../content/coreSchema'
 import { comboKey } from './deal'
-import { buildPatternSession, type FrameStats } from './patternSession'
+import { buildPatternSession, comboContext, type FrameStats } from './patternSession'
 
 function frame(id: string, level: 1 | 2 | 3 = 1): CoreFrame {
   return {
@@ -144,5 +144,95 @@ describe('buildPatternSession: 組み合わせが少ない型', () => {
     }
     expect(session.items.length).toBeGreaterThan(0)
     expect(new Set(session.items.map((item) => item.id)).size).toBe(session.items.length)
+  })
+})
+
+describe('buildPatternSession: 今日の狙い', () => {
+  function phrasalCore(): CoreVocab {
+    const base = core([frame('plain-a'), frame('plain-b'), frame('plain-c')])
+    return {
+      ...base,
+      phrasal: [
+        { text: 'pick up', emoji: '📦', hint_ja: '受け取る', takes: 'thing' },
+        { text: 'sort out', emoji: '🗂️', hint_ja: '片づける', takes: 'thing' },
+      ],
+      frames: [
+        ...base.frames,
+        {
+          id: 'need-phrasal',
+          level: 1,
+          pattern: 'I need to {phrasal:thing} {noun:thing}.',
+          slots: ['phrasal:thing', 'noun:thing'],
+          hint_ja: '{2}を{1}',
+          note_ja: '解説',
+          examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }],
+        },
+      ],
+    }
+  }
+
+  it('狙いの型を先に、狙いの句動詞を載せられる型をその次に出す', () => {
+    const session = buildPatternSession({
+      core: phrasalCore(),
+      level: 1,
+      // plain-a がいちばん苦手(従来ならこれが先頭)。無記録の型は習熟率 0 で最も苦手扱いなので plain-b にも記録を与える
+      stats: [stats('plain-a', 10, 1), stats('plain-b', 10, 9)],
+      history: new Map(),
+      rng: () => 0,
+      itemsPerFrame: 1,
+      targets: { frameIds: ['plain-c'], phrasal: ['pick up'], recentContexts: new Map() },
+    })
+
+    expect(session.frames.map((item) => item.id)).toEqual(['plain-c', 'need-phrasal', 'plain-a'])
+  })
+
+  it('狙いの句動詞を含む組を、その型の半分まで使う', () => {
+    const session = buildPatternSession({
+      core: phrasalCore(),
+      level: 1,
+      stats: [],
+      history: new Map(),
+      rng: () => 0,
+      framesPerSession: 1,
+      itemsPerFrame: 4,
+      targets: { frameIds: [], phrasal: ['pick up'], recentContexts: new Map() },
+    })
+
+    const withTarget = session.items.filter((item) => item.words.some((word) => word.text === 'pick up'))
+    expect(session.frames[0].id).toBe('need-phrasal')
+    expect(withTarget).toHaveLength(2)
+  })
+
+  it('その型で最近使った組は避ける', () => {
+    const vocabulary = core([frame('a')])
+    const recentCombo = comboContext([vocabulary.nouns[0]])
+    const session = buildPatternSession({
+      core: vocabulary,
+      level: 1,
+      stats: [],
+      history: new Map(),
+      rng: () => 0,
+      itemsPerFrame: 1,
+      targets: { frameIds: ['a'], phrasal: [], recentContexts: new Map([['frame:a', [recentCombo]]]) },
+    })
+
+    // rng 0 なら従来は nouns[0](one)が選ばれる。最近使った組なので次の候補になる
+    expect(session.items[0].words[0].text).toBe('two')
+  })
+
+  it('狙いを渡さなければ従来と同じ', () => {
+    const vocabulary = core([frame('c'), frame('b'), frame('a')])
+    const params = {
+      core: vocabulary,
+      level: 1 as const,
+      stats: [stats('a', 10, 5), stats('b', 4, 2), stats('c', 10, 2)],
+      history: new Map(),
+      rng: () => 0,
+      itemsPerFrame: 2,
+    }
+    const plain = buildPatternSession(params)
+    const withEmpty = buildPatternSession({ ...params, targets: { frameIds: [], phrasal: [], recentContexts: new Map() } })
+
+    expect(withEmpty.items.map((item) => item.id)).toEqual(plain.items.map((item) => item.id))
   })
 })

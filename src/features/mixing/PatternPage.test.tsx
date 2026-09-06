@@ -38,6 +38,7 @@ function session(overrides: Record<string, unknown> = {}) {
     itemCount: 4,
     secondsLeft: 3,
     summary: null,
+    targets: [],
     error: null,
     start: vi.fn(),
     beginItems: vi.fn(),
