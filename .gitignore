@@ -30,3 +30,7 @@ dist-ssr
 
 # TypeScript incremental build state
 *.tsbuildinfo
+
+# Vite の設定は vite.config.ts だけ。古い .js が残ると Vite がそちらを優先して読んでしまう
+vite.config.js
+vite.config.d.ts
