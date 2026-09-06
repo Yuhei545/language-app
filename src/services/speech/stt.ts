@@ -554,11 +554,16 @@ export function isIos(): boolean {
   return iosUserAgent || disguisedIpad
 }
 
+/**
+ * ブラウザの音声認識が使えるか。
+ * iPhone の Chrome は WebKit の制限で SpeechRecognition を持たない(コンストラクタが無い)。
+ * iPhone の Safari は webkitSpeechRecognition を持つので使える。iOS を一律で除外しない。
+ */
 export function isWebSpeechAvailable(): boolean {
   if (Date.now() < webSpeechDisabledUntil) {
     return false
   }
-  return !isIos() && getRecognitionConstructor() !== undefined
+  return getRecognitionConstructor() !== undefined
 }
 
 export function createSpeechInput(opts: {

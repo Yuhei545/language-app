@@ -51,13 +51,24 @@ afterEach(() => {
 })
 
 describe('isWebSpeechAvailable', () => {
-  it('iOSではAPIが存在してもfalseになる', () => {
+  it('iOS でも API があれば使える(iPhone の Safari)', () => {
     stubNavigator({
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
       platform: 'iPhone',
       maxTouchPoints: 5,
     })
     vi.stubGlobal('window', { webkitSpeechRecognition: FakeRecognition })
+
+    expect(isWebSpeechAvailable()).toBe(true)
+  })
+
+  it('API が無い端末(iPhone の Chrome)では使えない', () => {
+    stubNavigator({
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) CriOS/130.0',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    })
+    vi.stubGlobal('window', {})
 
     expect(isWebSpeechAvailable()).toBe(false)
   })
@@ -72,13 +83,13 @@ describe('createSpeechInput', () => {
     expect(input.engine).toBe('webspeech')
   })
 
-  it('autoはiOSではgeminiを選ぶ', () => {
+  it('auto は API の無い端末(iPhone の Chrome)では gemini を選ぶ', () => {
     stubNavigator({
-      userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)',
-      platform: 'iPad',
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) CriOS/130.0',
+      platform: 'iPhone',
       maxTouchPoints: 5,
     })
-    vi.stubGlobal('window', { webkitSpeechRecognition: FakeRecognition })
+    vi.stubGlobal('window', {})
 
     const input = createSpeechInput({ lang: 'ko', engine: 'auto', transcribe })
     expect(input.engine).toBe('gemini')

@@ -18,6 +18,7 @@ const questions = [
 function session(overrides: Record<string, unknown> = {}) {
   return {
     phase: 'cue',
+    checkMode: 'record',
     questions,
     current: questions[0],
     roundIndex: 0,
@@ -26,6 +27,7 @@ function session(overrides: Record<string, unknown> = {}) {
     summary: null,
     error: null,
     start: vi.fn(),
+    answered: vi.fn(),
     stopRecording: vi.fn(),
     stop: vi.fn(),
     clearError: vi.fn(),
@@ -49,6 +51,26 @@ describe('QuickPage', () => {
     expect(screen.queryByText('Where are you going this weekend?')).not.toBeNull()
     expect(screen.queryByText('今週末はどこへ行きますか?')).not.toBeNull()
     expect(screen.queryByText(/目標 3秒/)).not.toBeNull()
+  })
+
+  it('自分で判定: 質問のあとに「答えた」ボタンを出し、まとめは速さだけ', () => {
+    useQuickSession.mockReturnValue(session({ phase: 'answering', checkMode: 'self' }))
+    const { unmount } = render(<QuickPage lang="en" />)
+
+    expect(screen.queryByRole('button', { name: '答えた' })).not.toBeNull()
+    unmount()
+
+    useQuickSession.mockReturnValue(session({
+      phase: 'finished',
+      checkMode: 'self',
+      current: null,
+      summary: { roundLatencyMs: [2400, 1800, 1300], understood: 0, total: 0, judgments: [], answers: [] },
+    }))
+    render(<QuickPage lang="en" />)
+
+    expect(screen.queryByText('2.4秒 → 1.8秒 → 1.3秒')).not.toBeNull()
+    expect(screen.queryByText(/速さだけを記録します/)).not.toBeNull()
+    expect(screen.queryByText(/伝わった/)).toBeNull()
   })
 
   it('録音中は答え終わったボタンを出す', () => {

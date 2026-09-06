@@ -8,13 +8,14 @@ function seconds(milliseconds: number | null): string {
 export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
   const session = useQuickSession(lang)
   const { phase, current, summary } = session
+  const selfCheck = session.checkMode === 'self'
 
   return (
     <div>
       <Toast error={session.error} onClose={session.clearError} />
 
       <p className="text-sm font-bold text-slate-500">
-        {phase === 'cue' || phase === 'recording'
+        {phase === 'cue' || phase === 'answering' || phase === 'recording'
           ? `${session.roundIndex + 1}周目 ・ ${session.index + 1}/${session.questions.length} ・ 目標 ${session.targetSeconds}秒`
           : '同じ 8 問を 3 周。だんだん速く答えます。'}
       </p>
@@ -25,6 +26,9 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
           <h2 className="mt-5 text-xl font-bold text-slate-900">即答</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             質問が終わったらすぐ答えます。短くて構いません。長さより速さです。
+            {selfCheck
+              ? ' 言い終わったら「答えた」を押します。速さだけを記録し、Gemini は質問づくりの 1 回だけ使います。'
+              : ' 言い終わったらボタンを押すと、3 周分をまとめて確かめます。'}
           </p>
           <button
             type="button"
@@ -42,7 +46,7 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
         </p>
       ) : null}
 
-      {current && (phase === 'cue' || phase === 'recording') ? (
+      {current && (phase === 'cue' || phase === 'answering' || phase === 'recording') ? (
         <div className="mt-7 rounded-3xl border border-violet-200 bg-gradient-to-b from-violet-50 to-white p-6 shadow-sm">
           <p className="text-center text-xs font-bold tracking-wider text-violet-700">質問</p>
           <h2 className="mt-3 text-center text-2xl font-bold leading-9 text-slate-900">{current.q}</h2>
@@ -52,6 +56,16 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
 
       {phase === 'cue' ? (
         <p className="mt-5 text-center text-sm font-bold text-slate-500" role="status">質問を読み上げています…</p>
+      ) : null}
+
+      {phase === 'answering' ? (
+        <button
+          type="button"
+          onClick={session.answered}
+          className="mt-5 flex min-h-16 w-full items-center justify-center rounded-2xl bg-teal-600 px-5 text-base font-bold text-white"
+        >
+          答えた
+        </button>
       ) : null}
 
       {phase === 'recording' ? (
@@ -96,7 +110,11 @@ export function QuickPage({ lang }: { lang: 'en' | 'ko' }) {
             <p className="mt-3 rounded-2xl bg-teal-50 px-4 py-3 text-center font-bold text-teal-900">
               伝わった {summary.understood}/{summary.total}
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-3 text-center text-xs text-slate-500">
+              自分で判定のときは速さだけを記録します。通じたかを確かめたいときは「録音で確かめる」にしてください。
+            </p>
+          )}
 
           <div className="mt-6 space-y-3">
             {summary.answers.map((answer, position) => {

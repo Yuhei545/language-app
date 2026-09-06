@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadCore } from '../../content/coreSchema'
 import {
   createSpeechInput,
+  isWebSpeechAvailable,
   speak,
   stopSpeaking,
   unlockAudio,
@@ -23,6 +24,7 @@ import {
 } from '../../services/supabase/db'
 import type { MixingProgressRow } from '../../services/supabase/types'
 import { scorePronunciation } from '../cards/scoring'
+import { resolveCheck, type ResolvedCheck } from './checkMode'
 import { buildHint, type Hint } from './hint'
 import { suggestLevel } from './mastery'
 import { withPersonalWords } from './personal'
@@ -39,6 +41,8 @@ export type PatternPhase =
   | 'recording'
   | 'checking'
   | 'hint'
+  /** 自分で判定するとき: 合図を見て声に出す時間。数秒たつか「答えを見る」で模範へ。 */
+  | 'thinking'
   /** 言えても言えなくても、模範を見せる。 */
   | 'model'
   | 'finished'
@@ -103,6 +107,9 @@ export function usePatternSession(lang: 'en' | 'ko') {
   const [sttEngine, setSttEngine] = useState<'webspeech' | 'gemini' | null>(null)
   /** 直前の項目を言えたかどうか。模範の見出しに使う。 */
   const [matched, setMatched] = useState(false)
+  const [checkMode, setCheckModeState] = useState<ResolvedCheck>(() => resolveCheck(getSettings().patternCheck))
+  /** 自分で判定するときの、声に出す残り秒数。 */
+  const [secondsLeft, setSecondsLeft] = useState(0)
 
   const userIdRef = useRef<string | null>(null)
   const rowsRef = useRef(new Map<string, MixingProgressRow>())
@@ -123,6 +130,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
   useEffect(() => subscribe((next) => {
     settingsRef.current = next
     setSettingsState(next)
+    setCheckModeState(resolveCheck(next.patternCheck))
   }), [])
 
   const captureError = useCallback((caught: unknown) => {
@@ -307,6 +315,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
         throw new Error('練習できる型が見つかりませんでした')
       }
       cancelActive()
+      setCheckModeState(resolveCheck(settingsRef.current.patternCheck))
       setSession(built)
       setRoundIndex(0)
       setItemIndex(0)
@@ -322,7 +331,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
     }
   }, [cancelActive, captureError, lang, phase, ready])
 
-  // 合図は画面に出すだけ。読み上げずに、すぐ録音を始める
+  // 合図は画面に出すだけ。読み上げずに、すぐ録音(または声に出す時間)を始める
   useEffect(() => {
     if (phase !== 'starting' || !currentItem) {
       return
@@ -330,6 +339,13 @@ export function usePatternSession(lang: 'en' | 'ko') {
     generationRef.current += 1
     const generation = generationRef.current
     let cancelled = false
+
+    if (checkMode === 'self') {
+      stopSpeaking()
+      setSecondsLeft(Math.max(1, Math.round(settingsRef.current.lessonPauseSeconds)))
+      setPhase('thinking')
+      return
+    }
 
     const run = async () => {
       try {
@@ -365,7 +381,70 @@ export function usePatternSession(lang: 'en' | 'ko') {
     return () => {
       cancelled = true
     }
-  }, [captureError, currentItem, lang, phase])
+  }, [captureError, checkMode, currentItem, lang, phase])
+
+  const speakAnswer = useCallback(async (item: PatternItem) => {
+    try {
+      await speak(item.answer, {
+        lang,
+        rate: settingsRef.current.ttsRate,
+        voiceURI: settingsRef.current.ttsVoice[lang],
+      })
+    } catch (speakError) {
+      captureError(speakError)
+    }
+  }, [captureError, lang])
+
+  /** 自分で判定するとき: 声に出す時間が過ぎたら模範へ。 */
+  const reveal = useCallback(() => {
+    if (phase !== 'thinking' || !currentItem) {
+      return
+    }
+    setPhase('model')
+    void speakAnswer(currentItem)
+  }, [currentItem, phase, speakAnswer])
+
+  useEffect(() => {
+    if (phase !== 'thinking') {
+      return
+    }
+    const timer = setInterval(() => {
+      setSecondsLeft((current) => current - 1)
+    }, 1000)
+    return () => {
+      clearInterval(timer)
+    }
+  }, [phase])
+
+  useEffect(() => {
+    if (phase === 'thinking' && secondsLeft <= 0) {
+      reveal()
+    }
+  }, [phase, reveal, secondsLeft])
+
+  /** 自分で判定するとき: 言えたか言えなかったかを記録して次へ。 */
+  const judgeSelf = useCallback(async (said: boolean) => {
+    const item = currentItem
+    if (phase !== 'model' || checkMode !== 'self' || !item) {
+      return
+    }
+    stopSpeaking()
+    const attempt: PatternAttempt = {
+      itemId: item.id,
+      round: roundIndex,
+      firstTry: said,
+      usedHint: false,
+      latencyMs: null,
+      heardText: '',
+    }
+    const next = [...attempts, attempt]
+    setAttempts(next)
+    await saveAttempt(item, attempt)
+    if (!mountedRef.current) {
+      return
+    }
+    advance(next)
+  }, [advance, attempts, checkMode, currentItem, phase, roundIndex, saveAttempt])
 
   const stopRecording = useCallback(async () => {
     const input = inputRef.current
@@ -415,11 +494,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
         if (generationRef.current !== generation || !mountedRef.current) {
           return
         }
-        await speak(item.answer, {
-          lang,
-          rate: settingsRef.current.ttsRate,
-          voiceURI: settingsRef.current.ttsVoice[lang],
-        })
+        await speakAnswer(item)
         return
       }
 
@@ -447,11 +522,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
       if (generationRef.current !== generation || !mountedRef.current) {
         return
       }
-      await speak(item.answer, {
-        lang,
-        rate: settingsRef.current.ttsRate,
-        voiceURI: settingsRef.current.ttsVoice[lang],
-      })
+      await speakAnswer(item)
     } catch (stopError) {
       if (generationRef.current === generation && mountedRef.current) {
         inputRef.current?.cancel()
@@ -460,7 +531,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
         setPhase('idle')
       }
     }
-  }, [advance, attempts, captureError, currentItem, lang, phase, roundIndex, saveAttempt])
+  }, [attempts, captureError, currentItem, lang, phase, roundIndex, saveAttempt, speakAnswer])
 
   /** ヒントを聞いてからの言い直し。 */
   const retry = useCallback(() => {
@@ -478,14 +549,14 @@ export function usePatternSession(lang: 'en' | 'ko') {
     setPhase('starting')
   }, [phase])
 
-  /** 模範を聞いたあと、次の項目へ。 */
+  /** 模範を聞いたあと、次の項目へ(録音で確かめるとき)。 */
   const next = useCallback(() => {
-    if (phase !== 'model') {
+    if (phase !== 'model' || checkMode === 'self') {
       return
     }
     stopSpeaking()
     advance(attempts)
-  }, [advance, attempts, phase])
+  }, [advance, attempts, checkMode, phase])
 
   const stop = useCallback(() => {
     cancelActive()
@@ -504,11 +575,22 @@ export function usePatternSession(lang: 'en' | 'ko') {
     }
   }, [captureError])
 
+  /** 確かめ方を切り替える。練習中は次のセッションから効く。 */
+  const setCheckMode = useCallback((mode: ResolvedCheck) => {
+    try {
+      setSettings({ patternCheck: mode })
+    } catch (settingsError) {
+      captureError(settingsError)
+    }
+  }, [captureError])
+
   const round = session?.rounds[roundIndex] ?? []
 
   return {
     phase,
     level: settings.mixingLevel,
+    checkMode,
+    webSpeechAvailable: isWebSpeechAvailable(),
     session,
     currentItem,
     roundIndex,
@@ -518,16 +600,20 @@ export function usePatternSession(lang: 'en' | 'ko') {
     hint,
     heardText,
     matched,
+    secondsLeft,
     summary,
     sttEngine,
     error,
     start,
     beginItems,
     stopRecording,
+    reveal,
+    judgeSelf,
     retry,
     next,
     stop,
     setLevel,
+    setCheckMode,
     clearError: () => setError(null),
   }
 }

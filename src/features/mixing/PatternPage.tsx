@@ -11,7 +11,8 @@ function seconds(milliseconds: number | null): string {
 
 export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
   const session = usePatternSession(lang)
-  const { phase, currentItem, summary } = session
+  const { phase, currentItem, summary, checkMode } = session
+  const selfCheck = checkMode === 'self'
 
   const say = (text: string) => {
     const settings = getSettings()
@@ -44,6 +45,30 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       </div>
 
+      <div className="mt-3 flex items-center gap-2" role="group" aria-label="確かめ方">
+        <button
+          type="button"
+          aria-pressed={selfCheck}
+          onClick={() => session.setCheckMode('self')}
+          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${selfCheck ? 'bg-violet-700 text-white' : 'bg-white text-slate-600'}`}
+        >
+          👆 自分で判定
+        </button>
+        <button
+          type="button"
+          aria-pressed={!selfCheck}
+          onClick={() => session.setCheckMode('record')}
+          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${!selfCheck ? 'bg-violet-700 text-white' : 'bg-white text-slate-600'}`}
+        >
+          🎙 録音で確かめる
+        </button>
+        <span className="text-[11px] text-slate-500">
+          {selfCheck
+            ? 'Gemini は使いません'
+            : session.webSpeechAvailable ? 'ブラウザの音声認識' : 'この端末では Gemini を使います'}
+        </span>
+      </div>
+
       {phase === 'loading' ? (
         <p className="mt-7 rounded-2xl bg-white px-5 py-8 text-center text-sm font-bold text-slate-500" role="status">
           成績を読み込んでいます…
@@ -56,7 +81,10 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
           <h2 className="mt-5 text-xl font-bold text-slate-900">型を回す</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             型ごとに、意味と例文を先に見せます。そのあと日本語が出たら、すぐ声に出してください。
-            答えは毎回そのあとに出ます。3 つの型を 4 組ずつ、2 周します。
+            {selfCheck
+              ? ' 数秒後に答えが出るので、言えたかどうかを自分で押します。'
+              : ' 言い終わったらボタンを押すと、聞き取った文を答えと照らします。'}
+            3 つの型を 4 組ずつ、2 周します。
           </p>
           <button
             type="button"
@@ -106,13 +134,22 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       ) : null}
 
-      {currentItem && (phase === 'starting' || phase === 'recording' || phase === 'checking' || phase === 'hint' || phase === 'model') ? (
+      {currentItem && (phase === 'starting' || phase === 'thinking' || phase === 'recording' || phase === 'checking' || phase === 'hint' || phase === 'model') ? (
         <div className="mt-7 rounded-3xl border border-violet-200 bg-gradient-to-b from-violet-50 to-white p-6 shadow-sm">
           <p className="text-center text-xs font-bold tracking-wider text-violet-700">こう伝えてください</p>
           <h2 className="mt-3 text-center text-2xl font-bold leading-9 text-slate-900">
             {currentItem.promptJa}
           </h2>
           <p className="mt-2 text-center text-xs text-slate-500">{currentItem.frame.pattern}</p>
+
+          {phase === 'thinking' ? (
+            <div className="mt-5 text-center">
+              <p className="text-sm font-bold text-slate-600">声に出して言ってください</p>
+              <p className="mt-2 text-4xl font-bold tabular-nums text-violet-800" aria-live="polite">
+                あと {Math.max(0, session.secondsLeft)} 秒
+              </p>
+            </div>
+          ) : null}
 
           {session.hint && phase === 'hint' ? (
             <p className="mt-5 rounded-2xl bg-sky-50 px-4 py-3 text-center font-bold text-sky-900">
@@ -122,10 +159,14 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
 
           {phase === 'model' ? (
             <div className="mt-5 space-y-3">
-              <p className={`text-center text-sm font-bold ${session.matched ? 'text-teal-700' : 'text-slate-600'}`}>
-                {session.matched ? '言えました' : 'ひとつの言い方を見てみましょう'}
-              </p>
-              {session.heardText ? (
+              {selfCheck ? (
+                <p className="text-center text-sm font-bold text-slate-600">声に出せましたか?</p>
+              ) : (
+                <p className={`text-center text-sm font-bold ${session.matched ? 'text-teal-700' : 'text-slate-600'}`}>
+                  {session.matched ? '言えました' : 'ひとつの言い方を見てみましょう'}
+                </p>
+              )}
+              {!selfCheck && session.heardText ? (
                 <div>
                   <p className="text-[11px] font-bold tracking-wider text-slate-500">こう聞こえました</p>
                   <p className="mt-1 rounded-2xl bg-white/70 px-4 py-3 font-bold text-slate-800">
@@ -170,6 +211,16 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </p>
       ) : null}
 
+      {phase === 'thinking' ? (
+        <button
+          type="button"
+          onClick={session.reveal}
+          className="mt-5 w-full rounded-2xl bg-violet-700 px-5 py-4 font-bold text-white"
+        >
+          答えを見る
+        </button>
+      ) : null}
+
       {phase === 'recording' ? (
         <div className="mt-5 text-center">
           <button
@@ -202,7 +253,26 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
         </button>
       ) : null}
 
-      {phase === 'model' ? (
+      {phase === 'model' && selfCheck ? (
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => void session.judgeSelf(true)}
+            className="rounded-2xl bg-teal-600 px-4 py-4 font-bold text-white"
+          >
+            言えた
+          </button>
+          <button
+            type="button"
+            onClick={() => void session.judgeSelf(false)}
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-4 font-bold text-slate-700"
+          >
+            言えなかった
+          </button>
+        </div>
+      ) : null}
+
+      {phase === 'model' && !selfCheck ? (
         <button
           type="button"
           onClick={session.next}
@@ -231,13 +301,15 @@ export function PatternPage({ lang }: { lang: 'en' | 'ko' }) {
               <p className="text-2xl font-bold tabular-nums text-violet-900">
                 {summary.firstTry}/{summary.total}
               </p>
-              <p className="mt-1 text-xs font-bold text-slate-500">一度で言えた</p>
+              <p className="mt-1 text-xs font-bold text-slate-500">{selfCheck ? '言えた' : '一度で言えた'}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
               <p className="text-lg font-bold tabular-nums text-violet-900">
-                {summary.roundLatencyMs.map((latency) => seconds(latency)).join(' → ')}
+                {selfCheck ? '—' : summary.roundLatencyMs.map((latency) => seconds(latency)).join(' → ')}
               </p>
-              <p className="mt-1 text-xs font-bold text-slate-500">言い出すまでの平均</p>
+              <p className="mt-1 text-xs font-bold text-slate-500">
+                {selfCheck ? '応答時間は録音のときだけ' : '言い出すまでの平均'}
+              </p>
             </div>
           </div>
           {summary.nextLevel ? (

@@ -69,3 +69,12 @@ export function getModelId(): string {
 
   return model
 }
+
+/**
+ * 音声の文字起こしに使うモデル。設定が空なら通常のモデルと同じ。
+ * 無料枠の上限はモデルごとに別なので、軽いモデルを分けて指定すると上限を分散できる。
+ */
+export function getSttModelId(): string {
+  const model = getSettings().geminiSttModel.trim()
+  return model || getModelId()
+}

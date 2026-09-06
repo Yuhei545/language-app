@@ -2,6 +2,8 @@ export type SttEngine = 'auto' | 'webspeech' | 'gemini'
 export type Interest = 'travel' | 'friends' | 'content'
 export type MixingLevel = 1 | 2 | 3
 export type PersonalWordKind = 'place' | 'person' | 'thing' | 'media'
+/** 型を回す・即答の確かめ方。self は答えを見て自分で判定(Gemini を使わない)。 */
+export type PatternCheck = 'auto' | 'record' | 'self'
 
 export type PersonalWord = {
   ja: string
@@ -13,6 +15,9 @@ export type PersonalWord = {
 export type Settings = {
   geminiApiKey: string
   geminiModel: string
+  /** 音声の文字起こしに使うモデル。空なら geminiModel と同じ。無料枠はモデルごとなので分散できる。 */
+  geminiSttModel: string
+  patternCheck: PatternCheck
   sttEngine: SttEngine
   ttsVoice: { en: string | null; ko: string | null }
   ttsVoiceB: { en: string | null; ko: string | null }
@@ -33,11 +38,15 @@ const STORAGE_KEY = 'lla.settings'
 const STT_ENGINES: SttEngine[] = ['auto', 'webspeech', 'gemini']
 const INTERESTS: Interest[] = ['travel', 'friends', 'content']
 const PERSONAL_WORD_KINDS: PersonalWordKind[] = ['place', 'person', 'thing', 'media']
+const PATTERN_CHECKS: PatternCheck[] = ['auto', 'record', 'self']
 const listeners = new Set<SettingsListener>()
 
 const DEFAULT_SETTINGS: Settings = {
   geminiApiKey: '',
   geminiModel: '',
+  geminiSttModel: '',
+  // 既定は自分で判定。音声認識は当てにならず、無料枠も消費するため(Pimsleur も自己判定)。
+  patternCheck: 'self',
   sttEngine: 'auto',
   ttsVoice: { en: null, ko: null },
   ttsVoiceB: { en: null, ko: null },
@@ -93,6 +102,9 @@ function isSettings(value: unknown): value is Settings {
   return (
     typeof value.geminiApiKey === 'string'
     && typeof value.geminiModel === 'string'
+    && typeof value.geminiSttModel === 'string'
+    && typeof value.patternCheck === 'string'
+    && PATTERN_CHECKS.includes(value.patternCheck as PatternCheck)
     && typeof value.sttEngine === 'string'
     && STT_ENGINES.includes(value.sttEngine as SttEngine)
     && isNullableString(value.ttsVoice.en)
@@ -159,6 +171,12 @@ export function getSettings(): Settings {
         personalWords: parsed.personalWords === undefined
           ? [...DEFAULT_SETTINGS.personalWords]
           : parsed.personalWords,
+        geminiSttModel: parsed.geminiSttModel === undefined
+          ? DEFAULT_SETTINGS.geminiSttModel
+          : parsed.geminiSttModel,
+        patternCheck: parsed.patternCheck === undefined
+          ? DEFAULT_SETTINGS.patternCheck
+          : parsed.patternCheck,
       }
     }
 

@@ -17,6 +17,7 @@ import {
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import { insertSpeakingSession, listMixingProgress } from '../../services/supabase/db'
+import { resolveCheck, type ResolvedCheck } from './checkMode'
 import { withPersonalWords } from './personal'
 import { buildFrameStats } from './progress'
 import { frameMastery } from './mastery'
@@ -25,6 +26,8 @@ export type QuickPhase =
   | 'idle'
   | 'preparing'
   | 'cue'
+  /** 自分で判定するとき: 声に出して答え、言い終わったらタップ。 */
+  | 'answering'
   | 'recording'
   | 'judging'
   | 'finished'
@@ -104,6 +107,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
   const [answers, setAnswers] = useState<QuickAnswer[]>([])
   const [summary, setSummary] = useState<QuickSummary | null>(null)
   const [error, setError] = useState<unknown>(null)
+  const [checkMode, setCheckMode] = useState<ResolvedCheck>(() => resolveCheck(getSettings().patternCheck))
 
   const inputRef = useRef<SpeechInput | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -123,6 +127,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
   useEffect(() => subscribe((next) => {
     settingsRef.current = next
     setSettingsState(next)
+    setCheckMode(resolveCheck(next.patternCheck))
   }), [])
 
   useEffect(() => {
@@ -178,6 +183,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
 
     try {
       unlockAudio()
+      setCheckMode(resolveCheck(settingsRef.current.patternCheck))
       let list = readCache(lang)
       if (!list) {
         const core = withPersonalWords(loadCore(lang), settingsRef.current.personalWords, lang)
@@ -227,17 +233,47 @@ export function useQuickSession(lang: 'en' | 'ko') {
 
   const current = questions[index] ?? null
 
+  const saveSession = useCallback(async (
+    allAnswers: QuickAnswer[],
+    roundLatencyMs: (number | null)[],
+    understoodRatio: number | null,
+  ) => {
+    if (!userIdRef.current || allAnswers.length === 0) {
+      return
+    }
+    try {
+      await insertSpeakingSession({
+        user_id: userIdRef.current,
+        lang,
+        kind: 'quick',
+        rounds: roundLatencyMs.map((latency, round) => ({ round, avg_latency_ms: latency })),
+        understood_ratio: understoodRatio,
+        avg_latency_ms: average(allAnswers.map((answer) => answer.latencyMs)),
+      })
+    } catch (saveError) {
+      console.error('即答の記録を保存できませんでした', saveError)
+      captureError(saveError)
+    }
+  }, [captureError, lang])
+
   const finish = useCallback(async (allAnswers: QuickAnswer[]) => {
     generationRef.current += 1
     const generation = generationRef.current
-    const controller = new AbortController()
-    abortRef.current = controller
-    setPhase('judging')
-
     const roundLatencyMs = Array.from({ length: QUICK_ROUNDS }, (_, round) => (
       average(allAnswers.filter((answer) => answer.round === round).map((answer) => answer.latencyMs))
     ))
 
+    // 自分で判定するときは聞き取った文が無いので、判定は頼まず速さだけを記録する
+    if (checkMode === 'self') {
+      setSummary({ roundLatencyMs, understood: 0, total: 0, judgments: [], answers: allAnswers })
+      setPhase('finished')
+      await saveSession(allAnswers, roundLatencyMs, null)
+      return
+    }
+
+    const controller = new AbortController()
+    abortRef.current = controller
+    setPhase('judging')
     try {
       const judgments = await judgeQuickAnswers({
         lang,
@@ -258,28 +294,12 @@ export function useQuickSession(lang: 'en' | 'ko') {
         answers: allAnswers,
       })
       setPhase('finished')
-
-      if (userIdRef.current && allAnswers.length > 0) {
-        await insertSpeakingSession({
-          user_id: userIdRef.current,
-          lang,
-          kind: 'quick',
-          rounds: roundLatencyMs.map((latency, round) => ({ round, avg_latency_ms: latency })),
-          understood_ratio: judgments.length > 0 ? understood / judgments.length : null,
-          avg_latency_ms: average(allAnswers.map((answer) => answer.latencyMs)),
-        })
-      }
+      await saveSession(allAnswers, roundLatencyMs, judgments.length > 0 ? understood / judgments.length : null)
     } catch (judgeError) {
       if (generationRef.current === generation && mountedRef.current) {
         captureError(judgeError)
         // 判定に失敗しても、速さの記録は見せる
-        setSummary({
-          roundLatencyMs,
-          understood: 0,
-          total: 0,
-          judgments: [],
-          answers: allAnswers,
-        })
+        setSummary({ roundLatencyMs, understood: 0, total: 0, judgments: [], answers: allAnswers })
         setPhase('finished')
       }
     } finally {
@@ -287,9 +307,9 @@ export function useQuickSession(lang: 'en' | 'ko') {
         abortRef.current = null
       }
     }
-  }, [captureError, lang, questions])
+  }, [captureError, checkMode, lang, questions, saveSession])
 
-  // 質問を読み上げ、終わったら録音を始める
+  // 質問を読み上げ、終わったら録音(または答える時間)を始める
   useEffect(() => {
     if (phase !== 'cue' || !current) {
       return
@@ -310,6 +330,11 @@ export function useQuickSession(lang: 'en' | 'ko') {
           return
         }
         cueEndedAtRef.current = Date.now()
+
+        if (checkMode === 'self') {
+          setPhase('answering')
+          return
+        }
 
         const input = createSpeechInput({
           lang,
@@ -339,7 +364,33 @@ export function useQuickSession(lang: 'en' | 'ko') {
     return () => {
       cancelled = true
     }
-  }, [captureError, current, lang, phase])
+  }, [captureError, checkMode, current, lang, phase])
+
+  const moveOn = useCallback((next: QuickAnswer[]) => {
+    setAnswers(next)
+    if (index + 1 < questions.length) {
+      setIndex(index + 1)
+      setPhase('cue')
+      return
+    }
+    if (roundIndex + 1 < QUICK_ROUNDS) {
+      setRoundIndex(roundIndex + 1)
+      setIndex(0)
+      setPhase('cue')
+      return
+    }
+    void finish(next)
+  }, [finish, index, questions.length, roundIndex])
+
+  /** 自分で判定するとき: 言い終わったらタップ。質問の終わりからここまでを応答時間にする。 */
+  const answered = useCallback(() => {
+    if (phase !== 'answering') {
+      return
+    }
+    const cueEndedAt = cueEndedAtRef.current
+    const latencyMs = cueEndedAt === null ? null : Math.max(0, Date.now() - cueEndedAt)
+    moveOn([...answers, { round: roundIndex, index, heardText: '', latencyMs }])
+  }, [answers, index, moveOn, phase, roundIndex])
 
   const stopRecording = useCallback(async () => {
     const input = inputRef.current
@@ -363,27 +414,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
         ? Math.max(0, recordStartedAt - cueEndedAt) + result.onsetMs
         : null
 
-      const answer: QuickAnswer = {
-        round: roundIndex,
-        index,
-        heardText: result.text.trim(),
-        latencyMs,
-      }
-      const next = [...answers, answer]
-      setAnswers(next)
-
-      if (index + 1 < questions.length) {
-        setIndex(index + 1)
-        setPhase('cue')
-        return
-      }
-      if (roundIndex + 1 < QUICK_ROUNDS) {
-        setRoundIndex(roundIndex + 1)
-        setIndex(0)
-        setPhase('cue')
-        return
-      }
-      await finish(next)
+      moveOn([...answers, { round: roundIndex, index, heardText: result.text.trim(), latencyMs }])
     } catch (stopError) {
       if (generationRef.current === generation && mountedRef.current) {
         inputRef.current?.cancel()
@@ -392,7 +423,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
         setPhase('idle')
       }
     }
-  }, [answers, captureError, finish, index, phase, questions.length, roundIndex])
+  }, [answers, captureError, index, moveOn, phase, roundIndex])
 
   const stop = useCallback(() => {
     cancelActive()
@@ -401,6 +432,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
 
   return {
     phase,
+    checkMode,
     questions,
     current,
     roundIndex,
@@ -409,6 +441,7 @@ export function useQuickSession(lang: 'en' | 'ko') {
     summary,
     error,
     start,
+    answered,
     stopRecording,
     stop,
     clearError: () => setError(null),

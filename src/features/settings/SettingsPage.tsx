@@ -8,11 +8,13 @@ import {
   setSettings,
   subscribe,
   type Interest,
+  type PatternCheck,
   type PersonalWord,
   type PersonalWordKind,
   type Settings,
   type SttEngine,
 } from '../../services/settings'
+import { isWebSpeechAvailable } from '../../services/speech'
 import { MicTest } from './MicTest'
 import { VoiceSelect } from './VoiceSelect'
 
@@ -20,6 +22,12 @@ const sttOptions: Array<{ value: SttEngine; label: string; note: string }> = [
   { value: 'auto', label: '自動', note: 'PC ではブラウザ、iPhone では Gemini。無料枠を使わずに済みます' },
   { value: 'webspeech', label: 'Web Speech', note: 'ブラウザの音声認識。Gemini の回数を消費しません' },
   { value: 'gemini', label: 'Gemini', note: '1 回話すごとに Gemini を 1 回使います。上限に達しやすいです' },
+]
+
+const patternCheckOptions: Array<{ value: PatternCheck; label: string; note: string }> = [
+  { value: 'self', label: '自分で判定(おすすめ)', note: '答えを見て「言えた / 言えなかった」を自分で押します。Gemini を使いません。Pimsleur と同じやり方です' },
+  { value: 'record', label: '録音で確かめる', note: '言った文を聞き取って模範と照らします。Web Speech が無い端末では Gemini を使います' },
+  { value: 'auto', label: '自動', note: 'ブラウザの音声認識が使えれば録音、使えなければ自分で判定' },
 ]
 
 const interestOptions: Array<{ value: Interest; label: string }> = [
@@ -130,6 +138,7 @@ export function SettingsPage() {
   }
 
   const usage = getGeminiUsage()
+  const webSpeechAvailable = isWebSpeechAvailable()
 
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'))
   const koreanVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('ko'))
@@ -344,6 +353,70 @@ export function SettingsPage() {
                 </span>
               </label>
             ))}
+          </div>
+
+          {!webSpeechAvailable ? (
+            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">
+              このブラウザではブラウザの音声認識(Web Speech)が使えないため、どれを選んでも Gemini になります。
+              iPhone の Chrome は非対応です(iPhone の Safari なら使えます)。
+              Gemini を使わずに練習するには、下の「型を回すの確かめ方」を「自分で判定」にしてください。
+            </p>
+          ) : null}
+
+          <div className="mt-4">
+            <p className="mb-2 text-sm font-bold text-slate-700">型を回すの確かめ方</p>
+            <div className="grid gap-2">
+              {patternCheckOptions.map((option) => (
+                <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-sm text-slate-700 hover:bg-teal-50">
+                  <input
+                    type="radio"
+                    name="patternCheck"
+                    value={option.value}
+                    checked={settingsState.patternCheck === option.value}
+                    onChange={() => update({ patternCheck: option.value })}
+                    className="size-4 accent-teal-700"
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-bold">{option.label}</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-slate-500">{option.note}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label htmlFor="gemini-stt-model" className="mb-2 block text-sm font-bold text-slate-700">
+              文字起こしに使うモデル
+            </label>
+            {models ? (
+              <select
+                id="gemini-stt-model"
+                value={settingsState.geminiSttModel}
+                onChange={(event) => update({ geminiSttModel: event.target.value })}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-800"
+              >
+                <option value="">通常のモデルと同じ</option>
+                {settingsState.geminiSttModel && !models.some((model) => model.id === settingsState.geminiSttModel) ? (
+                  <option value={settingsState.geminiSttModel}>{settingsState.geminiSttModel}（現在の設定）</option>
+                ) : null}
+                {models.map((model) => (
+                  <option key={model.id} value={model.id}>{model.displayName}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="gemini-stt-model"
+                type="text"
+                value={settingsState.geminiSttModel}
+                onChange={(event) => update({ geminiSttModel: event.target.value })}
+                placeholder="空なら通常のモデルと同じ"
+                className="w-full rounded-xl border border-slate-300 px-3 py-3"
+              />
+            )}
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              無料枠の上限はモデルごとに別です。文字起こしだけ軽いモデル(flash-lite など)にすると、上限を分散できます。
+            </p>
           </div>
 
           <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3">

@@ -1,5 +1,5 @@
 import type { TranscribeAudio } from '../speech/stt'
-import { getGeminiClient, getModelId } from './client'
+import { getGeminiClient, getSttModelId } from './client'
 import { GeminiError, toGeminiError } from './errors'
 import type { Lang } from './persona'
 import { buildTranscribePrompt } from './prompts'
@@ -11,7 +11,7 @@ export const transcribeAudio = (async (
 ): Promise<string> => {
   try {
     const response = await getGeminiClient().models.generateContent({
-      model: getModelId(),
+      model: getSttModelId(),
       contents: [{
         role: 'user',
         parts: [

@@ -4,6 +4,8 @@ import { getSettings, setSettings } from './settings'
 const defaults = {
   geminiApiKey: '',
   geminiModel: '',
+  geminiSttModel: '',
+  patternCheck: 'self',
   sttEngine: 'auto',
   ttsVoice: { en: null, ko: null },
   ttsVoiceB: { en: null, ko: null },
@@ -83,5 +85,25 @@ describe('settings service', () => {
 
     expect(getSettings()).toEqual(defaults)
     expect(errorSpy).toHaveBeenCalledOnce()
+  })
+})
+
+describe('確かめ方と文字起こしモデル', () => {
+  it('古い保存データに無ければ、自分で判定と「通常のモデルと同じ」で補う', () => {
+    localStorage.clear()
+    const current = getSettings()
+    const legacy = { ...current, geminiSttModel: undefined, patternCheck: undefined }
+    localStorage.setItem('lla.settings', JSON.stringify(legacy))
+
+    const filled = getSettings()
+    expect(filled.geminiSttModel).toBe('')
+    expect(filled.patternCheck).toBe('self')
+  })
+
+  it('確かめ方が不正な値なら既定値へ戻す', () => {
+    localStorage.clear()
+    localStorage.setItem('lla.settings', JSON.stringify({ ...getSettings(), patternCheck: 'bogus' }))
+
+    expect(getSettings().patternCheck).toBe('self')
   })
 })

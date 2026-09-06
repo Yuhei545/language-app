@@ -38,11 +38,17 @@ function session(overrides: Record<string, unknown> = {}) {
     hint: null,
     heardText: null,
     matched: false,
+    checkMode: 'record',
+    webSpeechAvailable: true,
+    secondsLeft: 0,
     summary: null,
     sttEngine: 'webspeech',
     error: null,
     start: vi.fn(),
     beginItems: vi.fn(),
+    reveal: vi.fn(),
+    judgeSelf: vi.fn(),
+    setCheckMode: vi.fn(),
     stopRecording: vi.fn(),
     retry: vi.fn(),
     next: vi.fn(),
@@ -110,6 +116,25 @@ describe('PatternPage', () => {
     expect(screen.queryByRole('button', { name: '答えを聞く' })).not.toBeNull()
     expect(screen.queryByText('この型をもう一度見る')).not.toBeNull()
     expect(screen.queryByRole('button', { name: '次へ' })).not.toBeNull()
+  })
+
+  it('自分で判定: 声に出す残り秒数と「答えを見る」を出し、答えのあとに言えた/言えなかったを押せる', () => {
+    usePatternSession.mockReturnValue(session({ phase: 'thinking', checkMode: 'self', secondsLeft: 3 }))
+    const { unmount } = render(<PatternPage lang="en" />)
+
+    expect(screen.queryByText('あと 3 秒')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '答えを見る' })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '👆 自分で判定' })?.getAttribute('aria-pressed')).toBe('true')
+    unmount()
+
+    usePatternSession.mockReturnValue(session({ phase: 'model', checkMode: 'self' }))
+    render(<PatternPage lang="en" />)
+
+    expect(screen.queryByText('声に出せましたか?')).not.toBeNull()
+    expect(screen.queryByText('Coffee, please.')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '言えた' })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '言えなかった' })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '次へ' })).toBeNull()
   })
 
   it('言えなかったときも同じ画面で答えを見せる', () => {
