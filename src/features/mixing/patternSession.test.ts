@@ -10,6 +10,8 @@ function frame(id: string, level: 1 | 2 | 3 = 1): CoreFrame {
     pattern: `${id} {noun:thing}`,
     slots: ['noun:thing'],
     hint_ja: `${id}の{1}`,
+    note_ja: 'テスト用の解説',
+    examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }],
   }
 }
 

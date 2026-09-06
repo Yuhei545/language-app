@@ -32,10 +32,14 @@ import { buildComboHistory, buildFrameStats, identityKey, progressIdentity } fro
 export type PatternPhase =
   | 'loading'
   | 'idle'
-  | 'cue'
+  /** 新しい型に入る前の紹介。解説と例文を見せる。 */
+  | 'intro'
+  /** 録音の準備中(合図を表示した直後)。 */
+  | 'starting'
   | 'recording'
   | 'checking'
   | 'hint'
+  /** 言えても言えなくても、模範を見せる。 */
   | 'model'
   | 'finished'
 
@@ -54,6 +58,21 @@ export type PatternSummary = {
   withHint: number
   roundLatencyMs: (number | null)[]
   nextLevel: MixingLevel | null
+}
+
+/**
+ * 保存の失敗が「マイグレーション未適用」なら、何をすればよいかを伝える。
+ * 列が無いだけなので練習そのものは続けられる。
+ */
+function migrationError(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error)
+  if (/schema cache|column .* does not exist|first_try_count|latency_ms_total|speaking_sessions/i.test(message)) {
+    return new Error(
+      '成績を保存できません。Supabase の SQL Editor で supabase/migrations/004_speaking.sql を実行してください。'
+      + '練習はこのまま続けられます',
+    )
+  }
+  return error instanceof Error ? error : new Error(String(error))
 }
 
 /** 同じ項目で言い直せる回数。ヒントを見てからの 1 回だけ。 */
@@ -82,6 +101,8 @@ export function usePatternSession(lang: 'en' | 'ko') {
   const [summary, setSummary] = useState<PatternSummary | null>(null)
   const [error, setError] = useState<unknown>(null)
   const [sttEngine, setSttEngine] = useState<'webspeech' | 'gemini' | null>(null)
+  /** 直前の項目を言えたかどうか。模範の見出しに使う。 */
+  const [matched, setMatched] = useState(false)
 
   const userIdRef = useRef<string | null>(null)
   const rowsRef = useRef(new Map<string, MixingProgressRow>())
@@ -172,25 +193,31 @@ export function usePatternSession(lang: 'en' | 'ko') {
     if (!userId) {
       return
     }
+    // 保存に失敗しても練習は続ける。成績が残らないだけなので、伝えて先に進む。
     const identity = progressIdentity(item.frame, item.words)
     const key = identityKey(identity)
     const previous = rowsRef.current.get(key)
 
-    const updated = await upsertMixingProgress({
-      user_id: userId,
-      lang,
-      frame_id: identity.frameId,
-      verb_text: identity.verbText,
-      noun_text: identity.nounText,
-      understood_count: (previous?.understood_count ?? 0) + (attempt.firstTry || !attempt.usedHint ? 1 : 0),
-      attempt_count: (previous?.attempt_count ?? 0) + 1,
-      first_try_count: (previous?.first_try_count ?? 0) + (attempt.firstTry ? 1 : 0),
-      hint_count: (previous?.hint_count ?? 0) + (attempt.usedHint ? 1 : 0),
-      latency_ms_total: (previous?.latency_ms_total ?? 0) + (attempt.latencyMs ?? 0),
-      latency_samples: (previous?.latency_samples ?? 0) + (attempt.latencyMs === null ? 0 : 1),
-      last_at: new Date().toISOString(),
-    })
-    rowsRef.current.set(key, updated)
+    try {
+      const updated = await upsertMixingProgress({
+        user_id: userId,
+        lang,
+        frame_id: identity.frameId,
+        verb_text: identity.verbText,
+        noun_text: identity.nounText,
+        understood_count: (previous?.understood_count ?? 0) + (attempt.firstTry || !attempt.usedHint ? 1 : 0),
+        attempt_count: (previous?.attempt_count ?? 0) + 1,
+        first_try_count: (previous?.first_try_count ?? 0) + (attempt.firstTry ? 1 : 0),
+        hint_count: (previous?.hint_count ?? 0) + (attempt.usedHint ? 1 : 0),
+        latency_ms_total: (previous?.latency_ms_total ?? 0) + (attempt.latencyMs ?? 0),
+        latency_samples: (previous?.latency_samples ?? 0) + (attempt.latencyMs === null ? 0 : 1),
+        last_at: new Date().toISOString(),
+      })
+      rowsRef.current.set(key, updated)
+    } catch (saveError) {
+      console.error('練習の成績を保存できませんでした', saveError)
+      setError(migrationError(saveError))
+    }
   }, [lang])
 
   const finish = useCallback(async (allAttempts: PatternAttempt[]) => {
@@ -232,27 +259,31 @@ export function usePatternSession(lang: 'en' | 'ko') {
         avg_latency_ms: averageLatency(allAttempts),
       })
     } catch (saveError) {
-      captureError(saveError)
+      console.error('練習の記録を保存できませんでした', saveError)
+      setError(migrationError(saveError))
     }
-  }, [captureError, lang, session])
+  }, [lang, session])
 
   const advance = useCallback((allAttempts: PatternAttempt[]) => {
     triesRef.current = 0
     setHint(null)
     setHeardText(null)
+    setMatched(false)
     if (!session) {
       return
     }
     const round = session.rounds[roundIndex] ?? []
     if (itemIndex + 1 < round.length) {
+      const changingFrame = round[itemIndex + 1]?.frame.id !== round[itemIndex]?.frame.id
       setItemIndex(itemIndex + 1)
-      setPhase('cue')
+      // 1 周目で型が変わるときだけ紹介を挟む。2 周目は知っているので挟まない。
+      setPhase(changingFrame && roundIndex === 0 ? 'intro' : 'starting')
       return
     }
     if (roundIndex + 1 < session.rounds.length) {
       setRoundIndex(roundIndex + 1)
       setItemIndex(0)
-      setPhase('cue')
+      setPhase('starting')
       return
     }
     void finish(allAttempts)
@@ -285,15 +316,15 @@ export function usePatternSession(lang: 'en' | 'ko') {
       setHeardText(null)
       setError(null)
       triesRef.current = 0
-      setPhase('cue')
+      setPhase('intro')
     } catch (startError) {
       captureError(startError)
     }
   }, [cancelActive, captureError, lang, phase, ready])
 
-  // 合図を読み上げ、終わったら録音を始める
+  // 合図は画面に出すだけ。読み上げずに、すぐ録音を始める
   useEffect(() => {
-    if (phase !== 'cue' || !currentItem) {
+    if (phase !== 'starting' || !currentItem) {
       return
     }
     generationRef.current += 1
@@ -303,15 +334,6 @@ export function usePatternSession(lang: 'en' | 'ko') {
     const run = async () => {
       try {
         stopSpeaking()
-        const text = hint ? hint.textJa : currentItem.promptJa
-        await speak(text, {
-          lang: 'ja',
-          rate: 1,
-          voiceURI: settingsRef.current.ttsVoiceJa ?? undefined,
-        })
-        if (cancelled || generationRef.current !== generation || !mountedRef.current) {
-          return
-        }
         cueEndedAtRef.current = Date.now()
 
         const input = createSpeechInput({
@@ -343,7 +365,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
     return () => {
       cancelled = true
     }
-  }, [captureError, currentItem, hint, lang, phase])
+  }, [captureError, currentItem, lang, phase])
 
   const stopRecording = useCallback(async () => {
     const input = inputRef.current
@@ -387,6 +409,8 @@ export function usePatternSession(lang: 'en' | 'ko') {
         }
         const next = [...attempts, attempt]
         setAttempts(next)
+        setMatched(true)
+        setPhase('model')
         await saveAttempt(item, attempt)
         if (generationRef.current !== generation || !mountedRef.current) {
           return
@@ -396,10 +420,6 @@ export function usePatternSession(lang: 'en' | 'ko') {
           rate: settingsRef.current.ttsRate,
           voiceURI: settingsRef.current.ttsVoice[lang],
         })
-        if (generationRef.current !== generation || !mountedRef.current) {
-          return
-        }
-        advance(next)
         return
       }
 
@@ -421,11 +441,12 @@ export function usePatternSession(lang: 'en' | 'ko') {
       }
       const next = [...attempts, attempt]
       setAttempts(next)
+      setMatched(false)
+      setPhase('model')
       await saveAttempt(item, attempt)
       if (generationRef.current !== generation || !mountedRef.current) {
         return
       }
-      setPhase('model')
       await speak(item.answer, {
         lang,
         rate: settingsRef.current.ttsRate,
@@ -446,7 +467,15 @@ export function usePatternSession(lang: 'en' | 'ko') {
     if (phase !== 'hint') {
       return
     }
-    setPhase('cue')
+    setPhase('starting')
+  }, [phase])
+
+  /** 型の紹介を読み終えて、練習に入る。 */
+  const beginItems = useCallback(() => {
+    if (phase !== 'intro') {
+      return
+    }
+    setPhase('starting')
   }, [phase])
 
   /** 模範を聞いたあと、次の項目へ。 */
@@ -488,10 +517,12 @@ export function usePatternSession(lang: 'en' | 'ko') {
     itemCount: round.length,
     hint,
     heardText,
+    matched,
     summary,
     sttEngine,
     error,
     start,
+    beginItems,
     stopRecording,
     retry,
     next,

@@ -4,9 +4,9 @@ import { frameMastery, MASTERY, suggestLevel } from './mastery'
 import type { FrameStats } from './patternSession'
 
 const frames: CoreFrame[] = [
-  { id: 'level-1', level: 1, pattern: '', slots: [], hint_ja: '' },
-  { id: 'level-2', level: 2, pattern: '', slots: [], hint_ja: '' },
-  { id: 'level-3', level: 3, pattern: '', slots: [], hint_ja: '' },
+  { id: 'level-1', level: 1, pattern: '', slots: [], hint_ja: '', note_ja: 'テスト用の解説', examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }] },
+  { id: 'level-2', level: 2, pattern: '', slots: [], hint_ja: '', note_ja: 'テスト用の解説', examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }] },
+  { id: 'level-3', level: 3, pattern: '', slots: [], hint_ja: '', note_ja: 'テスト用の解説', examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }] },
 ]
 
 function masteredStats(frameId: string): FrameStats {

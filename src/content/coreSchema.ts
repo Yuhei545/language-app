@@ -21,12 +21,22 @@ export type CorePhrasal = CoreWord & {
   takes: 'thing' | 'none' | 'media'
 }
 
+/** 型の使い方を見せる例文。 */
+export type CoreExample = {
+  text: string
+  ja: string
+}
+
 export type CoreFrame = {
   id: string
   level: 1 | 2 | 3
   pattern: string
   slots: string[]
   hint_ja: string
+  /** 型の短い解説(日本語)。練習に入る前に見せる。 */
+  note_ja: string
+  /** 完成した文の見本。2 つ以上。 */
+  examples: CoreExample[]
 }
 
 export type CoreVocab = {
@@ -133,7 +143,20 @@ function validateFrame(value: unknown, label: string, index: number): CoreFrame 
     }
   }
 
-  return { id, level, pattern, slots, hint_ja: hintJa }
+  const noteJa = requireString(record, 'note_ja', label, path)
+  if (!Array.isArray(record.examples) || record.examples.length < 2) {
+    fail(label, `${path}.examples`, 'は2つ以上の配列である必要があります')
+  }
+  const examples = record.examples.map((value, exampleIndex): CoreExample => {
+    const examplePath = `${path}.examples[${exampleIndex}]`
+    const example = requireRecord(value, label, examplePath)
+    return {
+      text: requireString(example, 'text', label, examplePath),
+      ja: requireString(example, 'ja', label, examplePath),
+    }
+  })
+
+  return { id, level, pattern, slots, hint_ja: hintJa, note_ja: noteJa, examples }
 }
 
 export function validateCore(json: unknown, label: string): CoreVocab {

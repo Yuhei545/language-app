@@ -64,3 +64,19 @@ describe('validateCore', () => {
       .toThrow(/bad-hint: .*\{3\}がスロット数を超えています/)
   })
 })
+
+describe('型の解説と例文', () => {
+  it('実際の core.json は、すべての型に解説と 2 つ以上の例文を持つ', () => {
+    for (const lang of ['en', 'ko'] as const) {
+      const core = loadCore(lang)
+      for (const frame of core.frames) {
+        expect(frame.note_ja.length, `${lang} ${frame.id}`).toBeGreaterThan(5)
+        expect(frame.examples.length, `${lang} ${frame.id}`).toBeGreaterThanOrEqual(2)
+        for (const example of frame.examples) {
+          expect(example.text.trim(), `${lang} ${frame.id}`).not.toBe('')
+          expect(example.ja.trim(), `${lang} ${frame.id}`).not.toBe('')
+        }
+      }
+    }
+  })
+})

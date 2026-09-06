@@ -19,16 +19,14 @@ const levelOneFrame: CoreFrame = {
   level: 1,
   pattern: 'I want {noun:thing}.',
   slots: ['noun:thing'],
-  hint_ja: '{1}が欲しい',
-}
+  hint_ja: '{1}が欲しい', note_ja: 'テスト用の解説', examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }], }
 
 const levelTwoFrame: CoreFrame = {
   id: 'level-two',
   level: 2,
   pattern: 'I {verb:thing} {noun:thing}.',
   slots: ['verb:thing', 'noun:thing'],
-  hint_ja: '私は{2}を{1}',
-}
+  hint_ja: '私は{2}を{1}', note_ja: 'テスト用の解説', examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }], }
 
 const core: CoreVocab = {
   version: 1,

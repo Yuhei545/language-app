@@ -18,6 +18,8 @@ const core: CoreVocab = {
     level: 1,
     pattern: 'I want {noun:thing}.',
     slots: ['noun:thing'],
+    note_ja: 'テスト用の解説',
+    examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }],
     hint_ja: '{1}が欲しい',
   }],
 }

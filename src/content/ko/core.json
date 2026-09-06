@@ -1,56 +1,430 @@
 {
   "version": 1,
   "verbs": [
-    { "text": "가요", "emoji": "🚶", "hint_ja": "行きます", "takes": "place" },
-    { "text": "와요", "emoji": "🏃", "hint_ja": "来ます", "takes": "place" },
-    { "text": "먹어요", "emoji": "🍽️", "hint_ja": "食べます", "takes": "thing" },
-    { "text": "마셔요", "emoji": "🥤", "hint_ja": "飲みます", "takes": "thing" },
-    { "text": "사요", "emoji": "🛒", "hint_ja": "買います", "takes": "thing" },
-    { "text": "봐요", "emoji": "👀", "hint_ja": "見ます", "takes": "thing" },
-    { "text": "좋아해요", "emoji": "❤️", "hint_ja": "好きです", "takes": "thing" },
-    { "text": "알아요", "emoji": "🧠", "hint_ja": "知っています", "takes": "thing" },
-    { "text": "찾아요", "emoji": "🔍", "hint_ja": "探します", "takes": "thing" },
-    { "text": "만나요", "emoji": "🤝", "hint_ja": "会います", "takes": "person" }
+    {
+      "text": "가요",
+      "emoji": "🚶",
+      "hint_ja": "行きます",
+      "takes": "place"
+    },
+    {
+      "text": "와요",
+      "emoji": "🏃",
+      "hint_ja": "来ます",
+      "takes": "place"
+    },
+    {
+      "text": "먹어요",
+      "emoji": "🍽️",
+      "hint_ja": "食べます",
+      "takes": "thing"
+    },
+    {
+      "text": "마셔요",
+      "emoji": "🥤",
+      "hint_ja": "飲みます",
+      "takes": "thing"
+    },
+    {
+      "text": "사요",
+      "emoji": "🛒",
+      "hint_ja": "買います",
+      "takes": "thing"
+    },
+    {
+      "text": "봐요",
+      "emoji": "👀",
+      "hint_ja": "見ます",
+      "takes": "thing"
+    },
+    {
+      "text": "좋아해요",
+      "emoji": "❤️",
+      "hint_ja": "好きです",
+      "takes": "thing"
+    },
+    {
+      "text": "알아요",
+      "emoji": "🧠",
+      "hint_ja": "知っています",
+      "takes": "thing"
+    },
+    {
+      "text": "찾아요",
+      "emoji": "🔍",
+      "hint_ja": "探します",
+      "takes": "thing"
+    },
+    {
+      "text": "만나요",
+      "emoji": "🤝",
+      "hint_ja": "会います",
+      "takes": "person"
+    }
   ],
   "nouns": [
-    { "text": "물", "emoji": "💧", "hint_ja": "水", "kind": "thing" },
-    { "text": "밥", "emoji": "🍚", "hint_ja": "ご飯", "kind": "thing" },
-    { "text": "커피", "emoji": "☕", "hint_ja": "コーヒー", "kind": "thing" },
-    { "text": "표", "emoji": "🎫", "hint_ja": "切符", "kind": "thing" },
-    { "text": "핸드폰", "emoji": "📱", "hint_ja": "携帯電話", "kind": "thing" },
-    { "text": "돈", "emoji": "💴", "hint_ja": "お金", "kind": "thing" },
-    { "text": "역", "emoji": "🚉", "hint_ja": "駅", "kind": "place" },
-    { "text": "카페", "emoji": "🏪", "hint_ja": "カフェ", "kind": "place" },
-    { "text": "방", "emoji": "🚪", "hint_ja": "部屋", "kind": "place" },
-    { "text": "화장실", "emoji": "🚻", "hint_ja": "トイレ", "kind": "place" },
-    { "text": "친구", "emoji": "🧑‍🤝‍🧑", "hint_ja": "友達", "kind": "person" },
-    { "text": "오늘", "emoji": "📅", "hint_ja": "今日", "kind": "time" },
-    { "text": "내일", "emoji": "🌅", "hint_ja": "明日", "kind": "time" }
+    {
+      "text": "물",
+      "emoji": "💧",
+      "hint_ja": "水",
+      "kind": "thing"
+    },
+    {
+      "text": "밥",
+      "emoji": "🍚",
+      "hint_ja": "ご飯",
+      "kind": "thing"
+    },
+    {
+      "text": "커피",
+      "emoji": "☕",
+      "hint_ja": "コーヒー",
+      "kind": "thing"
+    },
+    {
+      "text": "표",
+      "emoji": "🎫",
+      "hint_ja": "切符",
+      "kind": "thing"
+    },
+    {
+      "text": "핸드폰",
+      "emoji": "📱",
+      "hint_ja": "携帯電話",
+      "kind": "thing"
+    },
+    {
+      "text": "돈",
+      "emoji": "💴",
+      "hint_ja": "お金",
+      "kind": "thing"
+    },
+    {
+      "text": "역",
+      "emoji": "🚉",
+      "hint_ja": "駅",
+      "kind": "place"
+    },
+    {
+      "text": "카페",
+      "emoji": "🏪",
+      "hint_ja": "カフェ",
+      "kind": "place"
+    },
+    {
+      "text": "방",
+      "emoji": "🚪",
+      "hint_ja": "部屋",
+      "kind": "place"
+    },
+    {
+      "text": "화장실",
+      "emoji": "🚻",
+      "hint_ja": "トイレ",
+      "kind": "place"
+    },
+    {
+      "text": "친구",
+      "emoji": "🧑‍🤝‍🧑",
+      "hint_ja": "友達",
+      "kind": "person"
+    },
+    {
+      "text": "오늘",
+      "emoji": "📅",
+      "hint_ja": "今日",
+      "kind": "time"
+    },
+    {
+      "text": "내일",
+      "emoji": "🌅",
+      "hint_ja": "明日",
+      "kind": "time"
+    }
   ],
   "adjectives": [
-    { "text": "뜨거워요", "emoji": "🔥", "hint_ja": "熱いです" },
-    { "text": "차가워요", "emoji": "🧊", "hint_ja": "冷たいです" },
-    { "text": "좋아요", "emoji": "👍", "hint_ja": "良いです" },
-    { "text": "나빠요", "emoji": "👎", "hint_ja": "悪いです" },
-    { "text": "커요", "emoji": "🐘", "hint_ja": "大きいです" },
-    { "text": "작아요", "emoji": "🐜", "hint_ja": "小さいです" },
-    { "text": "맛있어요", "emoji": "😋", "hint_ja": "美味しいです" },
-    { "text": "비싸요", "emoji": "💸", "hint_ja": "高いです(値段)" },
-    { "text": "싸요", "emoji": "🏷️", "hint_ja": "安いです" },
-    { "text": "새로워요", "emoji": "✨", "hint_ja": "新しいです" }
+    {
+      "text": "뜨거워요",
+      "emoji": "🔥",
+      "hint_ja": "熱いです"
+    },
+    {
+      "text": "차가워요",
+      "emoji": "🧊",
+      "hint_ja": "冷たいです"
+    },
+    {
+      "text": "좋아요",
+      "emoji": "👍",
+      "hint_ja": "良いです"
+    },
+    {
+      "text": "나빠요",
+      "emoji": "👎",
+      "hint_ja": "悪いです"
+    },
+    {
+      "text": "커요",
+      "emoji": "🐘",
+      "hint_ja": "大きいです"
+    },
+    {
+      "text": "작아요",
+      "emoji": "🐜",
+      "hint_ja": "小さいです"
+    },
+    {
+      "text": "맛있어요",
+      "emoji": "😋",
+      "hint_ja": "美味しいです"
+    },
+    {
+      "text": "비싸요",
+      "emoji": "💸",
+      "hint_ja": "高いです(値段)"
+    },
+    {
+      "text": "싸요",
+      "emoji": "🏷️",
+      "hint_ja": "安いです"
+    },
+    {
+      "text": "새로워요",
+      "emoji": "✨",
+      "hint_ja": "新しいです"
+    }
   ],
   "phrasal": [],
   "frames": [
-    { "id": "ko-noun-juseyo", "level": 1, "pattern": "{noun:thing} 주세요.", "slots": ["noun:thing"], "hint_ja": "{1}をください" },
-    { "id": "ko-noun-isseoyo-q", "level": 1, "pattern": "{noun:thing} 있어요?", "slots": ["noun:thing"], "hint_ja": "{1}はありますか" },
-    { "id": "ko-place-gayo", "level": 1, "pattern": "{noun:place}에 가요.", "slots": ["noun:place"], "hint_ja": "{1}に行きます" },
-    { "id": "ko-thing-verb", "level": 2, "pattern": "{noun:thing}을/를 {verb:thing}.", "slots": ["noun:thing", "verb:thing"], "hint_ja": "{1}を{2}" },
-    { "id": "ko-place-verb", "level": 2, "pattern": "{noun:place}에 {verb:place}.", "slots": ["noun:place", "verb:place"], "hint_ja": "{1}に{2}" },
-    { "id": "ko-noun-adj", "level": 2, "pattern": "{noun:thing}이/가 {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "{1}が{2}" },
-    { "id": "ko-person-verb", "level": 2, "pattern": "{noun:person}을/를 {verb:person}.", "slots": ["noun:person", "verb:person"], "hint_ja": "{1}に{2}" },
-    { "id": "ko-time-place-gayo", "level": 2, "pattern": "{noun:time} {noun:place}에 가요.", "slots": ["noun:time", "noun:place"], "hint_ja": "{1}、{2}に行きます" },
-    { "id": "ko-place-thing-verb", "level": 3, "pattern": "{noun:place}에서 {noun:thing}을/를 {verb:thing}.", "slots": ["noun:place", "noun:thing", "verb:thing"], "hint_ja": "{1}で{2}を{3}" },
-    { "id": "ko-time-person-place", "level": 3, "pattern": "{noun:time} {noun:person}하고 {noun:place}에 가요.", "slots": ["noun:time", "noun:person", "noun:place"], "hint_ja": "{1}、{2}と{3}に行きます" },
-    { "id": "ko-i-noun-too-adj", "level": 3, "pattern": "이 {noun:thing}은/는 너무 {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "この{1}は{2}すぎます" }
+    {
+      "id": "ko-noun-juseyo",
+      "level": 1,
+      "pattern": "{noun:thing} 주세요.",
+      "slots": [
+        "noun:thing"
+      ],
+      "hint_ja": "{1}をください",
+      "note_ja": "주세요 は「ください」。店や食堂で何かを頼むときの基本形です。",
+      "examples": [
+        {
+          "text": "물 주세요.",
+          "ja": "水をください"
+        },
+        {
+          "text": "커피 주세요.",
+          "ja": "コーヒーをください"
+        }
+      ]
+    },
+    {
+      "id": "ko-noun-isseoyo-q",
+      "level": 1,
+      "pattern": "{noun:thing} 있어요?",
+      "slots": [
+        "noun:thing"
+      ],
+      "hint_ja": "{1}はありますか",
+      "note_ja": "있어요? で「ありますか」。語尾を上げるだけで質問になります。",
+      "examples": [
+        {
+          "text": "물 있어요?",
+          "ja": "水はありますか"
+        },
+        {
+          "text": "자리 있어요?",
+          "ja": "席はありますか"
+        }
+      ]
+    },
+    {
+      "id": "ko-place-gayo",
+      "level": 1,
+      "pattern": "{noun:place}에 가요.",
+      "slots": [
+        "noun:place"
+      ],
+      "hint_ja": "{1}に行きます",
+      "note_ja": "場所には 에、そして 가요 で「行きます」。〜에 가요 をひとかたまりで覚えます。",
+      "examples": [
+        {
+          "text": "학교에 가요.",
+          "ja": "学校に行きます"
+        },
+        {
+          "text": "집에 가요.",
+          "ja": "家に行きます"
+        }
+      ]
+    },
+    {
+      "id": "ko-thing-verb",
+      "level": 2,
+      "pattern": "{noun:thing}을/를 {verb:thing}.",
+      "slots": [
+        "noun:thing",
+        "verb:thing"
+      ],
+      "hint_ja": "{1}を{2}",
+      "note_ja": "을/를 は「を」。前の語にパッチム(下の子音)があれば 을、なければ 를 になります。",
+      "examples": [
+        {
+          "text": "밥을 먹어요.",
+          "ja": "ご飯を食べます"
+        },
+        {
+          "text": "커피를 마셔요.",
+          "ja": "コーヒーを飲みます"
+        }
+      ]
+    },
+    {
+      "id": "ko-place-verb",
+      "level": 2,
+      "pattern": "{noun:place}에 {verb:place}.",
+      "slots": [
+        "noun:place",
+        "verb:place"
+      ],
+      "hint_ja": "{1}に{2}",
+      "note_ja": "行き先には 에 を付けます。日本語の「に」とほぼ同じ働きです。",
+      "examples": [
+        {
+          "text": "학교에 가요.",
+          "ja": "学校に行きます"
+        },
+        {
+          "text": "집에 와요.",
+          "ja": "家に来ます"
+        }
+      ]
+    },
+    {
+      "id": "ko-noun-adj",
+      "level": 2,
+      "pattern": "{noun:thing}이/가 {adj}.",
+      "slots": [
+        "noun:thing",
+        "adj"
+      ],
+      "hint_ja": "{1}が{2}",
+      "note_ja": "이/가 は「が」。パッチムがあれば 이、なければ 가 です。",
+      "examples": [
+        {
+          "text": "커피가 비싸요.",
+          "ja": "コーヒーが高いです"
+        },
+        {
+          "text": "밥이 맛있어요.",
+          "ja": "ご飯がおいしいです"
+        }
+      ]
+    },
+    {
+      "id": "ko-person-verb",
+      "level": 2,
+      "pattern": "{noun:person}을/를 {verb:person}.",
+      "slots": [
+        "noun:person",
+        "verb:person"
+      ],
+      "hint_ja": "{1}に{2}",
+      "note_ja": "人にも 을/를 を使います。日本語の「〜に会う」が、韓国語では「〜を会う」の形になります。",
+      "examples": [
+        {
+          "text": "친구를 만나요.",
+          "ja": "友だちに会います"
+        },
+        {
+          "text": "선생님을 만나요.",
+          "ja": "先生に会います"
+        }
+      ]
+    },
+    {
+      "id": "ko-time-place-gayo",
+      "level": 2,
+      "pattern": "{noun:time} {noun:place}에 가요.",
+      "slots": [
+        "noun:time",
+        "noun:place"
+      ],
+      "hint_ja": "{1}、{2}に行きます",
+      "note_ja": "時を先に置くと自然です。「いつ → どこに → 行く」の順に並べます。",
+      "examples": [
+        {
+          "text": "내일 학교에 가요.",
+          "ja": "明日、学校に行きます"
+        },
+        {
+          "text": "주말에 집에 가요.",
+          "ja": "週末、家に帰ります"
+        }
+      ]
+    },
+    {
+      "id": "ko-place-thing-verb",
+      "level": 3,
+      "pattern": "{noun:place}에서 {noun:thing}을/를 {verb:thing}.",
+      "slots": [
+        "noun:place",
+        "noun:thing",
+        "verb:thing"
+      ],
+      "hint_ja": "{1}で{2}を{3}",
+      "note_ja": "에서 は「〜で」。動作をする場所には 에서、行き先には 에 を使い分けます。",
+      "examples": [
+        {
+          "text": "집에서 밥을 먹어요.",
+          "ja": "家でご飯を食べます"
+        },
+        {
+          "text": "카페에서 커피를 마셔요.",
+          "ja": "カフェでコーヒーを飲みます"
+        }
+      ]
+    },
+    {
+      "id": "ko-time-person-place",
+      "level": 3,
+      "pattern": "{noun:time} {noun:person}하고 {noun:place}에 가요.",
+      "slots": [
+        "noun:time",
+        "noun:person",
+        "noun:place"
+      ],
+      "hint_ja": "{1}、{2}と{3}に行きます",
+      "note_ja": "하고 は「〜と」。誰と行くかを add するときに使います。",
+      "examples": [
+        {
+          "text": "내일 친구하고 학교에 가요.",
+          "ja": "明日、友だちと学校に行きます"
+        },
+        {
+          "text": "주말에 친구하고 집에 가요.",
+          "ja": "週末、友だちと家に行きます"
+        }
+      ]
+    },
+    {
+      "id": "ko-i-noun-too-adj",
+      "level": 3,
+      "pattern": "이 {noun:thing}은/는 너무 {adj}.",
+      "slots": [
+        "noun:thing",
+        "adj"
+      ],
+      "hint_ja": "この{1}は{2}すぎます",
+      "note_ja": "이 は「この」、너무 は「〜すぎる」。目の前のものについて言うときの形です。",
+      "examples": [
+        {
+          "text": "이 커피는 너무 비싸요.",
+          "ja": "このコーヒーは高すぎます"
+        },
+        {
+          "text": "이 밥은 너무 매워요.",
+          "ja": "このご飯は辛すぎます"
+        }
+      ]
+    }
   ]
 }

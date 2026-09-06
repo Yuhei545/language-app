@@ -32,6 +32,8 @@ describe('renderPattern', () => {
       pattern: '{noun:thing}을/를 {verb:thing}.',
       slots: ['noun:thing', 'verb:thing'],
       hint_ja: '{1}を{2}',
+      note_ja: 'テスト用の解説',
+      examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }],
     }
 
     expect(renderPattern(frame, [word('물'), word('마셔요')])).toBe('물을 마셔요.')
@@ -44,6 +46,8 @@ describe('renderPattern', () => {
       pattern: 'I {verb:thing} {noun:thing}.',
       slots: ['verb:thing', 'noun:thing'],
       hint_ja: '私は{2}を{1}',
+      note_ja: 'テスト用の解説',
+      examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }],
     }
 
     expect(renderPattern(frame, [word('eat'), word('food')])).toBe('I eat food.')
@@ -58,6 +62,8 @@ describe('renderHint', () => {
       pattern: 'I {verb:thing} {noun:thing}.',
       slots: ['verb:thing', 'noun:thing'],
       hint_ja: '私は{2}を{1}',
+      note_ja: 'テスト用の解説',
+      examples: [{ text: 'a', ja: 'あ' }, { text: 'b', ja: 'い' }],
     }
 
     expect(renderHint(frame, [word('eat', '食べる'), word('food', '食べ物')]))

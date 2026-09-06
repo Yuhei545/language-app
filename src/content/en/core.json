@@ -1,91 +1,740 @@
 {
   "version": 1,
   "verbs": [
-    { "text": "get", "emoji": "🤲", "hint_ja": "手に入れる・もらう", "takes": "thing" },
-    { "text": "order", "emoji": "🧾", "hint_ja": "注文する", "takes": "thing" },
-    { "text": "try", "emoji": "🍴", "hint_ja": "試す", "takes": "thing" },
-    { "text": "book", "emoji": "📅", "hint_ja": "予約する", "takes": "thing" },
-    { "text": "recommend", "emoji": "⭐", "hint_ja": "おすすめする", "takes": "thing" },
-    { "text": "enjoy", "emoji": "😊", "hint_ja": "楽しむ", "takes": "thing" },
-    { "text": "text", "emoji": "📲", "hint_ja": "メッセージを送る", "takes": "person" },
-    { "text": "call", "emoji": "📞", "hint_ja": "電話する", "takes": "person" },
-    { "text": "visit", "emoji": "🧭", "hint_ja": "訪れる", "takes": "place" },
-    { "text": "explore", "emoji": "🗺️", "hint_ja": "見て回る", "takes": "place" }
+    {
+      "text": "get",
+      "emoji": "🤲",
+      "hint_ja": "手に入れる・もらう",
+      "takes": "thing"
+    },
+    {
+      "text": "order",
+      "emoji": "🧾",
+      "hint_ja": "注文する",
+      "takes": "thing"
+    },
+    {
+      "text": "try",
+      "emoji": "🍴",
+      "hint_ja": "試す",
+      "takes": "thing"
+    },
+    {
+      "text": "book",
+      "emoji": "📅",
+      "hint_ja": "予約する",
+      "takes": "thing"
+    },
+    {
+      "text": "recommend",
+      "emoji": "⭐",
+      "hint_ja": "おすすめする",
+      "takes": "thing"
+    },
+    {
+      "text": "enjoy",
+      "emoji": "😊",
+      "hint_ja": "楽しむ",
+      "takes": "thing"
+    },
+    {
+      "text": "text",
+      "emoji": "📲",
+      "hint_ja": "メッセージを送る",
+      "takes": "person"
+    },
+    {
+      "text": "call",
+      "emoji": "📞",
+      "hint_ja": "電話する",
+      "takes": "person"
+    },
+    {
+      "text": "visit",
+      "emoji": "🧭",
+      "hint_ja": "訪れる",
+      "takes": "place"
+    },
+    {
+      "text": "explore",
+      "emoji": "🗺️",
+      "hint_ja": "見て回る",
+      "takes": "place"
+    }
   ],
   "nouns": [
-    { "text": "the check", "emoji": "🧾", "hint_ja": "お会計", "kind": "thing" },
-    { "text": "a table for two", "emoji": "🍽️", "hint_ja": "2人席", "kind": "thing" },
-    { "text": "a ticket", "emoji": "🎫", "hint_ja": "チケット", "kind": "thing" },
-    { "text": "coffee", "emoji": "☕", "hint_ja": "コーヒー", "kind": "thing" },
-    { "text": "the menu", "emoji": "📖", "hint_ja": "メニュー", "kind": "thing" },
-    { "text": "a charger", "emoji": "🔌", "hint_ja": "充電器", "kind": "thing" },
-    { "text": "a refund", "emoji": "💸", "hint_ja": "返金", "kind": "thing" },
-    { "text": "water", "emoji": "💧", "hint_ja": "水", "kind": "thing" },
-    { "text": "a recommendation", "emoji": "👍", "hint_ja": "おすすめ", "kind": "thing" },
-    { "text": "the new episode", "emoji": "📺", "hint_ja": "最新話", "kind": "media" },
-    { "text": "that show", "emoji": "🎬", "hint_ja": "あの番組", "kind": "media" },
-    { "text": "this song", "emoji": "🎵", "hint_ja": "この曲", "kind": "media" },
-    { "text": "their new album", "emoji": "💿", "hint_ja": "彼らの新しいアルバム", "kind": "media" },
-    { "text": "the last season", "emoji": "🎞️", "hint_ja": "前のシーズン", "kind": "media" },
-    { "text": "that video", "emoji": "▶️", "hint_ja": "あの動画", "kind": "media" },
-    { "text": "the station", "emoji": "🚉", "hint_ja": "駅", "kind": "place" },
-    { "text": "the airport", "emoji": "✈️", "hint_ja": "空港", "kind": "place" },
-    { "text": "a cafe", "emoji": "🏪", "hint_ja": "カフェ", "kind": "place" },
-    { "text": "the hotel", "emoji": "🏨", "hint_ja": "ホテル", "kind": "place" },
-    { "text": "the platform", "emoji": "🚏", "hint_ja": "ホーム(乗り場)", "kind": "place" },
-    { "text": "downtown", "emoji": "🏙️", "hint_ja": "街の中心", "kind": "place" },
-    { "text": "the front desk", "emoji": "🛎️", "hint_ja": "フロント", "kind": "place" },
-    { "text": "a friend", "emoji": "🧑‍🤝‍🧑", "hint_ja": "友達", "kind": "person" },
-    { "text": "my coworker", "emoji": "💼", "hint_ja": "同僚", "kind": "person" },
-    { "text": "the staff", "emoji": "🧑‍💼", "hint_ja": "店員・スタッフ", "kind": "person" },
-    { "text": "my host", "emoji": "🏠", "hint_ja": "ホスト(泊めてくれる人)", "kind": "person" },
-    { "text": "tomorrow", "emoji": "🌅", "hint_ja": "明日", "kind": "time" },
-    { "text": "this weekend", "emoji": "📅", "hint_ja": "今週末", "kind": "time" },
-    { "text": "tonight", "emoji": "🌙", "hint_ja": "今夜", "kind": "time" },
-    { "text": "after work", "emoji": "🕕", "hint_ja": "仕事の後", "kind": "time" }
+    {
+      "text": "the check",
+      "emoji": "🧾",
+      "hint_ja": "お会計",
+      "kind": "thing"
+    },
+    {
+      "text": "a table for two",
+      "emoji": "🍽️",
+      "hint_ja": "2人席",
+      "kind": "thing"
+    },
+    {
+      "text": "a ticket",
+      "emoji": "🎫",
+      "hint_ja": "チケット",
+      "kind": "thing"
+    },
+    {
+      "text": "coffee",
+      "emoji": "☕",
+      "hint_ja": "コーヒー",
+      "kind": "thing"
+    },
+    {
+      "text": "the menu",
+      "emoji": "📖",
+      "hint_ja": "メニュー",
+      "kind": "thing"
+    },
+    {
+      "text": "a charger",
+      "emoji": "🔌",
+      "hint_ja": "充電器",
+      "kind": "thing"
+    },
+    {
+      "text": "a refund",
+      "emoji": "💸",
+      "hint_ja": "返金",
+      "kind": "thing"
+    },
+    {
+      "text": "water",
+      "emoji": "💧",
+      "hint_ja": "水",
+      "kind": "thing"
+    },
+    {
+      "text": "a recommendation",
+      "emoji": "👍",
+      "hint_ja": "おすすめ",
+      "kind": "thing"
+    },
+    {
+      "text": "the new episode",
+      "emoji": "📺",
+      "hint_ja": "最新話",
+      "kind": "media"
+    },
+    {
+      "text": "that show",
+      "emoji": "🎬",
+      "hint_ja": "あの番組",
+      "kind": "media"
+    },
+    {
+      "text": "this song",
+      "emoji": "🎵",
+      "hint_ja": "この曲",
+      "kind": "media"
+    },
+    {
+      "text": "their new album",
+      "emoji": "💿",
+      "hint_ja": "彼らの新しいアルバム",
+      "kind": "media"
+    },
+    {
+      "text": "the last season",
+      "emoji": "🎞️",
+      "hint_ja": "前のシーズン",
+      "kind": "media"
+    },
+    {
+      "text": "that video",
+      "emoji": "▶️",
+      "hint_ja": "あの動画",
+      "kind": "media"
+    },
+    {
+      "text": "the station",
+      "emoji": "🚉",
+      "hint_ja": "駅",
+      "kind": "place"
+    },
+    {
+      "text": "the airport",
+      "emoji": "✈️",
+      "hint_ja": "空港",
+      "kind": "place"
+    },
+    {
+      "text": "a cafe",
+      "emoji": "🏪",
+      "hint_ja": "カフェ",
+      "kind": "place"
+    },
+    {
+      "text": "the hotel",
+      "emoji": "🏨",
+      "hint_ja": "ホテル",
+      "kind": "place"
+    },
+    {
+      "text": "the platform",
+      "emoji": "🚏",
+      "hint_ja": "ホーム(乗り場)",
+      "kind": "place"
+    },
+    {
+      "text": "downtown",
+      "emoji": "🏙️",
+      "hint_ja": "街の中心",
+      "kind": "place"
+    },
+    {
+      "text": "the front desk",
+      "emoji": "🛎️",
+      "hint_ja": "フロント",
+      "kind": "place"
+    },
+    {
+      "text": "a friend",
+      "emoji": "🧑‍🤝‍🧑",
+      "hint_ja": "友達",
+      "kind": "person"
+    },
+    {
+      "text": "my coworker",
+      "emoji": "💼",
+      "hint_ja": "同僚",
+      "kind": "person"
+    },
+    {
+      "text": "the staff",
+      "emoji": "🧑‍💼",
+      "hint_ja": "店員・スタッフ",
+      "kind": "person"
+    },
+    {
+      "text": "my host",
+      "emoji": "🏠",
+      "hint_ja": "ホスト(泊めてくれる人)",
+      "kind": "person"
+    },
+    {
+      "text": "tomorrow",
+      "emoji": "🌅",
+      "hint_ja": "明日",
+      "kind": "time"
+    },
+    {
+      "text": "this weekend",
+      "emoji": "📅",
+      "hint_ja": "今週末",
+      "kind": "time"
+    },
+    {
+      "text": "tonight",
+      "emoji": "🌙",
+      "hint_ja": "今夜",
+      "kind": "time"
+    },
+    {
+      "text": "after work",
+      "emoji": "🕕",
+      "hint_ja": "仕事の後",
+      "kind": "time"
+    }
   ],
   "adjectives": [
-    { "text": "crowded", "emoji": "👥", "hint_ja": "混んでいる" },
-    { "text": "expensive", "emoji": "💸", "hint_ja": "高い(値段)" },
-    { "text": "worth it", "emoji": "💎", "hint_ja": "価値がある" },
-    { "text": "kind of slow", "emoji": "🐌", "hint_ja": "ちょっと遅い・だるい" },
-    { "text": "amazing", "emoji": "🤩", "hint_ja": "すばらしい" },
-    { "text": "relatable", "emoji": "🎭", "hint_ja": "共感できる" },
-    { "text": "overrated", "emoji": "📉", "hint_ja": "過大評価されている" },
-    { "text": "cozy", "emoji": "🛋️", "hint_ja": "居心地がいい" },
-    { "text": "confusing", "emoji": "😵", "hint_ja": "分かりにくい" },
-    { "text": "pretty good", "emoji": "👌", "hint_ja": "かなり良い" }
+    {
+      "text": "crowded",
+      "emoji": "👥",
+      "hint_ja": "混んでいる"
+    },
+    {
+      "text": "expensive",
+      "emoji": "💸",
+      "hint_ja": "高い(値段)"
+    },
+    {
+      "text": "worth it",
+      "emoji": "💎",
+      "hint_ja": "価値がある"
+    },
+    {
+      "text": "kind of slow",
+      "emoji": "🐌",
+      "hint_ja": "ちょっと遅い・だるい"
+    },
+    {
+      "text": "amazing",
+      "emoji": "🤩",
+      "hint_ja": "すばらしい"
+    },
+    {
+      "text": "relatable",
+      "emoji": "🎭",
+      "hint_ja": "共感できる"
+    },
+    {
+      "text": "overrated",
+      "emoji": "📉",
+      "hint_ja": "過大評価されている"
+    },
+    {
+      "text": "cozy",
+      "emoji": "🛋️",
+      "hint_ja": "居心地がいい"
+    },
+    {
+      "text": "confusing",
+      "emoji": "😵",
+      "hint_ja": "分かりにくい"
+    },
+    {
+      "text": "pretty good",
+      "emoji": "👌",
+      "hint_ja": "かなり良い"
+    }
   ],
   "phrasal": [
-    { "text": "hang out", "emoji": "🎈", "hint_ja": "遊ぶ・一緒に過ごす", "takes": "none" },
-    { "text": "meet up", "emoji": "🤝", "hint_ja": "会う・集まる", "takes": "none" },
-    { "text": "show up", "emoji": "🚪", "hint_ja": "顔を出す・現れる", "takes": "none" },
-    { "text": "chill out", "emoji": "🧊", "hint_ja": "のんびりする", "takes": "none" },
-    { "text": "look for", "emoji": "🔍", "hint_ja": "探す", "takes": "thing" },
-    { "text": "pick up", "emoji": "🤏", "hint_ja": "受け取る・買ってくる", "takes": "thing" },
-    { "text": "figure out", "emoji": "🧠", "hint_ja": "理解する・解決する", "takes": "thing" },
-    { "text": "sort out", "emoji": "🧹", "hint_ja": "片付ける・整理する", "takes": "thing" },
-    { "text": "check out", "emoji": "👀", "hint_ja": "見てみる・チェックする", "takes": "media" },
-    { "text": "catch up on", "emoji": "⏩", "hint_ja": "見逃し分を追いかける", "takes": "media" }
+    {
+      "text": "hang out",
+      "emoji": "🎈",
+      "hint_ja": "遊ぶ・一緒に過ごす",
+      "takes": "none"
+    },
+    {
+      "text": "meet up",
+      "emoji": "🤝",
+      "hint_ja": "会う・集まる",
+      "takes": "none"
+    },
+    {
+      "text": "show up",
+      "emoji": "🚪",
+      "hint_ja": "顔を出す・現れる",
+      "takes": "none"
+    },
+    {
+      "text": "chill out",
+      "emoji": "🧊",
+      "hint_ja": "のんびりする",
+      "takes": "none"
+    },
+    {
+      "text": "look for",
+      "emoji": "🔍",
+      "hint_ja": "探す",
+      "takes": "thing"
+    },
+    {
+      "text": "pick up",
+      "emoji": "🤏",
+      "hint_ja": "受け取る・買ってくる",
+      "takes": "thing"
+    },
+    {
+      "text": "figure out",
+      "emoji": "🧠",
+      "hint_ja": "理解する・解決する",
+      "takes": "thing"
+    },
+    {
+      "text": "sort out",
+      "emoji": "🧹",
+      "hint_ja": "片付ける・整理する",
+      "takes": "thing"
+    },
+    {
+      "text": "check out",
+      "emoji": "👀",
+      "hint_ja": "見てみる・チェックする",
+      "takes": "media"
+    },
+    {
+      "text": "catch up on",
+      "emoji": "⏩",
+      "hint_ja": "見逃し分を追いかける",
+      "takes": "media"
+    }
   ],
   "frames": [
-    { "id": "en-could-i-get", "level": 1, "pattern": "Could I get {noun:thing}?", "slots": ["noun:thing"], "hint_ja": "{1}をもらえますか" },
-    { "id": "en-do-you-have", "level": 1, "pattern": "Do you have {noun:thing}?", "slots": ["noun:thing"], "hint_ja": "{1}はありますか" },
-    { "id": "en-how-get-to", "level": 1, "pattern": "How do I get to {noun:place}?", "slots": ["noun:place"], "hint_ja": "{1}へはどう行けばいいですか" },
-    { "id": "en-is-far", "level": 1, "pattern": "Is {noun:place} far from here?", "slots": ["noun:place"], "hint_ja": "{1}はここから遠いですか" },
-    { "id": "en-into-lately", "level": 1, "pattern": "I've been into {noun:media} lately.", "slots": ["noun:media"], "hint_ja": "最近{1}にハマっています" },
-    { "id": "en-have-you-seen", "level": 1, "pattern": "Have you seen {noun:media}?", "slots": ["noun:media"], "hint_ja": "{1}は見た?" },
-    { "id": "en-lets-phrasal-time", "level": 2, "pattern": "Let's {phrasal:none} {noun:time}.", "slots": ["phrasal:none", "noun:time"], "hint_ja": "{2}、{1}しよう" },
-    { "id": "en-looking-near", "level": 2, "pattern": "I'm looking for {noun:thing} near {noun:place}.", "slots": ["noun:thing", "noun:place"], "hint_ja": "{2}の近くで{1}を探しています" },
-    { "id": "en-thing-was-adj", "level": 2, "pattern": "{noun:thing} was {adj}.", "slots": ["noun:thing", "adj"], "hint_ja": "{1}は{2}でした" },
-    { "id": "en-media-was-adj", "level": 2, "pattern": "{noun:media} was {adj}.", "slots": ["noun:media", "adj"], "hint_ja": "{1}は{2}でした" },
-    { "id": "en-need-phrasal-thing", "level": 2, "pattern": "I need to {phrasal:thing} {noun:thing}.", "slots": ["phrasal:thing", "noun:thing"], "hint_ja": "{2}を{1}しないと" },
-    { "id": "en-still-phrasal-media", "level": 2, "pattern": "I still need to {phrasal:media} {noun:media}.", "slots": ["phrasal:media", "noun:media"], "hint_ja": "まだ{2}を{1}していない" },
-    { "id": "en-going-verb-person-time", "level": 2, "pattern": "I'm going to {verb:person} {noun:person} {noun:time}.", "slots": ["verb:person", "noun:person", "noun:time"], "hint_ja": "{3}、{2}に{1}予定です" },
-    { "id": "en-going-verb-place-time", "level": 2, "pattern": "I'm going to {verb:place} {noun:place} {noun:time}.", "slots": ["verb:place", "noun:place", "noun:time"], "hint_ja": "{3}、{2}を{1}予定です" },
-    { "id": "en-meeting-at", "level": 3, "pattern": "I'm meeting {noun:person} at {noun:place} {noun:time}.", "slots": ["noun:person", "noun:place", "noun:time"], "hint_ja": "{3}、{2}で{1}と会います" },
-    { "id": "en-at-place-was-adj", "level": 3, "pattern": "The {noun:thing} at {noun:place} was {adj}.", "slots": ["noun:thing", "noun:place", "adj"], "hint_ja": "{2}の{1}は{3}でした" },
-    { "id": "en-recommend-not-too", "level": 3, "pattern": "Could you recommend {noun:thing} that isn't too {adj}?", "slots": ["noun:thing", "adj"], "hint_ja": "あまり{2}すぎない{1}をおすすめしてもらえますか" },
-    { "id": "en-usually-verb-thing-time", "level": 3, "pattern": "I usually {verb:thing} {noun:thing} {noun:time}.", "slots": ["verb:thing", "noun:thing", "noun:time"], "hint_ja": "{3}はたいてい{2}を{1}" }
+    {
+      "id": "en-could-i-get",
+      "level": 1,
+      "pattern": "Could I get {noun:thing}?",
+      "slots": [
+        "noun:thing"
+      ],
+      "hint_ja": "{1}をもらえますか",
+      "note_ja": "お店で何かを頼むときの、いちばん角が立たない言い方です。Can I get より丁寧に響きます。",
+      "examples": [
+        {
+          "text": "Could I get the check?",
+          "ja": "お会計をお願いします"
+        },
+        {
+          "text": "Could I get a table for two?",
+          "ja": "2人席をお願いします"
+        }
+      ]
+    },
+    {
+      "id": "en-do-you-have",
+      "level": 1,
+      "pattern": "Do you have {noun:thing}?",
+      "slots": [
+        "noun:thing"
+      ],
+      "hint_ja": "{1}はありますか",
+      "note_ja": "在庫や空きがあるかを聞く形です。物にも席にも時間にも使えます。",
+      "examples": [
+        {
+          "text": "Do you have a ticket?",
+          "ja": "チケットはありますか"
+        },
+        {
+          "text": "Do you have a table for two?",
+          "ja": "2人席は空いていますか"
+        }
+      ]
+    },
+    {
+      "id": "en-how-get-to",
+      "level": 1,
+      "pattern": "How do I get to {noun:place}?",
+      "slots": [
+        "noun:place"
+      ],
+      "hint_ja": "{1}へはどう行けばいいですか",
+      "note_ja": "行き方を尋ねる定番です。get to は「たどり着く」。目的地だけ入れ替えれば、どこでも使えます。",
+      "examples": [
+        {
+          "text": "How do I get to the station?",
+          "ja": "駅へはどう行けばいいですか"
+        },
+        {
+          "text": "How do I get to the airport?",
+          "ja": "空港へはどう行けばいいですか"
+        }
+      ]
+    },
+    {
+      "id": "en-is-far",
+      "level": 1,
+      "pattern": "Is {noun:place} far from here?",
+      "slots": [
+        "noun:place"
+      ],
+      "hint_ja": "{1}はここから遠いですか",
+      "note_ja": "距離を確かめる言い方です。far from here で「ここから遠い」。歩けるか判断したいときに使います。",
+      "examples": [
+        {
+          "text": "Is the station far from here?",
+          "ja": "駅はここから遠いですか"
+        },
+        {
+          "text": "Is the museum far from here?",
+          "ja": "美術館はここから遠いですか"
+        }
+      ]
+    },
+    {
+      "id": "en-into-lately",
+      "level": 1,
+      "pattern": "I've been into {noun:media} lately.",
+      "slots": [
+        "noun:media"
+      ],
+      "hint_ja": "最近{1}にハマっています",
+      "note_ja": "be into 〜 で「〜にハマっている」。lately を付けると「最近」という時間の幅が出ます。",
+      "examples": [
+        {
+          "text": "I've been into K-dramas lately.",
+          "ja": "最近、韓国ドラマにハマっています"
+        },
+        {
+          "text": "I've been into that podcast lately.",
+          "ja": "最近、あのポッドキャストにハマっています"
+        }
+      ]
+    },
+    {
+      "id": "en-have-you-seen",
+      "level": 1,
+      "pattern": "Have you seen {noun:media}?",
+      "slots": [
+        "noun:media"
+      ],
+      "hint_ja": "{1}は見た?",
+      "note_ja": "相手が見たかどうかを聞く形です。話のきっかけとして、そのまま感想へつなげられます。",
+      "examples": [
+        {
+          "text": "Have you seen that movie?",
+          "ja": "あの映画は見た?"
+        },
+        {
+          "text": "Have you seen the new season?",
+          "ja": "新シーズンは見た?"
+        }
+      ]
+    },
+    {
+      "id": "en-lets-phrasal-time",
+      "level": 2,
+      "pattern": "Let's {phrasal:none} {noun:time}.",
+      "slots": [
+        "phrasal:none",
+        "noun:time"
+      ],
+      "hint_ja": "{2}、{1}しよう",
+      "note_ja": "Let's で誘う形です。hang out や meet up のような 2 語の動詞を、時を表す語とつなげます。",
+      "examples": [
+        {
+          "text": "Let's hang out this weekend.",
+          "ja": "今週末、遊ぼう"
+        },
+        {
+          "text": "Let's meet up after work.",
+          "ja": "仕事の後に会おう"
+        }
+      ]
+    },
+    {
+      "id": "en-looking-near",
+      "level": 2,
+      "pattern": "I'm looking for {noun:thing} near {noun:place}.",
+      "slots": [
+        "noun:thing",
+        "noun:place"
+      ],
+      "hint_ja": "{2}の近くで{1}を探しています",
+      "note_ja": "探し物を伝える形です。near 〜 で場所を添えると、相手が案内しやすくなります。",
+      "examples": [
+        {
+          "text": "I'm looking for a coffee shop near the station.",
+          "ja": "駅の近くでカフェを探しています"
+        },
+        {
+          "text": "I'm looking for a pharmacy near the hotel.",
+          "ja": "ホテルの近くで薬局を探しています"
+        }
+      ]
+    },
+    {
+      "id": "en-thing-was-adj",
+      "level": 2,
+      "pattern": "{noun:thing} was {adj}.",
+      "slots": [
+        "noun:thing",
+        "adj"
+      ],
+      "hint_ja": "{1}は{2}でした",
+      "note_ja": "体験した物や場所の感想を、一言で伝える形です。was なので、終わったことについて言います。",
+      "examples": [
+        {
+          "text": "The line was crowded.",
+          "ja": "列は混んでいました"
+        },
+        {
+          "text": "The ticket was expensive.",
+          "ja": "チケットは高かったです"
+        }
+      ]
+    },
+    {
+      "id": "en-media-was-adj",
+      "level": 2,
+      "pattern": "{noun:media} was {adj}.",
+      "slots": [
+        "noun:media",
+        "adj"
+      ],
+      "hint_ja": "{1}は{2}でした",
+      "note_ja": "見たものの感想です。amazing / overrated のような一語で、まず結論を伝えます。",
+      "examples": [
+        {
+          "text": "That movie was amazing.",
+          "ja": "あの映画はすばらしかった"
+        },
+        {
+          "text": "The ending was confusing.",
+          "ja": "結末は分かりにくかった"
+        }
+      ]
+    },
+    {
+      "id": "en-need-phrasal-thing",
+      "level": 2,
+      "pattern": "I need to {phrasal:thing} {noun:thing}.",
+      "slots": [
+        "phrasal:thing",
+        "noun:thing"
+      ],
+      "hint_ja": "{2}を{1}しないと",
+      "note_ja": "need to 〜 で「〜しないといけない」。やることを相手に伝えたり、断る理由に使えます。",
+      "examples": [
+        {
+          "text": "I need to pick up a ticket.",
+          "ja": "チケットを受け取らないと"
+        },
+        {
+          "text": "I need to sort out my schedule.",
+          "ja": "予定を整理しないと"
+        }
+      ]
+    },
+    {
+      "id": "en-still-phrasal-media",
+      "level": 2,
+      "pattern": "I still need to {phrasal:media} {noun:media}.",
+      "slots": [
+        "phrasal:media",
+        "noun:media"
+      ],
+      "hint_ja": "まだ{2}を{1}していない",
+      "note_ja": "still を足すと「まだ済んでいない」が伝わります。見逃している話題を出すときに便利です。",
+      "examples": [
+        {
+          "text": "I still need to catch up on that show.",
+          "ja": "まだあの番組を追いかけていません"
+        },
+        {
+          "text": "I still need to check out that album.",
+          "ja": "まだあのアルバムを聴いていません"
+        }
+      ]
+    },
+    {
+      "id": "en-going-verb-person-time",
+      "level": 2,
+      "pattern": "I'm going to {verb:person} {noun:person} {noun:time}.",
+      "slots": [
+        "verb:person",
+        "noun:person",
+        "noun:time"
+      ],
+      "hint_ja": "{3}、{2}に{1}予定です",
+      "note_ja": "I'm going to 〜 は決まっている予定です。will より「もう決めてある」感じが出ます。",
+      "examples": [
+        {
+          "text": "I'm going to see my friend tomorrow.",
+          "ja": "明日、友だちに会う予定です"
+        },
+        {
+          "text": "I'm going to call my sister tonight.",
+          "ja": "今夜、姉に電話する予定です"
+        }
+      ]
+    },
+    {
+      "id": "en-going-verb-place-time",
+      "level": 2,
+      "pattern": "I'm going to {verb:place} {noun:place} {noun:time}.",
+      "slots": [
+        "verb:place",
+        "noun:place",
+        "noun:time"
+      ],
+      "hint_ja": "{3}、{2}を{1}予定です",
+      "note_ja": "場所と時をまとめて言う形です。英語は「何を → どこで → いつ」の順に並びます。",
+      "examples": [
+        {
+          "text": "I'm going to visit the museum this weekend.",
+          "ja": "今週末、美術館に行く予定です"
+        },
+        {
+          "text": "I'm going to check the station tomorrow.",
+          "ja": "明日、駅を見てくる予定です"
+        }
+      ]
+    },
+    {
+      "id": "en-meeting-at",
+      "level": 3,
+      "pattern": "I'm meeting {noun:person} at {noun:place} {noun:time}.",
+      "slots": [
+        "noun:person",
+        "noun:place",
+        "noun:time"
+      ],
+      "hint_ja": "{3}、{2}で{1}と会います",
+      "note_ja": "約束を伝える形です。今している最中でなくても、決まった予定は -ing で言えます。",
+      "examples": [
+        {
+          "text": "I'm meeting my friend at the station tomorrow.",
+          "ja": "明日、駅で友だちと会います"
+        },
+        {
+          "text": "I'm meeting my coworker at the cafe after work.",
+          "ja": "仕事の後、カフェで同僚と会います"
+        }
+      ]
+    },
+    {
+      "id": "en-at-place-was-adj",
+      "level": 3,
+      "pattern": "The {noun:thing} at {noun:place} was {adj}.",
+      "slots": [
+        "noun:thing",
+        "noun:place",
+        "adj"
+      ],
+      "hint_ja": "{2}の{1}は{3}でした",
+      "note_ja": "The 〜 at 〈場所〉 で「どこの何か」を絞ります。店ごとの感想を言うときに使います。",
+      "examples": [
+        {
+          "text": "The coffee at that cafe was amazing.",
+          "ja": "あのカフェのコーヒーはすばらしかった"
+        },
+        {
+          "text": "The line at the station was crowded.",
+          "ja": "駅の列は混んでいました"
+        }
+      ]
+    },
+    {
+      "id": "en-recommend-not-too",
+      "level": 3,
+      "pattern": "Could you recommend {noun:thing} that isn't too {adj}?",
+      "slots": [
+        "noun:thing",
+        "adj"
+      ],
+      "hint_ja": "あまり{2}すぎない{1}をおすすめしてもらえますか",
+      "note_ja": "条件を付けておすすめを頼む形です。not too 〜 で「〜すぎない」と、やんわり希望を伝えます。",
+      "examples": [
+        {
+          "text": "Could you recommend a dish that isn't too expensive?",
+          "ja": "あまり高すぎない料理をおすすめしてもらえますか"
+        },
+        {
+          "text": "Could you recommend a show that isn't too confusing?",
+          "ja": "あまり分かりにくくない番組をおすすめしてもらえますか"
+        }
+      ]
+    },
+    {
+      "id": "en-usually-verb-thing-time",
+      "level": 3,
+      "pattern": "I usually {verb:thing} {noun:thing} {noun:time}.",
+      "slots": [
+        "verb:thing",
+        "noun:thing",
+        "noun:time"
+      ],
+      "hint_ja": "{3}はたいてい{2}を{1}",
+      "note_ja": "usually は「たいてい」。習慣を言うときは、動詞をそのままの形で使います。",
+      "examples": [
+        {
+          "text": "I usually get coffee after work.",
+          "ja": "仕事の後はたいていコーヒーを買います"
+        },
+        {
+          "text": "I usually order the same dish.",
+          "ja": "たいてい同じ料理を注文します"
+        }
+      ]
+    }
   ]
 }
