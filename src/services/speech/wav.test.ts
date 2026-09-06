@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  decodePcm16Base64,
+  detectOnsetSec,
   downmixToMono,
   downsampleTo16k,
-  detectOnsetSec,
   encodeWavBuffer,
   peakRms,
+  splitBySilence,
   trimSilence,
 } from './wav'
 
@@ -174,5 +176,68 @@ describe('detectOnsetSec', () => {
     expect(() => detectOnsetSec(new Float32Array(), 0)).toThrow(/サンプルレート/)
     expect(() => detectOnsetSec(new Float32Array(), 100, -1)).toThrow(/しきい値/)
     expect(() => detectOnsetSec(new Float32Array(), 100, 0.01, 0)).toThrow(/窓幅/)
+  })
+})
+
+describe('decodePcm16Base64', () => {
+  it('16bit PCM を -1〜1 に戻す', () => {
+    const pcm = new Int16Array([0, 16384, -16384, 32767, -32768])
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(pcm.buffer)))
+    const samples = decodePcm16Base64(base64)
+    expect(Array.from(samples).map((value) => Number(value.toFixed(3)))).toEqual([0, 0.5, -0.5, 1, -1])
+  })
+})
+
+describe('splitBySilence', () => {
+  const rate = 8000
+  function tone(seconds: number): Float32Array {
+    const out = new Float32Array(Math.round(rate * seconds))
+    for (let index = 0; index < out.length; index += 1) {
+      out[index] = 0.5 * Math.sin((2 * Math.PI * 440 * index) / rate)
+    }
+    return out
+  }
+  function silence(seconds: number): Float32Array {
+    return new Float32Array(Math.round(rate * seconds))
+  }
+  function concat(parts: Float32Array[]): Float32Array {
+    const total = parts.reduce((sum, part) => sum + part.length, 0)
+    const out = new Float32Array(total)
+    let offset = 0
+    parts.forEach((part) => {
+      out.set(part, offset)
+      offset += part.length
+    })
+    return out
+  }
+
+  it('長い無音で 3 つに切り分け、各区間は音の長さにほぼ等しい', () => {
+    const audio = concat([silence(0.3), tone(0.5), silence(0.8), tone(0.3), silence(0.9), tone(0.7), silence(0.2)])
+    const segments = splitBySilence(audio, rate, 3)
+    expect(segments).not.toBeNull()
+    // 音の長さ + 前後の余白(最大 0.08 秒ずつ)
+    const lengths = segments!.map((segment) => segment.length / rate)
+    ;[0.5, 0.3, 0.7].forEach((expected, index) => {
+      expect(lengths[index]).toBeGreaterThanOrEqual(expected - 0.02)
+      expect(lengths[index]).toBeLessThanOrEqual(expected + 0.2)
+    })
+  })
+
+  it('語の間の短い間(0.2 秒)は境目にしない', () => {
+    const audio = concat([tone(0.4), silence(0.2), tone(0.4), silence(0.8), tone(0.4)])
+    const segments = splitBySilence(audio, rate, 2)
+    expect(segments).not.toBeNull()
+    const lengths = segments!.map((segment) => segment.length / rate)
+    // 1 つ目は「音 0.4 + 短い間 0.2 + 音 0.4」がひとまとまり
+    expect(lengths[0]).toBeGreaterThanOrEqual(1.0 - 0.02)
+    expect(lengths[0]).toBeLessThanOrEqual(1.0 + 0.2)
+    expect(lengths[1]).toBeGreaterThanOrEqual(0.4 - 0.02)
+    expect(lengths[1]).toBeLessThanOrEqual(0.4 + 0.2)
+  })
+
+  it('求めた数に分けられなければ null', () => {
+    const audio = concat([tone(0.5), silence(0.8), tone(0.5)])
+    expect(splitBySilence(audio, rate, 3)).toBeNull()
+    expect(splitBySilence(new Float32Array(rate), rate, 1)).toBeNull()
   })
 })

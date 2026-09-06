@@ -4,6 +4,9 @@ export type MixingLevel = 1 | 2 | 3
 export type PersonalWordKind = 'place' | 'person' | 'thing' | 'media'
 /** 型を回す・即答の確かめ方。self は答えを見て自分で判定(Gemini を使わない)。 */
 export type PatternCheck = 'auto' | 'record' | 'self'
+/** 読み上げの声。gemini は Gemini TTS(自然な声、作った音声は端末に保存)。上限時は内蔵に自動で戻る。 */
+export type TtsProvider = 'browser' | 'gemini'
+export type VoicePair = { en: string; ko: string }
 
 export type PersonalWord = {
   ja: string
@@ -19,6 +22,10 @@ export type Settings = {
   geminiSttModel: string
   patternCheck: PatternCheck
   sttEngine: SttEngine
+  ttsProvider: TtsProvider
+  geminiTtsModel: string
+  geminiVoice: VoicePair
+  geminiVoiceB: VoicePair
   ttsVoice: { en: string | null; ko: string | null }
   ttsVoiceB: { en: string | null; ko: string | null }
   ttsRate: number
@@ -39,6 +46,7 @@ const STT_ENGINES: SttEngine[] = ['auto', 'webspeech', 'gemini']
 const INTERESTS: Interest[] = ['travel', 'friends', 'content']
 const PERSONAL_WORD_KINDS: PersonalWordKind[] = ['place', 'person', 'thing', 'media']
 const PATTERN_CHECKS: PatternCheck[] = ['auto', 'record', 'self']
+const TTS_PROVIDERS: TtsProvider[] = ['browser', 'gemini']
 const listeners = new Set<SettingsListener>()
 
 const DEFAULT_SETTINGS: Settings = {
@@ -48,6 +56,10 @@ const DEFAULT_SETTINGS: Settings = {
   // 既定は自分で判定。音声認識は当てにならず、無料枠も消費するため(Pimsleur も自己判定)。
   patternCheck: 'self',
   sttEngine: 'auto',
+  ttsProvider: 'gemini',
+  geminiTtsModel: 'gemini-2.5-flash-preview-tts',
+  geminiVoice: { en: 'Kore', ko: 'Aoede' },
+  geminiVoiceB: { en: 'Puck', ko: 'Charon' },
   ttsVoice: { en: null, ko: null },
   ttsVoiceB: { en: null, ko: null },
   ttsRate: 0.9,
@@ -67,6 +79,8 @@ function defaultSettings(): Settings {
     ttsVoice: { ...DEFAULT_SETTINGS.ttsVoice },
     ttsVoiceB: { ...DEFAULT_SETTINGS.ttsVoiceB },
     interests: [...DEFAULT_SETTINGS.interests],
+    geminiVoice: { ...DEFAULT_SETTINGS.geminiVoice },
+    geminiVoiceB: { ...DEFAULT_SETTINGS.geminiVoiceB },
     parentName: { ...DEFAULT_SETTINGS.parentName },
     personalWords: [...DEFAULT_SETTINGS.personalWords],
   }
@@ -78,6 +92,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNullableString(value: unknown): value is string | null {
   return typeof value === 'string' || value === null
+}
+
+function isVoicePair(value: unknown): value is VoicePair {
+  return isRecord(value) && typeof value.en === 'string' && typeof value.ko === 'string'
 }
 
 function isPersonalWord(value: unknown): value is PersonalWord {
@@ -105,6 +123,11 @@ function isSettings(value: unknown): value is Settings {
     && typeof value.geminiSttModel === 'string'
     && typeof value.patternCheck === 'string'
     && PATTERN_CHECKS.includes(value.patternCheck as PatternCheck)
+    && typeof value.ttsProvider === 'string'
+    && TTS_PROVIDERS.includes(value.ttsProvider as TtsProvider)
+    && typeof value.geminiTtsModel === 'string'
+    && isVoicePair(value.geminiVoice)
+    && isVoicePair(value.geminiVoiceB)
     && typeof value.sttEngine === 'string'
     && STT_ENGINES.includes(value.sttEngine as SttEngine)
     && isNullableString(value.ttsVoice.en)
@@ -177,6 +200,10 @@ export function getSettings(): Settings {
         patternCheck: parsed.patternCheck === undefined
           ? DEFAULT_SETTINGS.patternCheck
           : parsed.patternCheck,
+        ttsProvider: parsed.ttsProvider === undefined ? DEFAULT_SETTINGS.ttsProvider : parsed.ttsProvider,
+        geminiTtsModel: parsed.geminiTtsModel === undefined ? DEFAULT_SETTINGS.geminiTtsModel : parsed.geminiTtsModel,
+        geminiVoice: parsed.geminiVoice === undefined ? { ...DEFAULT_SETTINGS.geminiVoice } : parsed.geminiVoice,
+        geminiVoiceB: parsed.geminiVoiceB === undefined ? { ...DEFAULT_SETTINGS.geminiVoiceB } : parsed.geminiVoiceB,
       }
     }
 
@@ -192,6 +219,8 @@ export function getSettings(): Settings {
       interests: [...parsed.interests],
       parentName: { ...parsed.parentName },
       personalWords: parsed.personalWords.map((word) => ({ ...word })),
+      geminiVoice: { ...parsed.geminiVoice },
+      geminiVoiceB: { ...parsed.geminiVoiceB },
     }
   } catch (error) {
     console.error('lla.settings のJSONを解析できません。既定値を使用します。', { saved, error })

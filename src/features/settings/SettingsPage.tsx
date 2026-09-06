@@ -15,6 +15,8 @@ import {
   type SttEngine,
 } from '../../services/settings'
 import { isWebSpeechAvailable } from '../../services/speech'
+import { audioCacheStats, clearAudioCache } from '../../services/speech/audioCache'
+import { GeminiVoiceSelect } from './GeminiVoiceSelect'
 import { MicTest } from './MicTest'
 import { VoiceSelect } from './VoiceSelect'
 
@@ -138,6 +140,25 @@ export function SettingsPage() {
   }
 
   const usage = getGeminiUsage()
+  const [cacheStats, setCacheStats] = useState<{ count: number; bytes: number } | null>(null)
+  const [cacheError, setCacheError] = useState<string | null>(null)
+  useEffect(() => {
+    let active = true
+    audioCacheStats()
+      .then((stats) => { if (active) setCacheStats(stats) })
+      .catch((error) => { console.error('音声キャッシュの集計に失敗しました', error) })
+    return () => { active = false }
+  }, [settingsState.ttsProvider])
+  const clearCache = async () => {
+    setCacheError(null)
+    try {
+      await clearAudioCache()
+      setCacheStats(await audioCacheStats())
+    } catch (error) {
+      console.error('音声キャッシュを消せませんでした', error)
+      setCacheError(error instanceof Error ? error.message : String(error))
+    }
+  }
   const webSpeechAvailable = isWebSpeechAvailable()
 
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'))
@@ -436,6 +457,94 @@ export function SettingsPage() {
         <fieldset className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <legend className="px-1 text-base font-bold text-slate-800">読み上げ</legend>
           <div className="space-y-5">
+            <div>
+              <p className="mb-2 text-sm font-bold text-slate-700">声の種類</p>
+              <div className="grid gap-2">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-sm text-slate-700 hover:bg-teal-50">
+                  <input
+                    type="radio"
+                    name="ttsProvider"
+                    checked={settingsState.ttsProvider === 'gemini'}
+                    onChange={() => update({ ttsProvider: 'gemini' })}
+                    className="size-4 accent-teal-700"
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-bold">Gemini の声(自然)</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-slate-500">
+                      英語・韓国語を Gemini で読み上げます。作った音声はこの端末に保存し、同じ文は 2 度と作りません。
+                      上限に達したら内蔵の声に自動で戻ります。日本語のナレーターは内蔵のままです。
+                    </span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-sm text-slate-700 hover:bg-teal-50">
+                  <input
+                    type="radio"
+                    name="ttsProvider"
+                    checked={settingsState.ttsProvider === 'browser'}
+                    onChange={() => update({ ttsProvider: 'browser' })}
+                    className="size-4 accent-teal-700"
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-bold">内蔵の声</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-slate-500">Gemini を使いません。PC の Edge なら自然な声が選べます</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {settingsState.ttsProvider === 'gemini' ? (
+              <div className="space-y-4 rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
+                <GeminiVoiceSelect
+                  label="英語の声"
+                  lang="en"
+                  value={settingsState.geminiVoice.en}
+                  onChange={(name) => update({ geminiVoice: { ...settingsState.geminiVoice, en: name } })}
+                />
+                <GeminiVoiceSelect
+                  label="英語の相手役(B)の声"
+                  lang="en"
+                  value={settingsState.geminiVoiceB.en}
+                  onChange={(name) => update({ geminiVoiceB: { ...settingsState.geminiVoiceB, en: name } })}
+                />
+                <GeminiVoiceSelect
+                  label="韓国語の声"
+                  lang="ko"
+                  value={settingsState.geminiVoice.ko}
+                  onChange={(name) => update({ geminiVoice: { ...settingsState.geminiVoice, ko: name } })}
+                />
+                <GeminiVoiceSelect
+                  label="韓国語の相手役(B)の声"
+                  lang="ko"
+                  value={settingsState.geminiVoiceB.ko}
+                  onChange={(name) => update({ geminiVoiceB: { ...settingsState.geminiVoiceB, ko: name } })}
+                />
+                <label className="block">
+                  <span className="mb-2 block text-sm font-bold text-slate-700">音声合成のモデル</span>
+                  <input
+                    type="text"
+                    value={settingsState.geminiTtsModel}
+                    onChange={(event) => update({ geminiTtsModel: event.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-3"
+                  />
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">無料枠で使えるのは Flash 系の TTS です(Pro TTS は有料のみ)</span>
+                </label>
+                <div className="rounded-2xl bg-white px-4 py-3">
+                  <p className="text-xs font-bold text-slate-500">保存済みの音声</p>
+                  <p className="mt-1 font-bold tabular-nums text-slate-900">
+                    {cacheStats ? `${cacheStats.count} 件 ・ ${(cacheStats.bytes / 1024 / 1024).toFixed(1)} MB` : '集計中…'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void clearCache()}
+                    className="mt-2 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4"
+                  >
+                    保存した音声を消す
+                  </button>
+                  {cacheError ? <p role="alert" className="mt-2 text-xs text-red-700">{cacheError}</p> : null}
+                </div>
+              </div>
+            ) : null}
+
             <p className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs leading-5 text-sky-900">
               自然な声が見つからないときは、このアプリを Microsoft Edge で開いてみてください。Edge には「Online (Natural)」と付く
               自然な声が日本語・韓国語・英語それぞれに男女で用意されています。声は「試聴」で聞き比べられます。

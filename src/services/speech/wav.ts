@@ -224,3 +224,110 @@ export function blobToBase64(blob: Blob): Promise<string> {
     reader.readAsDataURL(blob)
   })
 }
+
+/** Gemini TTS が返す 16bit PCM(base64、リトルエンディアン)を -1〜1 のサンプルにする。 */
+export function decodePcm16Base64(base64: string): Float32Array {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  const usable = bytes.byteLength - (bytes.byteLength % 2)
+  const view = new DataView(bytes.buffer, bytes.byteOffset, usable)
+  const samples = new Float32Array(usable / 2)
+  for (let index = 0; index < samples.length; index += 1) {
+    samples[index] = view.getInt16(index * 2, true) / 32768
+  }
+  return samples
+}
+
+export type SplitOptions = {
+  /** これ未満の窓 RMS を無音とみなす。 */
+  threshold: number
+  /** 境目とみなす無音の最短の長さ(秒)。 */
+  minGapSec: number
+  windowSec: number
+  /** 切り出した音声の前後に残す無音(秒)。 */
+  paddingSec: number
+}
+
+export const DEFAULT_SPLIT_OPTIONS: SplitOptions = {
+  threshold: 0.01,
+  minGapSec: 0.45,
+  windowSec: 0.02,
+  paddingSec: 0.08,
+}
+
+/**
+ * まとめて合成した音声を、無音で count 個に切り分ける。
+ * 無音区間(minGapSec 以上続く)のうち長い順に count-1 個を境目にし、各区間の前後の無音を落とす。
+ * ちょうど count 個に分けられないときは null(呼び出し側は 1 文ずつ作り直す)。
+ */
+export function splitBySilence(
+  samples: Float32Array,
+  sampleRate: number,
+  count: number,
+  opts: Partial<SplitOptions> = {},
+): Float32Array[] | null {
+  const options = { ...DEFAULT_SPLIT_OPTIONS, ...opts }
+  if (count < 1 || samples.length === 0) {
+    return null
+  }
+  const windowSize = Math.max(1, Math.round(sampleRate * options.windowSec))
+  const windowCount = Math.ceil(samples.length / windowSize)
+  const loud: boolean[] = []
+  for (let window = 0; window < windowCount; window += 1) {
+    const start = window * windowSize
+    const end = Math.min(samples.length, start + windowSize)
+    let sum = 0
+    for (let index = start; index < end; index += 1) {
+      sum += samples[index] * samples[index]
+    }
+    loud.push(Math.sqrt(sum / (end - start)) >= options.threshold)
+  }
+
+  // 音のある範囲(先頭と末尾の無音は境目にしない)
+  const firstLoud = loud.indexOf(true)
+  const lastLoud = loud.lastIndexOf(true)
+  if (firstLoud < 0) {
+    return null
+  }
+
+  const gaps: Array<{ start: number; end: number }> = []
+  let gapStart: number | null = null
+  for (let window = firstLoud; window <= lastLoud; window += 1) {
+    if (!loud[window]) {
+      gapStart ??= window
+    } else if (gapStart !== null) {
+      gaps.push({ start: gapStart, end: window })
+      gapStart = null
+    }
+  }
+  const minGapWindows = Math.ceil(options.minGapSec / options.windowSec)
+  const longGaps = gaps
+    .filter((gap) => gap.end - gap.start >= minGapWindows)
+    .sort((left, right) => (right.end - right.start) - (left.end - left.start))
+    .slice(0, count - 1)
+    .sort((left, right) => left.start - right.start)
+  if (longGaps.length !== count - 1) {
+    return null
+  }
+
+  const padding = Math.round(options.paddingSec * sampleRate)
+  const boundaries = [firstLoud * windowSize, ...longGaps.map((gap) => Math.round(((gap.start + gap.end) / 2) * windowSize)), (lastLoud + 1) * windowSize]
+  const segments: Float32Array[] = []
+  for (let index = 0; index < count; index += 1) {
+    let start = boundaries[index]
+    let end = Math.min(samples.length, boundaries[index + 1])
+    // 区間の中の先頭・末尾の無音を落とす
+    while (start < end && Math.abs(samples[start]) < options.threshold) start += 1
+    while (end > start && Math.abs(samples[end - 1]) < options.threshold) end -= 1
+    start = Math.max(0, start - padding)
+    end = Math.min(samples.length, end + padding)
+    if (end - start < sampleRate * 0.15) {
+      return null
+    }
+    segments.push(samples.slice(start, end))
+  }
+  return segments
+}

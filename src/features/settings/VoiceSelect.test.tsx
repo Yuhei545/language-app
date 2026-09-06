@@ -1,14 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { speak, unlockAudio } from '../../services/speech'
+import { speakWithBrowser, unlockAudio } from '../../services/speech'
 import { VoiceSelect } from './VoiceSelect'
 
 vi.mock('../../services/speech', () => ({
-  speak: vi.fn(async () => undefined),
+  speakWithBrowser: vi.fn(async () => undefined),
   unlockAudio: vi.fn(),
 }))
 
-const mockedSpeak = vi.mocked(speak)
+const mockedSpeak = vi.mocked(speakWithBrowser)
 const mockedUnlock = vi.mocked(unlockAudio)
 
 const voices = [

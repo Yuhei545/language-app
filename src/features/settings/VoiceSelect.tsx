@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { speak, unlockAudio } from '../../services/speech'
+import { speakWithBrowser, unlockAudio } from '../../services/speech'
 
 /** 試聴用の短い文。設定画面で声の違いが分かる長さにする。 */
 const PREVIEW_SAMPLES: Record<'en' | 'ko' | 'ja', string> = {
@@ -36,7 +36,7 @@ export function VoiceSelect({
     setPreviewing(true)
     try {
       unlockAudio()
-      await speak(PREVIEW_SAMPLES[lang], {
+      await speakWithBrowser(PREVIEW_SAMPLES[lang], {
         lang,
         voiceURI: value,
         rate,

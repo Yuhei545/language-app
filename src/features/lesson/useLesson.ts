@@ -6,6 +6,7 @@ import { transcribeAudio } from '../../services/gemini/transcribe'
 import {
   createSpeechInput,
   hasVoiceFor,
+  prefetchSpeech,
   speak,
   stopSpeaking,
   type SpeechInput,
@@ -474,6 +475,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
                   : action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
                 voiceURI: action.lang === 'ja' ? settingsRef.current.ttsVoiceJa ?? undefined : targetVoice,
                 pitch: isFallbackB ? 0.9 : undefined,
+                speaker: action.voice === 'B' ? 'B' : 'A',
               })
               consecutiveSpeechFailuresRef.current = 0
             } catch (speechError) {
@@ -761,6 +763,19 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     setPaused(false)
     setStatus('finished')
   }, [cancelActive, status, updateElapsed])
+
+  // Gemini の声のとき、今のステップで読む文を先に作っておく(キャッシュ済みなら何もしない)
+  useEffect(() => {
+    if (status !== 'running' || !currentStep || !isDialogueStep(currentStep)) {
+      return
+    }
+    const items = currentStep.actions.flatMap((action) => (
+      action.type === 'speak' && action.lang !== 'ja'
+        ? [{ text: action.text, lang: action.lang, speaker: (action.voice === 'B' ? 'B' : 'A') as 'A' | 'B' }]
+        : []
+    ))
+    void prefetchSpeech(items)
+  }, [currentStep, status])
 
   const estimatedMinutes = useMemo(() => {
     if (steps.length === 0) {
