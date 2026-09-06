@@ -10,6 +10,7 @@ import { LessonHistoryPage } from './features/lesson/LessonHistoryPage'
 import { LessonPage } from './features/lesson/LessonPage'
 import { InstantBuildPage } from './features/mixing/InstantBuildPage'
 import { PrepPage } from './features/prep/PrepPage'
+import { ReplayPage } from './features/replay/ReplayPage'
 import { PracticePage } from './features/practice/PracticePage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { TalkPage } from './features/talk/TalkPage'
@@ -28,6 +29,7 @@ function App() {
           <Route path="/dictation" element={<DictationPage />} />
           <Route path="/lesson" element={<LessonPage />} />
           <Route path="/lesson/history" element={<LessonHistoryPage />} />
+          <Route path="/replay" element={<ReplayPage />} />
           <Route path="/curriculum" element={<CurriculumPage />} />
           <Route path="/prep" element={<PrepPage />} />
           <Route path="/settings" element={<SettingsPage />} />

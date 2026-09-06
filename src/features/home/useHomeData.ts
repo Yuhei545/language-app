@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { selectDueCards, type SrsState } from '../cards/srs'
+import { targetProgress } from '../chunks/dailyTargets'
+import { countAcquired } from '../chunks/ledger'
+import type { Chunk } from '../chunks/registry'
+import { loadChunkContext } from '../chunks/targetsStore'
 import { getSession } from '../../services/supabase/auth'
 import {
   advanceLanguageWeek,
+  countChunkEncountersSince,
   countConversationsToday,
   countDictationToday,
   getLanguageProgress,
@@ -26,6 +31,15 @@ export type UpcomingPrepEvent = {
   daysRemaining: number
 }
 
+export type HomeTarget = {
+  chunk: Chunk
+  /** 出会いの回数(言えた回も含む)。 */
+  seen: number
+  said: number
+  /** 「身についた」に必要な出会いの回数。 */
+  goal: number
+}
+
 export type HomeData = {
   week: number
   day: number
@@ -33,12 +47,18 @@ export type HomeData = {
   dueCardCount: number
   conversationComplete: boolean
   dictationComplete: boolean
+  replayComplete: boolean
   knownWordCount: number
   weekWordCount: number
   masteredWeekWordCount: number
   masteryRatio: number
   canAdvance: boolean
   upcomingEvents: UpcomingPrepEvent[]
+  /** 今日の狙い(型・句動詞・表現)。 */
+  targets: HomeTarget[]
+  /** 身についた表現の数と、この 1 週間で身についた数。 */
+  acquiredCount: number
+  acquiredThisWeek: number
 }
 
 function localDateString(date: Date): string {
@@ -76,6 +96,7 @@ export function useHomeData(lang: 'en' | 'ko') {
         const userId = authSession.user.id
         const now = new Date()
         const today = localDateString(now)
+        const dayStart = localDayStartIso(now)
         const [
           ,
           existingProgress,
@@ -88,13 +109,22 @@ export function useHomeData(lang: 'en' | 'ko') {
           getLanguageProgress(userId, lang),
           listVocabItems(userId, lang),
           listPrepEvents(userId, lang),
-          countConversationsToday(userId, lang, localDayStartIso(now)),
-          countDictationToday(userId, lang, localDayStartIso(now)),
+          countConversationsToday(userId, lang, dayStart),
+          countDictationToday(userId, lang, dayStart),
         ])
-        const vocabProgress = await getVocabProgress(
-          userId,
-          vocabItems.map((item) => item.id),
-        )
+        const [vocabProgress, chunkContext] = await Promise.all([
+          getVocabProgress(userId, vocabItems.map((item) => item.id)),
+          loadChunkContext({ userId, lang, vocabItems, now }),
+        ])
+        // 聞き流しの記録。台帳が無ければ 0 のまま(台帳の不足は chunkContext.error で伝える)
+        let replayCount = 0
+        if (!chunkContext.error) {
+          try {
+            replayCount = await countChunkEncountersSince(userId, lang, 'replay', dayStart)
+          } catch (replayError) {
+            console.error('聞き流しの記録を読めませんでした', replayError)
+          }
+        }
 
         let languageProgress = existingProgress
         if (!languageProgress) {
@@ -130,6 +160,7 @@ export function useHomeData(lang: 'en' | 'ko') {
             status: progress.status,
             correct_count: progress.correct_count,
             next_review_at: progress.next_review_at,
+            last_reviewed_at: progress.last_reviewed_at,
           }]),
         )
         const weekItems = vocabItems.filter(
@@ -152,6 +183,8 @@ export function useHomeData(lang: 'en' | 'ko') {
             left.daysRemaining - right.daysRemaining
             || left.event.id.localeCompare(right.event.id)
           ))
+        const prioritizeIds = chunkContext.targets.flatMap((chunk) => (chunk.vocabItemId ? [chunk.vocabItemId] : []))
+        const acquired = countAcquired(chunkContext.summaries)
 
         if (active) {
           userIdRef.current = userId
@@ -162,9 +195,10 @@ export function useHomeData(lang: 'en' | 'ko') {
               now,
             ),
             streak: languageProgress.streak,
-            dueCardCount: selectDueCards(vocabItems, srsProgress, now, 10).length,
+            dueCardCount: selectDueCards(vocabItems, srsProgress, now, 10, { prioritizeIds }).length,
             conversationComplete: conversationCount > 0,
             dictationComplete: dictationCount >= 5,
+            replayComplete: replayCount > 0,
             knownWordCount: vocabItems.filter(
               (item) => progressById.get(item.id)?.status === 'known',
             ).length,
@@ -173,7 +207,16 @@ export function useHomeData(lang: 'en' | 'ko') {
             masteryRatio,
             canAdvance: canAdvanceWeek(weekItems, progressById),
             upcomingEvents,
+            targets: chunkContext.targets.map((chunk) => ({
+              chunk,
+              ...targetProgress(chunkContext.summaries.get(chunk.key)),
+            })),
+            acquiredCount: acquired.total,
+            acquiredThisWeek: acquired.recent,
           })
+          if (chunkContext.error) {
+            setError(chunkContext.error)
+          }
         }
       } catch (loadError) {
         if (active) {
