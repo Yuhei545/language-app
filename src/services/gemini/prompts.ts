@@ -1,4 +1,4 @@
-import type { Interest } from '../settings'
+import type { Interest, PersonalWordKind } from '../settings'
 import type { DialogueIssue } from '../../features/lesson/lessonDialogueSchema'
 import { getPersona, type Lang } from './persona'
 
@@ -31,6 +31,34 @@ export type MixingCheckPromptInput = {
   personaName: string
   intendedMeaningJa: string
   learnerText: string
+}
+
+export type TopicCheckPromptInput = {
+  lang: Lang
+  personaName: string
+  topicJa: string
+  learnerText: string
+  previousTurn?: {
+    question: string
+    answer: string
+  }
+}
+
+export type QuickQuestionsPromptInput = {
+  lang: Lang
+  frames: Array<{ pattern: string; hint_ja: string }>
+  personalWords: Array<{ text: string; kind: PersonalWordKind }>
+  count?: number
+}
+
+export type QuickJudgePromptInput = {
+  lang: Lang
+  items: Array<{ q: string; answer: string }>
+}
+
+export type TranslatePersonalWordPromptInput = {
+  ja: string
+  kind: PersonalWordKind
 }
 
 export type DialogueLevel = 'practical-b1' | 'beginner'
@@ -138,6 +166,80 @@ Decide only whether the intended meaning was communicated.
 2. If the meaning came through, set understood=true and restate what you understood as one natural, correct ${language} sentence in recast.
 3. If the meaning did not come through, set understood=false and write one gentle ${language} question in recast that says what you heard and checks the learner's intent.
 4. Put a Japanese translation of recast in ja.`
+}
+
+export function buildTopicCheckPrompt(input: TopicCheckPromptInput): string {
+  const language = languageNames[input.lang]
+  const previousTurn = input.previousTurn
+    ? `\nThis is the second turn. Use this previous question and answer as context:\nPrevious question: ${input.previousTurn.question}\nPrevious answer: ${input.previousTurn.answer}\nJudge how the current utterance continues that exchange.`
+    : ''
+
+  return `You are ${input.personaName}, a warm and patient language parent.
+The learner spoke in ${language} for this Japanese topic: ${input.topicJa}
+The learner said: ${input.learnerText}${previousTurn}
+
+Decide only whether the learner's meaning was communicated and relevant to the topic.
+1. Do not evaluate grammar or pronunciation. Never call an answer "wrong", a "mistake", or "incorrect".
+2. Set understood to whether the meaning came through.
+3. In recast, write one natural ${language} sentence expressing what the learner communicated. If the meaning did not come through, write one gentle confirmation question instead.
+4. In ja, write the Japanese translation of recast.
+5. If understood is true, ask one short ${language} follow-up question about information the learner has not said yet, and put its Japanese translation in follow_up_ja.
+6. If understood is false, set follow_up and follow_up_ja to empty strings.
+Return only JSON with understood, recast, ja, follow_up, and follow_up_ja.`
+}
+
+export function buildQuickQuestionsPrompt(input: QuickQuestionsPromptInput): string {
+  const language = languageNames[input.lang]
+  const count = input.count ?? 8
+  const frames = input.frames.length > 0
+    ? input.frames.map((frame) => `- ${frame.pattern} (${frame.hint_ja})`).join('\n')
+    : '(none)'
+  const personalWords = input.personalWords.length > 0
+    ? input.personalWords.map((word) => `- ${word.text} (${word.kind})`).join('\n')
+    : '(none)'
+
+  return `Create exactly ${count} short ${language} questions that a beginner can answer in 1-2 seconds.
+Use and vary the practiced sentence patterns and the learner's personal words when natural.
+Mix the patterns so consecutive questions do not keep using the same pattern.
+Do not evaluate the learner or use the words "wrong", "mistake", or "incorrect".
+
+Practiced patterns:
+${frames}
+
+Personal words:
+${personalWords}
+
+Return only a JSON array of exactly ${count} objects. Every object must contain q with the ${language} question and ja with its Japanese translation.`
+}
+
+export function buildQuickJudgePrompt(input: QuickJudgePromptInput): string {
+  const language = languageNames[input.lang]
+  const items = input.items.map((item, index) => (
+    `${index + 1}. Question: ${item.q}\n   Learner answer: ${item.answer}`
+  )).join('\n')
+
+  return `Judge whether the meaning of each learner answer was communicated in ${language}.
+Do not evaluate grammar or pronunciation. Never call an answer "wrong", a "mistake", or "incorrect".
+Keep exactly the same order as the ${input.items.length} input items.
+For every item return understood as a boolean and better as one short, more natural ${language} answer. better may be an empty string when the original answer already communicates the meaning naturally.
+
+Items:
+${items || '(none)'}
+
+Return only a JSON array of exactly ${input.items.length} objects with understood and better.`
+}
+
+export function buildTranslatePersonalWordPrompt(
+  input: TranslatePersonalWordPromptInput,
+): string {
+  return `Translate this Japanese personal word for use in everyday language practice.
+Japanese: ${input.ja}
+Kind: ${input.kind}
+
+Return its natural English form in en and Korean form in ko.
+For a proper noun such as a person's name, place, title, or work, use its common established spelling when known; otherwise use a natural romanization for English and Hangul transcription for Korean.
+Do not add explanations, evaluations, or words such as "wrong", "mistake", or "incorrect".
+Return only JSON with en and ko.`
 }
 
 export function buildDialoguePrompt(input: DialoguePromptInput): string {

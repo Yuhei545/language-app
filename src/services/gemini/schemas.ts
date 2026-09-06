@@ -44,6 +44,51 @@ export const mixingCheckSchema = {
   required: ['understood', 'recast', 'ja'],
 }
 
+export const topicCheckSchema = {
+  type: Type.OBJECT,
+  properties: {
+    understood: { type: Type.BOOLEAN },
+    recast: { type: Type.STRING },
+    ja: { type: Type.STRING },
+    follow_up: { type: Type.STRING },
+    follow_up_ja: { type: Type.STRING },
+  },
+  required: ['understood', 'recast', 'ja', 'follow_up', 'follow_up_ja'],
+}
+
+export const quickQuestionsSchema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      q: { type: Type.STRING },
+      ja: { type: Type.STRING },
+    },
+    required: ['q', 'ja'],
+  },
+}
+
+export const quickJudgeSchema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      understood: { type: Type.BOOLEAN },
+      better: { type: Type.STRING },
+    },
+    required: ['understood', 'better'],
+  },
+}
+
+export const personalWordTranslationSchema = {
+  type: Type.OBJECT,
+  properties: {
+    en: { type: Type.STRING },
+    ko: { type: Type.STRING },
+  },
+  required: ['en', 'ko'],
+}
+
 export const dialogueSchema = {
   type: Type.OBJECT,
   properties: {

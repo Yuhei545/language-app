@@ -3,7 +3,11 @@ import {
   buildDialoguePrompt,
   buildMixingCheckPrompt,
   buildParentSystemPrompt,
+  buildQuickJudgePrompt,
+  buildQuickQuestionsPrompt,
+  buildTopicCheckPrompt,
   buildTranscribePrompt,
+  buildTranslatePersonalWordPrompt,
   buildVocabPrompt,
   type ParentPromptInput,
 } from './prompts'
@@ -117,6 +121,88 @@ describe('buildMixingCheckPrompt', () => {
 
     expect(prompt).toContain('Do not evaluate grammar or pronunciation')
     expect(prompt).toContain('Never correct the learner')
+    expect(prompt).toContain('"wrong", "mistake", or "incorrect"')
+  })
+})
+
+describe('buildTopicCheckPrompt', () => {
+  it('お題・学習者の発話・意味だけを判定する指示を含む', () => {
+    const prompt = buildTopicCheckPrompt({
+      lang: 'ko',
+      personaName: '지민',
+      topicJa: '週末の予定を2文で言ってください',
+      learnerText: '주말에 친구를 만나요',
+    })
+
+    expect(prompt).toContain('週末の予定を2文で言ってください')
+    expect(prompt).toContain('주말에 친구를 만나요')
+    expect(prompt).toContain('Do not evaluate grammar or pronunciation')
+    expect(prompt).toContain('"wrong", a "mistake", or "incorrect"')
+    expect(prompt).toContain('information the learner has not said yet')
+  })
+
+  it('2ターン目は前の質問と答えを含む', () => {
+    const prompt = buildTopicCheckPrompt({
+      lang: 'en',
+      personaName: 'Alex',
+      topicJa: '好きな場所について話してください',
+      learnerText: 'On Sundays.',
+      previousTurn: {
+        question: 'When do you go there?',
+        answer: 'I like Asakusa.',
+      },
+    })
+
+    expect(prompt).toContain('This is the second turn')
+    expect(prompt).toContain('When do you go there?')
+    expect(prompt).toContain('I like Asakusa.')
+  })
+})
+
+describe('buildQuickQuestionsPrompt', () => {
+  it('指定件数・練習した型・自分の語・禁止語の指示を含む', () => {
+    const prompt = buildQuickQuestionsPrompt({
+      lang: 'en',
+      frames: [{ pattern: 'Do you have {noun:thing}?', hint_ja: '{1}はありますか' }],
+      personalWords: [{ text: 'Asakusa', kind: 'place' }],
+      count: 6,
+    })
+
+    expect(prompt).toContain('exactly 6')
+    expect(prompt).toContain('Do you have {noun:thing}?')
+    expect(prompt).toContain('Asakusa (place)')
+    expect(prompt).toContain('consecutive questions do not keep using the same pattern')
+    expect(prompt).toContain('"wrong", "mistake", or "incorrect"')
+  })
+})
+
+describe('buildQuickJudgePrompt', () => {
+  it('質問と答え、件数、順番維持、意味だけを判定する指示を含む', () => {
+    const prompt = buildQuickJudgePrompt({
+      lang: 'ko',
+      items: [
+        { q: '어디에 가요?', answer: '서울에 가요.' },
+        { q: '뭐 먹어요?', answer: '김밥 먹어요.' },
+      ],
+    })
+
+    expect(prompt).toContain('어디에 가요?')
+    expect(prompt).toContain('서울에 가요.')
+    expect(prompt).toContain('same order as the 2 input items')
+    expect(prompt).toContain('Do not evaluate grammar or pronunciation')
+    expect(prompt).toContain('"wrong", a "mistake", or "incorrect"')
+  })
+})
+
+describe('buildTranslatePersonalWordPrompt', () => {
+  it('日本語・種類・固有名詞の表記規則・禁止語の指示を含む', () => {
+    const prompt = buildTranslatePersonalWordPrompt({ ja: '東京タワー', kind: 'place' })
+
+    expect(prompt).toContain('東京タワー')
+    expect(prompt).toContain('Kind: place')
+    expect(prompt).toContain('proper noun')
+    expect(prompt).toContain('romanization')
+    expect(prompt).toContain('Hangul transcription')
     expect(prompt).toContain('"wrong", "mistake", or "incorrect"')
   })
 })
