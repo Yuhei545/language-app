@@ -3,6 +3,8 @@ export type VocabCategory = 'toolbox' | 'baby' | 'glue' | 'core' | 'prep' | 'dia
 export type VocabSource = 'bundled' | 'generated'
 export type VocabStatus = 'new' | 'learning' | 'known'
 export type MessageRole = 'user' | 'assistant'
+export type SpeakingSessionKind = 'pattern' | 'topic' | 'quick'
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type ProfileRow = {
   user_id: string
@@ -87,7 +89,22 @@ export type MixingProgressRow = {
   noun_text: string
   understood_count: number
   attempt_count: number
+  first_try_count: number
+  hint_count: number
+  latency_ms_total: number
+  latency_samples: number
   last_at: string | null
+  created_at: string
+}
+
+export type SpeakingSessionRow = {
+  id: string
+  user_id: string
+  lang: Language
+  kind: SpeakingSessionKind
+  rounds: Json
+  understood_ratio: number | null
+  avg_latency_ms: number | null
   created_at: string
 }
 
@@ -202,7 +219,22 @@ export type MixingProgressInsert = {
   noun_text?: string
   understood_count?: number
   attempt_count?: number
+  first_try_count?: number
+  hint_count?: number
+  latency_ms_total?: number
+  latency_samples?: number
   last_at?: string | null
+  created_at?: string
+}
+
+export type SpeakingSessionInsert = {
+  id?: string
+  user_id: string
+  lang: Language
+  kind: SpeakingSessionKind
+  rounds?: Json
+  understood_ratio?: number | null
+  avg_latency_ms?: number | null
   created_at?: string
 }
 
@@ -247,6 +279,7 @@ export type Database = {
       conversations: TableDefinition<ConversationRow, ConversationInsert>
       messages: TableDefinition<MessageRow, MessageInsert>
       mixing_progress: TableDefinition<MixingProgressRow, MixingProgressInsert>
+      speaking_sessions: TableDefinition<SpeakingSessionRow, SpeakingSessionInsert>
       dictation_progress: TableDefinition<DictationProgressRow, DictationProgressInsert>
       lesson_dialogues: TableDefinition<LessonDialogueRow, LessonDialogueInsert>
     }

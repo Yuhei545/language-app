@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "topics": [
+    { "id": "ko-order-water", "level": 1, "ja": "食堂で、水と料理を 1 つ頼んでください", "uses": [] },
+    { "id": "ko-go-place", "level": 1, "ja": "今日{place}に行くことを 1 文で言ってください", "uses": ["place"] },
+    { "id": "ko-ask-have", "level": 1, "ja": "店で{thing}があるか聞いてください", "uses": ["thing"] },
+    { "id": "ko-like-thing", "level": 1, "ja": "好きな食べ物を 1 つ言ってください", "uses": [] },
+    { "id": "ko-weekend", "level": 1, "ja": "週末に行く場所を 1 文で言ってください", "uses": [] },
+    { "id": "ko-oshi-intro", "level": 2, "ja": "{person}に会いに行くことを 1 文で言ってください", "uses": ["person"] },
+    { "id": "ko-tomorrow-plan", "level": 2, "ja": "明日の予定を 2 文で言ってください", "uses": [] },
+    { "id": "ko-too-adj", "level": 2, "ja": "{thing}が高すぎる(または辛すぎる)と店員に伝えてください", "uses": ["thing"] },
+    { "id": "ko-with-friend", "level": 2, "ja": "友だちと{place}に行くことを、いつ行くかも入れて言ってください", "uses": ["place"] },
+    { "id": "ko-eat-where", "level": 2, "ja": "{place}で何を食べるか 1 文で言ってください", "uses": ["place"] },
+    { "id": "ko-yesterday", "level": 3, "ja": "昨日行った場所と食べたものを 2 文で言ってください", "uses": [] },
+    { "id": "ko-recommend", "level": 3, "ja": "友だちに{place}をすすめてください。理由を 1 つ言ってください", "uses": ["place"] }
+  ]
+}

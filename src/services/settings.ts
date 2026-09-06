@@ -1,6 +1,14 @@
 export type SttEngine = 'auto' | 'webspeech' | 'gemini'
 export type Interest = 'travel' | 'friends' | 'content'
 export type MixingLevel = 1 | 2 | 3
+export type PersonalWordKind = 'place' | 'person' | 'thing' | 'media'
+
+export type PersonalWord = {
+  ja: string
+  en: string
+  ko: string
+  kind: PersonalWordKind
+}
 
 export type Settings = {
   geminiApiKey: string
@@ -16,6 +24,7 @@ export type Settings = {
   lessonRecording: boolean
   micDeviceId: string | null
   ttsVoiceJa: string | null
+  personalWords: PersonalWord[]
 }
 
 type SettingsListener = (settings: Settings) => void
@@ -23,6 +32,7 @@ type SettingsListener = (settings: Settings) => void
 const STORAGE_KEY = 'lla.settings'
 const STT_ENGINES: SttEngine[] = ['auto', 'webspeech', 'gemini']
 const INTERESTS: Interest[] = ['travel', 'friends', 'content']
+const PERSONAL_WORD_KINDS: PersonalWordKind[] = ['place', 'person', 'thing', 'media']
 const listeners = new Set<SettingsListener>()
 
 const DEFAULT_SETTINGS: Settings = {
@@ -39,6 +49,7 @@ const DEFAULT_SETTINGS: Settings = {
   lessonRecording: false,
   micDeviceId: null,
   ttsVoiceJa: null,
+  personalWords: [],
 }
 
 function defaultSettings(): Settings {
@@ -48,6 +59,7 @@ function defaultSettings(): Settings {
     ttsVoiceB: { ...DEFAULT_SETTINGS.ttsVoiceB },
     interests: [...DEFAULT_SETTINGS.interests],
     parentName: { ...DEFAULT_SETTINGS.parentName },
+    personalWords: [...DEFAULT_SETTINGS.personalWords],
   }
 }
 
@@ -57,6 +69,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNullableString(value: unknown): value is string | null {
   return typeof value === 'string' || value === null
+}
+
+function isPersonalWord(value: unknown): value is PersonalWord {
+  return isRecord(value)
+    && typeof value.ja === 'string'
+    && typeof value.en === 'string'
+    && typeof value.ko === 'string'
+    && typeof value.kind === 'string'
+    && PERSONAL_WORD_KINDS.includes(value.kind as PersonalWordKind)
 }
 
 function isSettings(value: unknown): value is Settings {
@@ -94,6 +115,8 @@ function isSettings(value: unknown): value is Settings {
     && typeof value.lessonRecording === 'boolean'
     && isNullableString(value.micDeviceId)
     && isNullableString(value.ttsVoiceJa)
+    && Array.isArray(value.personalWords)
+    && value.personalWords.every(isPersonalWord)
   )
 }
 
@@ -133,6 +156,9 @@ export function getSettings(): Settings {
         ttsVoiceJa: parsed.ttsVoiceJa === undefined
           ? DEFAULT_SETTINGS.ttsVoiceJa
           : parsed.ttsVoiceJa,
+        personalWords: parsed.personalWords === undefined
+          ? [...DEFAULT_SETTINGS.personalWords]
+          : parsed.personalWords,
       }
     }
 
@@ -147,6 +173,7 @@ export function getSettings(): Settings {
       ttsVoiceB: { ...parsed.ttsVoiceB },
       interests: [...parsed.interests],
       parentName: { ...parsed.parentName },
+      personalWords: parsed.personalWords.map((word) => ({ ...word })),
     }
   } catch (error) {
     console.error('lla.settings のJSONを解析できません。既定値を使用します。', { saved, error })
@@ -163,6 +190,9 @@ export function setSettings(partial: Partial<Settings>): Settings {
     ttsVoiceB: partial.ttsVoiceB ? { ...partial.ttsVoiceB } : current.ttsVoiceB,
     interests: partial.interests ? [...partial.interests] : current.interests,
     parentName: partial.parentName ? { ...partial.parentName } : current.parentName,
+    personalWords: partial.personalWords
+      ? partial.personalWords.map((word) => ({ ...word }))
+      : current.personalWords,
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))

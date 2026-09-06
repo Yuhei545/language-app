@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   downmixToMono,
   downsampleTo16k,
+  detectOnsetSec,
   encodeWavBuffer,
   peakRms,
   trimSilence,
@@ -146,5 +147,32 @@ describe('peakRms', () => {
     samples.fill(0.3, 500)
 
     expect(peakRms(samples, 1_000)).toBeCloseTo(0.3, 5)
+  })
+})
+
+describe('detectOnsetSec', () => {
+  it('RMSがしきい値を超える最初の窓の開始秒を返す', () => {
+    const samples = new Float32Array(100)
+    samples.fill(0.02, 40, 60)
+
+    expect(detectOnsetSec(samples, 100, 0.01, 0.2)).toBeCloseTo(0.4)
+  })
+
+  it('しきい値と同じRMSの窓は音声開始にしない', () => {
+    const samples = new Float32Array(20)
+    samples.fill(0.01)
+
+    expect(detectOnsetSec(samples, 100, 0.01, 0.2)).toBeNull()
+  })
+
+  it('音声がなければ null を返す', () => {
+    expect(detectOnsetSec(new Float32Array(100), 100)).toBeNull()
+    expect(detectOnsetSec(new Float32Array(), 100)).toBeNull()
+  })
+
+  it('不正な引数を拒否する', () => {
+    expect(() => detectOnsetSec(new Float32Array(), 0)).toThrow(/サンプルレート/)
+    expect(() => detectOnsetSec(new Float32Array(), 100, -1)).toThrow(/しきい値/)
+    expect(() => detectOnsetSec(new Float32Array(), 100, 0.01, 0)).toThrow(/窓幅/)
   })
 })

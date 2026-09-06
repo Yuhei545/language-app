@@ -15,6 +15,9 @@ import type {
   PrepEventInsert,
   PrepEventRow,
   ProfileRow,
+  SpeakingSessionInsert,
+  SpeakingSessionKind,
+  SpeakingSessionRow,
   VocabItemInsert,
   VocabItemRow,
   VocabProgressInsert,
@@ -119,6 +122,44 @@ export async function upsertMixingProgress(
     .upsert(row, { onConflict: 'user_id,lang,frame_id,verb_text,noun_text' })
     .select('*')
     .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function insertSpeakingSession(
+  row: SpeakingSessionInsert,
+): Promise<SpeakingSessionRow> {
+  const { data, error } = await getSupabaseClient()
+    .from('speaking_sessions')
+    .insert(row)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function listSpeakingSessions(
+  userId: string,
+  lang: Language,
+  kind: SpeakingSessionKind,
+  limit = 10,
+): Promise<SpeakingSessionRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('speaking_sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .eq('kind', kind)
+    .order('created_at', { ascending: false })
+    .limit(limit)
 
   if (error) {
     throw error

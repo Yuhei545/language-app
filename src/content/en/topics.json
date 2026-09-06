@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "topics": [
+    { "id": "en-weekend-plan", "level": 1, "ja": "今週末の予定を 2 文で言ってください", "uses": [] },
+    { "id": "en-favorite-place", "level": 1, "ja": "{place}がどんな場所か、1〜2 文で言ってください", "uses": ["place"] },
+    { "id": "en-oshi-intro", "level": 1, "ja": "{person}がどんな人か、2 文で紹介してください", "uses": ["person"] },
+    { "id": "en-media-review", "level": 1, "ja": "{media}を見た感想を 2 文で言ってください", "uses": ["media"] },
+    { "id": "en-order-cafe", "level": 1, "ja": "カフェで、飲み物と食べ物を 1 つずつ頼んでください", "uses": [] },
+    { "id": "en-ask-way", "level": 1, "ja": "{place}への行き方を、駅員に聞いてください", "uses": ["place"] },
+    { "id": "en-recommend", "level": 1, "ja": "店員に、あまり辛くない料理をおすすめしてもらってください", "uses": [] },
+    { "id": "en-yesterday", "level": 2, "ja": "昨日したことを 3 文で言ってください", "uses": [] },
+    { "id": "en-invite-friend", "level": 2, "ja": "友だちを{place}に誘ってください。日時も言ってください", "uses": ["place"] },
+    { "id": "en-lately-into", "level": 2, "ja": "最近ハマっているものと、その理由を 2 文で言ってください", "uses": [] },
+    { "id": "en-lost-thing", "level": 2, "ja": "{thing}をなくしました。係の人に状況を 2 文で説明してください", "uses": ["thing"] },
+    { "id": "en-hotel-request", "level": 2, "ja": "ホテルのフロントに、部屋について困っていることを 1 つ伝えてください", "uses": [] },
+    { "id": "en-meet-plan", "level": 2, "ja": "{person}と会う予定を、場所と時間を入れて言ってください", "uses": ["person"] },
+    { "id": "en-media-recommend", "level": 3, "ja": "{media}を友だちにおすすめしてください。理由を 2 つ言ってください", "uses": ["media"] },
+    { "id": "en-trip-story", "level": 3, "ja": "最近の旅行(または行きたい旅行)について 3 文で話してください", "uses": [] },
+    { "id": "en-daily-routine", "level": 3, "ja": "平日の 1 日の流れを 3 文で言ってください", "uses": [] }
+  ]
+}

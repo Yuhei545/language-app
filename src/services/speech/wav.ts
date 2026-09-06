@@ -172,6 +172,39 @@ export function peakRms(
   return maximum
 }
 
+export function detectOnsetSec(
+  samples: Float32Array,
+  sampleRate: number,
+  threshold = 0.01,
+  windowSec = 0.02,
+): number | null {
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0) {
+    throw new RangeError('サンプルレートは正の数で指定してください')
+  }
+  if (!Number.isFinite(threshold) || threshold < 0) {
+    throw new RangeError('音声開始判定のしきい値は0以上で指定してください')
+  }
+  if (!Number.isFinite(windowSec) || windowSec <= 0) {
+    throw new RangeError('音声開始判定の窓幅は正の秒数で指定してください')
+  }
+
+  const windowSamples = Math.max(1, Math.round(windowSec * sampleRate))
+  for (let start = 0; start < samples.length; start += windowSamples) {
+    const end = Math.min(samples.length, start + windowSamples)
+    let sumSquares = 0
+
+    for (let index = start; index < end; index += 1) {
+      sumSquares += samples[index] * samples[index]
+    }
+
+    if (Math.sqrt(sumSquares / (end - start)) > threshold) {
+      return start / sampleRate
+    }
+  }
+
+  return null
+}
+
 export function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

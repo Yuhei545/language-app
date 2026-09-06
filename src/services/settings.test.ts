@@ -15,6 +15,7 @@ const defaults = {
   lessonRecording: false,
   micDeviceId: null,
   ttsVoiceJa: null,
+  personalWords: [],
 }
 
 describe('settings service', () => {
@@ -63,5 +64,24 @@ describe('settings service', () => {
       ...defaults,
       geminiApiKey: 'keep-this-key',
     })
+  })
+
+  it('personalWords がない既存の保存データは空配列で補う', () => {
+    const { personalWords: _personalWords, ...legacySettings } = defaults
+    localStorage.setItem('lla.settings', JSON.stringify(legacySettings))
+
+    expect(getSettings()).toEqual(defaults)
+  })
+
+  it.each([
+    ['配列でない', {}],
+    ['kind が不正', [{ ja: '浅草', en: 'Asakusa', ko: '아사쿠사', kind: 'time' }]],
+    ['ja が文字列でない', [{ ja: 1, en: 'Asakusa', ko: '아사쿠사', kind: 'place' }]],
+  ])('personalWords が%s場合は保存内容を拒否する', (_label, personalWords) => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    localStorage.setItem('lla.settings', JSON.stringify({ ...defaults, personalWords }))
+
+    expect(getSettings()).toEqual(defaults)
+    expect(errorSpy).toHaveBeenCalledOnce()
   })
 })

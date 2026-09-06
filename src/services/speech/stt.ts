@@ -3,6 +3,7 @@ import { getSettings } from '../settings'
 import { stopSpeaking } from './tts'
 import {
   blobToBase64,
+  detectOnsetSec,
   downmixToMono,
   downsampleTo16k,
   encodeWav,
@@ -15,7 +16,11 @@ const MIN_SPEECH_SECONDS = 0.3
 const MIN_PEAK_RMS = 0.01
 const RECORDING_STOP_TIMEOUT_MS = 3_000
 
-export type SttResult = { text: string; engine: 'webspeech' | 'gemini' }
+export type SttResult = {
+  text: string
+  engine: 'webspeech' | 'gemini'
+  onsetMs?: number
+}
 
 export interface SpeechInput {
   start(): Promise<void>
@@ -129,6 +134,8 @@ export class WebSpeechInput implements SpeechInput {
   private stopPromise: Promise<SttResult> | null = null
   private resolveStop: ((result: SttResult) => void) | null = null
   private rejectStop: ((error: Error) => void) | null = null
+  private startedAtMs: number | null = null
+  private onsetMs: number | undefined
 
   constructor(lang: SpeechLanguage) {
     const RecognitionClass = getRecognitionConstructor()
@@ -158,9 +165,12 @@ export class WebSpeechInput implements SpeechInput {
     this.stopPromise = null
     this.resolveStop = null
     this.rejectStop = null
+    this.startedAtMs = null
+    this.onsetMs = undefined
 
     try {
       this.recognition.start()
+      this.startedAtMs = performance.now()
       this.started = true
     } catch (error) {
       this.started = false
@@ -178,7 +188,7 @@ export class WebSpeechInput implements SpeechInput {
     }
 
     if (this.ended) {
-      return Promise.resolve({ text: this.finalText.trim(), engine: this.engine })
+      return Promise.resolve(this.result())
     }
 
     if (!this.started) {
@@ -215,6 +225,10 @@ export class WebSpeechInput implements SpeechInput {
   }
 
   private handleResult(event: RecognitionEvent): void {
+    if (this.onsetMs === undefined && this.startedAtMs !== null) {
+      this.onsetMs = Math.max(0, performance.now() - this.startedAtMs)
+    }
+
     for (let index = event.resultIndex; index < event.results.length; index += 1) {
       const result = event.results[index]
       if (result.isFinal && result.length > 0) {
@@ -237,7 +251,7 @@ export class WebSpeechInput implements SpeechInput {
     if (this.terminalError) {
       this.rejectStop?.(this.terminalError)
     } else {
-      this.resolveStop?.({ text: this.finalText.trim(), engine: this.engine })
+      this.resolveStop?.(this.result())
     }
 
     this.clearStopHandlers()
@@ -246,6 +260,14 @@ export class WebSpeechInput implements SpeechInput {
   private clearStopHandlers(): void {
     this.resolveStop = null
     this.rejectStop = null
+  }
+
+  private result(): SttResult {
+    return {
+      text: this.finalText.trim(),
+      engine: this.engine,
+      ...(this.onsetMs === undefined ? {} : { onsetMs: this.onsetMs }),
+    }
   }
 }
 
@@ -446,6 +468,7 @@ export class GeminiAudioInput implements SpeechInput {
     }
 
     const resampled = downsampleTo16k(samples, sampleRate)
+    const onsetSec = detectOnsetSec(resampled, 16_000)
     const trimmed = trimSilence(resampled, 16_000)
     const peak = peakRms(trimmed, 16_000)
     const rawSec = sampleRate > 0 ? samples.length / sampleRate : 0
@@ -476,7 +499,11 @@ export class GeminiAudioInput implements SpeechInput {
         this.lang,
         { signal: controller.signal },
       )
-      return { text, engine: this.engine }
+      return {
+        text,
+        engine: this.engine,
+        ...(onsetSec === null ? {} : { onsetMs: Math.round(onsetSec * 1000) }),
+      }
     } finally {
       if (this.abortController === controller) {
         this.abortController = null
