@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { OfflineBanner } from '../components/OfflineBanner'
+import { UpdateBanner } from '../components/UpdateBanner'
 import { Toast } from '../components/Toast'
 import { signOut } from '../services/supabase/auth'
 import { useLanguage } from './LanguageContext'
@@ -40,6 +41,7 @@ export function AppShell() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-[#f8fbfa] shadow-xl shadow-slate-900/10">
       <OfflineBanner />
+      <UpdateBanner />
       <Toast error={logoutError} onClose={() => setLogoutError(null)} />
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-teal-900/10 bg-[#f8fbfa]/95 px-5 py-4 backdrop-blur">
         <div>

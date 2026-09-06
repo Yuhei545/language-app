@@ -10,7 +10,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 新版は勝手に切り替えず、「更新」バナーを押したときだけ切り替える(src/app/pwaUpdate.ts)。
+      // 登録は main.tsx で virtual:pwa-register を使うので、自動の registerSW.js は入れない。
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
         name: '言語学習',
