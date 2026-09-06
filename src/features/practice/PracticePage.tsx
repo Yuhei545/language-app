@@ -8,8 +8,8 @@ const practices = [
     emoji: '🗣️',
   },
   {
-    title: '文をつくる',
-    description: '知っている言葉を組み合わせて、意味を声で伝えます。',
+    title: '瞬間組み立て',
+    description: '日本語 → 一瞬で言う。型を回す・お題で言う・即答の 3 段階。',
     to: '/mixing',
     emoji: '🧩',
   },

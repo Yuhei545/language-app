@@ -1,10 +1,14 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { Toast } from '../../components/Toast'
 import { listAvailableModels, type AvailableModel } from '../../services/gemini/models'
+import { translatePersonalWord } from '../../services/gemini/speaking'
 import {
   getSettings,
   setSettings,
   subscribe,
   type Interest,
+  type PersonalWord,
+  type PersonalWordKind,
   type Settings,
   type SttEngine,
 } from '../../services/settings'
@@ -23,14 +27,32 @@ const interestOptions: Array<{ value: Interest; label: string }> = [
   { value: 'content', label: '動画・コンテンツ' },
 ]
 
+const personalWordKinds: Array<{ value: PersonalWordKind; label: string }> = [
+  { value: 'place', label: '場所' },
+  { value: 'person', label: '人' },
+  { value: 'thing', label: 'もの' },
+  { value: 'media', label: '作品・メディア' },
+]
+
 export function SettingsPage() {
   const [settingsState, setSettingsState] = useState<Settings>(getSettings)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [models, setModels] = useState<AvailableModel[] | null>(null)
   const [modelsLoading, setModelsLoading] = useState(false)
   const [modelsError, setModelsError] = useState<string | null>(null)
+  const [personalWordJa, setPersonalWordJa] = useState('')
+  const [personalWordKind, setPersonalWordKind] = useState<PersonalWordKind>('place')
+  const [translatingPersonalWord, setTranslatingPersonalWord] = useState(false)
+  const [personalWordError, setPersonalWordError] = useState<unknown>(null)
+  const translationAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => subscribe(setSettingsState), [])
+
+  useEffect(() => () => {
+    const controller = translationAbortRef.current
+    translationAbortRef.current = null
+    controller?.abort()
+  }, [])
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) {
@@ -53,6 +75,57 @@ export function SettingsPage() {
       ? [...settingsState.interests, interest]
       : settingsState.interests.filter((item) => item !== interest)
     update({ interests: nextInterests })
+  }
+
+  const updatePersonalWord = (index: number, partial: Partial<PersonalWord>) => {
+    update({
+      personalWords: settingsState.personalWords.map((word, wordIndex) => (
+        wordIndex === index ? { ...word, ...partial } : word
+      )),
+    })
+  }
+
+  const deletePersonalWord = (index: number) => {
+    update({ personalWords: settingsState.personalWords.filter((_word, wordIndex) => wordIndex !== index) })
+  }
+
+  const translateAndAddPersonalWord = async () => {
+    const ja = personalWordJa.trim()
+    if (!ja) {
+      setPersonalWordError(new Error('追加する日本語を入力してください'))
+      return
+    }
+
+    const controller = new AbortController()
+    translationAbortRef.current?.abort()
+    translationAbortRef.current = controller
+    setTranslatingPersonalWord(true)
+    setPersonalWordError(null)
+    try {
+      const translated = await translatePersonalWord(
+        { ja, kind: personalWordKind },
+        { signal: controller.signal },
+      )
+      if (translationAbortRef.current !== controller) {
+        return
+      }
+      update({
+        personalWords: [
+          ...settingsState.personalWords,
+          { ja, en: translated.en, ko: translated.ko, kind: personalWordKind },
+        ],
+      })
+      setPersonalWordJa('')
+    } catch (error) {
+      if (translationAbortRef.current === controller) {
+        setPersonalWordError(error)
+      }
+    } finally {
+      if (translationAbortRef.current === controller) {
+        translationAbortRef.current = null
+        setTranslatingPersonalWord(false)
+      }
+    }
   }
 
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'))
@@ -86,6 +159,7 @@ export function SettingsPage() {
 
   return (
     <section>
+      <Toast error={personalWordError} onClose={() => setPersonalWordError(null)} />
       <p className="text-sm font-bold text-teal-700">PREFERENCES</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">設定</h1>
       <p className="mt-3 text-sm leading-6 text-slate-500">変更内容はこの端末にすぐ保存されます。</p>
@@ -150,6 +224,101 @@ export function SettingsPage() {
               {modelsError ? <p className="mt-2 text-xs font-bold leading-5 text-red-700" role="alert">{modelsError}</p> : null}
               {selectedModelDescription ? <p className="mt-2 text-xs leading-5 text-slate-500">{selectedModelDescription}</p> : null}
             </div>
+          </div>
+        </fieldset>
+
+        <fieldset className="rounded-2xl border border-violet-200 bg-white p-4 shadow-sm">
+          <legend className="px-1 text-base font-bold text-slate-800">自分の語</legend>
+          <p className="text-xs leading-5 text-slate-500">
+            よく行く場所や好きな人・作品を、瞬間組み立てのお題に使います。
+          </p>
+
+          {settingsState.personalWords.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {settingsState.personalWords.map((word, index) => (
+                <div key={`${word.kind}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+                    <select
+                      aria-label={`${index + 1}件目の種類`}
+                      value={word.kind}
+                      onChange={(event) => updatePersonalWord(index, { kind: event.target.value as PersonalWordKind })}
+                      className="min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+                    >
+                      {personalWordKinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => deletePersonalWord(index)}
+                      className="rounded-xl px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200"
+                      aria-label={`${word.ja || index + 1}を削除`}
+                    >
+                      削除
+                    </button>
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    <input
+                      type="text"
+                      aria-label={`${index + 1}件目の日本語`}
+                      value={word.ja}
+                      onChange={(event) => updatePersonalWord(index, { ja: event.target.value })}
+                      className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                      placeholder="日本語"
+                    />
+                    <input
+                      type="text"
+                      aria-label={`${index + 1}件目の英語`}
+                      value={word.en}
+                      onChange={(event) => updatePersonalWord(index, { en: event.target.value })}
+                      className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                      placeholder="English"
+                    />
+                    <input
+                      type="text"
+                      aria-label={`${index + 1}件目の韓国語`}
+                      value={word.ko}
+                      onChange={(event) => updatePersonalWord(index, { ko: event.target.value })}
+                      className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                      placeholder="한국어"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-2xl bg-violet-50 px-4 py-3 text-sm text-violet-900">
+              まだ登録されていません。最初の語を追加してみましょう。
+            </p>
+          )}
+
+          <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/60 p-3">
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-slate-700">追加する日本語</span>
+              <input
+                type="text"
+                value={personalWordJa}
+                onChange={(event) => setPersonalWordJa(event.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3"
+                placeholder="例：浅草、推しの名前、好きな映画"
+              />
+            </label>
+            <label className="mt-3 block">
+              <span className="mb-2 block text-sm font-bold text-slate-700">種類</span>
+              <select
+                value={personalWordKind}
+                onChange={(event) => setPersonalWordKind(event.target.value as PersonalWordKind)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3"
+              >
+                {personalWordKinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => void translateAndAddPersonalWord()}
+              disabled={translatingPersonalWord}
+              className="mt-4 w-full rounded-xl bg-violet-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {translatingPersonalWord ? '翻訳しています…' : '翻訳して追加'}
+            </button>
           </div>
         </fieldset>
 

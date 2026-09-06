@@ -10,7 +10,7 @@ describe('PracticePage', () => {
     render(<PracticePage />, { wrapper: MemoryRouter })
 
     expect(screen.queryByText('声で覚えるカード')).not.toBeNull()
-    expect(screen.queryByText('文をつくる')).not.toBeNull()
+    expect(screen.queryByText('瞬間組み立て')).not.toBeNull()
     expect(screen.queryByText('聞いて書く')).not.toBeNull()
     expect(screen.queryByText('音声レッスン')).not.toBeNull()
   })

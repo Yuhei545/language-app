@@ -160,8 +160,8 @@ export function HomePage() {
       >
         <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-2xl" aria-hidden="true">🧩</span>
         <span className="min-w-0 flex-1">
-          <span className="block font-bold text-slate-900">文をつくる</span>
-          <span className="mt-1 block text-sm leading-5 text-slate-600">知っている言葉を組み合わせて話す</span>
+          <span className="block font-bold text-slate-900">瞬間組み立て</span>
+          <span className="mt-1 block text-sm leading-5 text-slate-600">日本語から一瞬で、使える一言へ</span>
         </span>
         <span className="text-xl text-violet-700" aria-hidden="true">→</span>
       </Link>
