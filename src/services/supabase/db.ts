@@ -4,6 +4,7 @@ import type {
   ChunkEncounterRow,
   ChunkEncounterSummaryRow,
   ConversationRow,
+  CurriculumProgressRow,
   DailyTargetsInsert,
   DailyTargetsRow,
   DictationFeatureStatInsert,
@@ -545,10 +546,31 @@ export async function listLessonDialogues(
   return data
 }
 
-export async function markDialogueCompleted(id: string): Promise<LessonDialogueRow> {
+export type CompletionResult = { promptAccuracy: number | null }
+
+/** 完了 1 回分の更新。正答率(自己申告)があれば今回の値と最高値を残す。 */
+export function mergeCompletion(
+  current: { times_completed: number; best_prompt_accuracy?: number | null },
+  result: CompletionResult | undefined,
+  now: Date = new Date(),
+): Partial<LessonDialogueRow> {
+  const update: Partial<LessonDialogueRow> = {
+    times_completed: current.times_completed + 1,
+    last_completed_at: now.toISOString(),
+  }
+  if (result && result.promptAccuracy !== null) {
+    const best = current.best_prompt_accuracy ?? null
+    update.last_prompt_accuracy = result.promptAccuracy
+    update.best_prompt_accuracy = best === null ? result.promptAccuracy : Math.max(best, result.promptAccuracy)
+  }
+  return update
+}
+
+export async function markDialogueCompleted(id: string, result?: CompletionResult): Promise<LessonDialogueRow> {
+  // 正答率を扱うときだけ 007 の列を読む(生成レッスンは 007 が無くても完了できる)
   const { data: current, error: readError } = await getSupabaseClient()
     .from('lesson_dialogues')
-    .select('times_completed')
+    .select((result ? 'times_completed, best_prompt_accuracy' : 'times_completed') as string)
     .eq('id', id)
     .single()
 
@@ -558,10 +580,7 @@ export async function markDialogueCompleted(id: string): Promise<LessonDialogueR
 
   const { data, error } = await getSupabaseClient()
     .from('lesson_dialogues')
-    .update({
-      times_completed: current.times_completed + 1,
-      last_completed_at: new Date().toISOString(),
-    })
+    .update(mergeCompletion(current as unknown as { times_completed: number; best_prompt_accuracy?: number | null }, result))
     .eq('id', id)
     .select('*')
     .single()
@@ -579,6 +598,53 @@ export async function getLessonDialogue(id: string): Promise<LessonDialogueRow> 
     .select('*')
     .eq('id', id)
     .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+// ---- 同梱カリキュラム(007) ----
+
+/**
+ * 同梱レッスンの行を用意する(同じレッスンはユーザー・言語ごとに 1 行)。
+ * 既にあれば触らず、その行を返す(ignoreDuplicates は衝突時に行を返さないので取り直す)。
+ */
+export async function ensureCurriculumDialogue(
+  row: LessonDialogueInsert & { curriculum_id: string },
+): Promise<LessonDialogueRow> {
+  const { error: upsertError } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .upsert(row, { onConflict: 'user_id,lang,curriculum_id', ignoreDuplicates: true })
+
+  if (upsertError) {
+    throw upsertError
+  }
+
+  const { data, error } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .select('*')
+    .eq('user_id', row.user_id)
+    .eq('lang', row.lang)
+    .eq('curriculum_id', row.curriculum_id)
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function listCurriculumProgress(userId: string, lang: Language): Promise<CurriculumProgressRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('lesson_dialogues')
+    .select('id, curriculum_id, times_completed, last_completed_at, best_prompt_accuracy, last_prompt_accuracy')
+    .eq('user_id', userId)
+    .eq('lang', lang)
+    .not('curriculum_id', 'is', null)
 
   if (error) {
     throw error

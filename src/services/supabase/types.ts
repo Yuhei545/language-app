@@ -147,13 +147,23 @@ export type DictationFeatureStatInsert = {
   created_at?: string
 }
 
+/** 会話の 1 行。核・解説・応用は v3 で追加された任意項目。 */
+export type LessonDialogueTurn = {
+  speaker: 'A' | 'B'
+  text: string
+  ja: string
+  key?: { text: string; ja: string }
+  note_ja?: string
+  prompts?: Array<{ cue_ja: string; answer: string; ja: string }>
+}
+
 export type LessonDialogueRow = {
   id: string
   user_id: string
   lang: Language
   scene_ja: string
   title_ja: string
-  dialogue: Array<{ speaker: 'A' | 'B'; text: string; ja: string }>
+  dialogue: LessonDialogueTurn[]
   new_expressions: Array<{
     text: string
     ja: string
@@ -163,7 +173,17 @@ export type LessonDialogueRow = {
   times_completed: number
   last_completed_at: string | null
   created_at: string
+  /** 同梱カリキュラムのレッスン id(01-cafe など)。生成レッスンは null。 */
+  curriculum_id: string | null
+  last_prompt_accuracy: number | null
+  best_prompt_accuracy: number | null
 }
+
+/** カリキュラムの進み具合(lesson_dialogues の curriculum_id がある行の抜粋)。 */
+export type CurriculumProgressRow = Pick<
+  LessonDialogueRow,
+  'id' | 'curriculum_id' | 'times_completed' | 'last_completed_at' | 'best_prompt_accuracy' | 'last_prompt_accuracy'
+>
 
 export type ProfileInsert = {
   user_id: string
@@ -293,6 +313,9 @@ export type LessonDialogueInsert = {
   times_completed?: number
   last_completed_at?: string | null
   created_at?: string
+  curriculum_id?: string | null
+  last_prompt_accuracy?: number | null
+  best_prompt_accuracy?: number | null
 }
 
 export type ChunkEncounterKind = 'seen' | 'said'

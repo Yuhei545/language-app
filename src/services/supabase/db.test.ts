@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getSupabaseClient } from './client'
-import { getOrCreateProfile } from './db'
+import { getOrCreateProfile, mergeCompletion } from './db'
 import type { ProfileRow } from './types'
 
 vi.mock('./client', () => ({
@@ -119,5 +119,28 @@ describe('getOrCreateProfile', () => {
 
     expect(result.user_id).toBe('user-3')
     expect(fake.rows.size).toBe(1)
+  })
+})
+
+describe('mergeCompletion', () => {
+  const now = new Date('2026-09-07T10:00:00.000Z')
+
+  it('回数と完了時刻を進める。正答率が無ければ列を触らない', () => {
+    expect(mergeCompletion({ times_completed: 1 }, undefined, now)).toEqual({
+      times_completed: 2,
+      last_completed_at: '2026-09-07T10:00:00.000Z',
+    })
+  })
+
+  it('正答率は今回の値と最高値を残す', () => {
+    expect(mergeCompletion({ times_completed: 0, best_prompt_accuracy: null }, { promptAccuracy: 0.5 }, now)).toMatchObject({
+      last_prompt_accuracy: 0.5,
+      best_prompt_accuracy: 0.5,
+    })
+    expect(mergeCompletion({ times_completed: 2, best_prompt_accuracy: 0.8 }, { promptAccuracy: 0.5 }, now)).toMatchObject({
+      last_prompt_accuracy: 0.5,
+      best_prompt_accuracy: 0.8,
+    })
+    expect(mergeCompletion({ times_completed: 2, best_prompt_accuracy: 0.8 }, { promptAccuracy: null }, now)).not.toHaveProperty('best_prompt_accuracy')
   })
 })
