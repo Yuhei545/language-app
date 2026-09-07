@@ -36,3 +36,7 @@ export const GEMINI_VOICES: GeminiVoice[] = [
 
 export const DEFAULT_GEMINI_VOICE = { en: 'Kore', ko: 'Aoede' } as const
 export const DEFAULT_GEMINI_VOICE_B = { en: 'Puck', ko: 'Charon' } as const
+/** 日本語のナレーター(合図・解説)の既定の声。同梱レッスンの合成でも使う。 */
+export const DEFAULT_GEMINI_VOICE_JA = 'Zephyr'
+/** ナレーター候補。合成の前に聴き比べる(scripts/synthesize-lessons.ts --preview-voices)。 */
+export const NARRATOR_VOICE_CANDIDATES = ['Zephyr', 'Sulafat', 'Vindemiatrix'] as const

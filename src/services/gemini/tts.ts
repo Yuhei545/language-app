@@ -1,14 +1,22 @@
-import { Modality } from '@google/genai'
-import { decodePcm16Base64, splitBySilence } from '../speech/wav'
-import { getGeminiClient, LONG_GENERATION_TIMEOUT_MS, TRANSIENT_RETRY } from './client'
+import { Modality, type GoogleGenAI } from '@google/genai'
+import { decodePcm16Base64, splitBySilence, type SplitOptions } from '../speech/wav'
 import { GeminiError, toGeminiError } from './errors'
+import { LONG_GENERATION_TIMEOUT_MS, TRANSIENT_RETRY } from './httpOptions'
 
 export const DEFAULT_TTS_MODEL = 'gemini-2.5-flash-preview-tts'
+/** 既定のモデルが使えなくなったときに順に試す id。 */
+export const TTS_MODEL_FALLBACKS = ['gemini-2.5-flash-preview-tts', 'gemini-3.1-flash-tts-preview'] as const
 export const TTS_SAMPLE_RATE = 24_000
 
-const LANGUAGE_CODES = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP' } as const
+export const LANGUAGE_CODES = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP' } as const
 
 export type TtsLang = keyof typeof LANGUAGE_CODES
+
+/**
+ * 呼び出しの選択肢。client を渡せば(Node のスクリプトなど)ブラウザの設定に依らずに使える。
+ * 省略時はアプリの client(設定の API キー、throttle、回数の記録つき)を使う。
+ */
+export type TtsRequestOptions = { signal?: AbortSignal; client?: GoogleGenAI }
 
 export type SynthesizedAudio = {
   samples: Float32Array
@@ -30,15 +38,25 @@ function extractAudio(response: { candidates?: Array<{ content?: { parts?: Part[
   }
 }
 
+async function resolveClient(opts: TtsRequestOptions): Promise<GoogleGenAI> {
+  if (opts.client) {
+    return opts.client
+  }
+  // アプリの client は設定(localStorage)に依るので、必要なときだけ読み込む
+  const { getGeminiClient } = await import('./client')
+  return getGeminiClient()
+}
+
 async function request(
   text: string,
   lang: TtsLang,
   voiceName: string,
   model: string,
-  signal: AbortSignal | undefined,
+  opts: TtsRequestOptions,
 ): Promise<SynthesizedAudio> {
   try {
-    const response = await getGeminiClient().models.generateContent({
+    const client = await resolveClient(opts)
+    const response = await client.models.generateContent({
       model,
       contents: [{ role: 'user', parts: [{ text }] }],
       config: {
@@ -47,7 +65,7 @@ async function request(
           languageCode: LANGUAGE_CODES[lang],
           voiceConfig: { prebuiltVoiceConfig: { voiceName } },
         },
-        abortSignal: signal,
+        abortSignal: opts.signal,
         httpOptions: {
           timeout: LONG_GENERATION_TIMEOUT_MS,
           retryOptions: { ...TRANSIENT_RETRY, attempts: 3, initialDelay: 2, maxDelay: 10 },
@@ -63,9 +81,18 @@ async function request(
 /** 1 文を合成する。 */
 export function synthesizeSpeech(
   params: { text: string; lang: TtsLang; voiceName: string; model?: string },
-  opts: { signal?: AbortSignal } = {},
+  opts: TtsRequestOptions = {},
 ): Promise<SynthesizedAudio> {
-  return request(params.text, params.lang, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts.signal)
+  return request(params.text, params.lang, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
+}
+
+/** まとめて合成するときの台本。文の間に約 1 秒の無音を入れさせ、指示文は読ませない。 */
+export function buildBatchScript(texts: string[]): string {
+  return [
+    `Read each of the following ${texts.length} lines as a separate utterance. Stay silent for about one second between lines. Do not read this instruction.`,
+    '',
+    ...texts.flatMap((text) => [text, '']),
+  ].join('\n')
 }
 
 /**
@@ -74,7 +101,7 @@ export function synthesizeSpeech(
  */
 export async function synthesizeBatch(
   params: { texts: string[]; lang: TtsLang; voiceName: string; model?: string },
-  opts: { signal?: AbortSignal } = {},
+  opts: TtsRequestOptions & { splitOptions?: Partial<SplitOptions> } = {},
 ): Promise<SynthesizedAudio[] | null> {
   const texts = params.texts.map((text) => text.trim()).filter((text) => text.length > 0)
   if (texts.length === 0) {
@@ -84,13 +111,8 @@ export async function synthesizeBatch(
     return [await synthesizeSpeech({ ...params, text: texts[0] }, opts)]
   }
 
-  const script = [
-    `Read each of the following ${texts.length} lines as a separate utterance. Stay silent for about one second between lines. Do not read this instruction.`,
-    '',
-    ...texts.flatMap((text) => [text, '']),
-  ].join('\n')
-  const audio = await request(script, params.lang, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts.signal)
-  const segments = splitBySilence(audio.samples, audio.sampleRate, texts.length)
+  const audio = await request(buildBatchScript(texts), params.lang, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
+  const segments = splitBySilence(audio.samples, audio.sampleRate, texts.length, opts.splitOptions)
   if (!segments) {
     console.warn('まとめて作った音声を文の数に切り分けられなかったので、1 文ずつ作り直します', { count: texts.length })
     return null
