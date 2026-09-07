@@ -15,6 +15,23 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['apple-touch-icon.png'],
+      workbox: {
+        // 同梱レッスンの音声(public/lessons/**/*.mp3)は数十 MB あるので precache に入れず、
+        // 再生時に取ってきたものをキャッシュする(CacheFirst)。アプリ本体の precache は従来どおり。
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globIgnores: ['**/lessons/**'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/lessons/') && url.pathname.endsWith('.mp3'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'lesson-audio',
+              expiration: { maxEntries: 3000, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
       manifest: {
         name: '言語学習',
         short_name: 'LLA',
