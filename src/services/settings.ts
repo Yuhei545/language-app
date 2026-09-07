@@ -26,6 +26,8 @@ export type Settings = {
   geminiTtsModel: string
   geminiVoice: VoicePair
   geminiVoiceB: VoicePair
+  /** 日本語のナレーター(合図・解説)の Gemini の声。 */
+  geminiVoiceJa: string
   ttsVoice: { en: string | null; ko: string | null }
   ttsVoiceB: { en: string | null; ko: string | null }
   ttsRate: number
@@ -60,6 +62,7 @@ const DEFAULT_SETTINGS: Settings = {
   geminiTtsModel: 'gemini-2.5-flash-preview-tts',
   geminiVoice: { en: 'Kore', ko: 'Aoede' },
   geminiVoiceB: { en: 'Puck', ko: 'Charon' },
+  geminiVoiceJa: 'Zephyr',
   ttsVoice: { en: null, ko: null },
   ttsVoiceB: { en: null, ko: null },
   ttsRate: 0.9,
@@ -128,6 +131,7 @@ function isSettings(value: unknown): value is Settings {
     && typeof value.geminiTtsModel === 'string'
     && isVoicePair(value.geminiVoice)
     && isVoicePair(value.geminiVoiceB)
+    && typeof value.geminiVoiceJa === 'string'
     && typeof value.sttEngine === 'string'
     && STT_ENGINES.includes(value.sttEngine as SttEngine)
     && isNullableString(value.ttsVoice.en)
@@ -204,6 +208,7 @@ export function getSettings(): Settings {
         geminiTtsModel: parsed.geminiTtsModel === undefined ? DEFAULT_SETTINGS.geminiTtsModel : parsed.geminiTtsModel,
         geminiVoice: parsed.geminiVoice === undefined ? { ...DEFAULT_SETTINGS.geminiVoice } : parsed.geminiVoice,
         geminiVoiceB: parsed.geminiVoiceB === undefined ? { ...DEFAULT_SETTINGS.geminiVoiceB } : parsed.geminiVoiceB,
+        geminiVoiceJa: parsed.geminiVoiceJa === undefined ? DEFAULT_SETTINGS.geminiVoiceJa : parsed.geminiVoiceJa,
       }
     }
 

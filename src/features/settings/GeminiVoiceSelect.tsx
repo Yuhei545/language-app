@@ -2,9 +2,10 @@ import { useId, useState } from 'react'
 import { GEMINI_VOICES } from '../../services/gemini/voices'
 import { previewGeminiVoice } from '../../services/speech'
 
-const PREVIEW_SAMPLES: Record<'en' | 'ko', string> = {
+const PREVIEW_SAMPLES: Record<'en' | 'ko' | 'ja', string> = {
   en: 'Hi! Could I get a coffee, please?',
   ko: '안녕하세요. 커피 한 잔 주세요.',
+  ja: '「コーヒーをもらえますか」と言ってみましょう。',
 }
 
 export function GeminiVoiceSelect({
@@ -14,7 +15,7 @@ export function GeminiVoiceSelect({
   onChange,
 }: {
   label: string
-  lang: 'en' | 'ko'
+  lang: 'en' | 'ko' | 'ja'
   value: string
   onChange: (voiceName: string) => void
 }) {

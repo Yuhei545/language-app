@@ -1,20 +1,28 @@
+import type { ClipVoice } from '../../content/lessonAudio'
 import { synthesizeBatch, synthesizeSpeech, type SynthesizedAudio } from '../gemini/tts'
 import { getSettings } from '../settings'
 import { audioCacheKey, getCachedAudio, putCachedAudio } from './audioCache'
-import { isAudioPlaybackSupported, playWav, stopPlayback, unlockAudioPlayback } from './audioPlayer'
+import { isAudioPlaybackSupported, playAudio, stopPlayback, unlockAudioPlayback } from './audioPlayer'
+import { findBundledClip, getBundledAudio } from './bundledAudio'
 import type { SpeechLanguage } from './normalize'
 import { encodeWavBuffer } from './wav'
 
 export type TtsLanguage = SpeechLanguage | 'ja'
-export type TtsSpeaker = 'A' | 'B'
+/** 会話の話者(A/B)と、日本語のナレーター。 */
+export type TtsSpeaker = 'A' | 'B' | 'narrator'
 
 export type SpeakOptions = {
   lang: TtsLanguage
   rate?: number
   voiceURI?: string | null
   pitch?: number
-  /** 会話の話者。Gemini の声のとき A/B で声を分ける。省略時は A。 */
+  /** 会話の話者。Gemini の声のとき A/B で声を分ける。省略時は A(日本語はナレーター)。 */
   speaker?: TtsSpeaker
+  /**
+   * Gemini の声で読めなかったとき。'browser' は内蔵音声に切り替えて続ける(既定)、
+   * 'throw' は失敗を投げる(会話レッスンのように、機械的な声で続けたくないとき)。
+   */
+  onGeminiFailure?: 'browser' | 'throw'
 }
 
 const browserLanguages: Record<TtsLanguage, string> = {
@@ -155,6 +163,18 @@ export function speakWithBrowser(
   })
 }
 
+// ---- 同梱の音声 ---------------------------------------------------------------
+
+/** 同梱の音声は自然な速さで固定(playbackRate は音程も変えるため、速さの設定は当てない)。 */
+export const BUNDLED_PLAYBACK_RATE = 1
+
+function clipVoiceFor(lang: TtsLanguage, speaker: TtsSpeaker | undefined): ClipVoice {
+  if (lang === 'ja') {
+    return 'narrator'
+  }
+  return speaker === 'B' ? 'B' : 'A'
+}
+
 // ---- Gemini の声 --------------------------------------------------------------
 
 /** 最後に内蔵音声へ切り替わった理由。設定画面などで見せる。 */
@@ -166,13 +186,16 @@ export function getLastGeminiTtsFallback(): string | null {
 /** 同じ文を同時に 2 回作らないための、進行中の合成。 */
 const inFlight = new Map<string, Promise<ArrayBuffer>>()
 
-function geminiVoiceFor(lang: SpeechLanguage, speaker: TtsSpeaker): string {
+function geminiVoiceFor(lang: TtsLanguage, speaker: TtsSpeaker): string {
   const settings = getSettings()
+  if (lang === 'ja') {
+    return settings.geminiVoiceJa
+  }
   const pair = speaker === 'B' ? settings.geminiVoiceB : settings.geminiVoice
   return pair[lang] || settings.geminiVoice[lang]
 }
 
-function cacheKeyFor(text: string, lang: SpeechLanguage, voice: string): string {
+function cacheKeyFor(text: string, lang: TtsLanguage, voice: string): string {
   return audioCacheKey({
     provider: 'gemini',
     model: getSettings().geminiTtsModel,
@@ -186,17 +209,16 @@ function toWav(audio: SynthesizedAudio): ArrayBuffer {
   return encodeWavBuffer(audio.samples, audio.sampleRate)
 }
 
-function usesGeminiVoice(lang: TtsLanguage): lang is SpeechLanguage {
+function usesGeminiVoice(): boolean {
   const settings = getSettings()
   return (
     settings.ttsProvider === 'gemini'
-    && lang !== 'ja'
     && settings.geminiApiKey.trim() !== ''
     && isAudioPlaybackSupported()
   )
 }
 
-async function getOrSynthesize(text: string, lang: SpeechLanguage, voice: string): Promise<ArrayBuffer> {
+async function getOrSynthesize(text: string, lang: TtsLanguage, voice: string): Promise<ArrayBuffer> {
   const key = cacheKeyFor(text, lang, voice)
   const cached = await getCachedAudio(key)
   if (cached) {
@@ -221,19 +243,32 @@ async function getOrSynthesize(text: string, lang: SpeechLanguage, voice: string
 }
 
 /**
- * 読み上げ。設定が Gemini の声なら、キャッシュ → 合成 → 再生。
- * 上限や通信の失敗で読めないときは、その理由を記録して内蔵音声に切り替える(練習を止めない)。
+ * 読み上げ。
+ * 1. 同梱の音声(事前に合成したレッスンの文)があればそれを再生する。失敗は投げる。
+ * 2. 無ければ、設定が Gemini の声なら キャッシュ → 合成 → 再生。日本語のナレーションも Gemini で読む。
+ *    読めなかったときは onGeminiFailure に従う(既定は内蔵音声に切り替えて続ける)。
+ * 3. それ以外は内蔵音声。
  */
 export async function speak(text: string, opts: SpeakOptions): Promise<void> {
-  if (usesGeminiVoice(opts.lang)) {
-    const lang = opts.lang
+  const bundled = findBundledClip(text, opts.lang, clipVoiceFor(opts.lang, opts.speaker))
+  if (bundled) {
+    const buffer = await getBundledAudio(bundled)
+    stopSpeaking()
+    await playAudio(buffer, { rate: BUNDLED_PLAYBACK_RATE })
+    return
+  }
+
+  if (usesGeminiVoice()) {
     try {
-      const wav = await getOrSynthesize(text, lang, geminiVoiceFor(lang, opts.speaker ?? 'A'))
+      const wav = await getOrSynthesize(text, opts.lang, geminiVoiceFor(opts.lang, opts.speaker ?? 'A'))
       stopSpeaking()
-      await playWav(wav, { rate: opts.rate })
+      await playAudio(wav, { rate: opts.rate })
       lastGeminiFallback = null
       return
     } catch (error) {
+      if (opts.onGeminiFailure === 'throw') {
+        throw error
+      }
       lastGeminiFallback = error instanceof Error ? error.message : String(error)
       console.warn('Gemini の声で読めなかったので、内蔵音声に切り替えます', error)
     }
@@ -242,26 +277,29 @@ export async function speak(text: string, opts: SpeakOptions): Promise<void> {
 }
 
 /** 設定画面の試聴用。保存前の声で読む。 */
-export async function previewGeminiVoice(text: string, lang: SpeechLanguage, voiceName: string): Promise<void> {
+export async function previewGeminiVoice(text: string, lang: TtsLanguage, voiceName: string): Promise<void> {
   unlockAudio()
   const wav = await getOrSynthesize(text, lang, voiceName)
   stopSpeaking()
-  await playWav(wav)
+  await playAudio(wav)
 }
 
 /**
- * これから読む文を先に作っておく。Gemini の声のときだけ動き、キャッシュ済みは飛ばす。
+ * これから読む文を先に作っておく。Gemini の声のときだけ動き、同梱の音声がある文とキャッシュ済みは飛ばす。
  * 同じ声の文はまとめて 1 回で合成し、切り分けに失敗したら 1 文ずつ作る。
  */
 export async function prefetchSpeech(
-  items: Array<{ text: string; lang: SpeechLanguage; speaker?: TtsSpeaker }>,
+  items: Array<{ text: string; lang: TtsLanguage; speaker?: TtsSpeaker }>,
 ): Promise<void> {
   const settings = getSettings()
   if (settings.ttsProvider !== 'gemini' || settings.geminiApiKey.trim() === '') {
     return
   }
-  const groups = new Map<string, { lang: SpeechLanguage; voice: string; texts: string[] }>()
+  const groups = new Map<string, { lang: TtsLanguage; voice: string; texts: string[] }>()
   for (const item of items) {
+    if (findBundledClip(item.text, item.lang, clipVoiceFor(item.lang, item.speaker))) {
+      continue
+    }
     const voice = geminiVoiceFor(item.lang, item.speaker ?? 'A')
     const key = cacheKeyFor(item.text, item.lang, voice)
     if (inFlight.has(key) || (await getCachedAudio(key))) {

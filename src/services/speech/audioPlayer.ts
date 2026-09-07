@@ -49,7 +49,8 @@ export function stopPlayback(): void {
   finishCurrent?.()
 }
 
-export async function playWav(buffer: ArrayBuffer, opts: { rate?: number } = {}): Promise<void> {
+/** WAV でも mp3 でも、decodeAudioData が扱える形式ならそのまま再生する。 */
+export async function playAudio(buffer: ArrayBuffer, opts: { rate?: number } = {}): Promise<void> {
   const ctx = ensureContext()
   if (!ctx) {
     throw new Error('この端末では音声の再生が使えません')
@@ -100,3 +101,6 @@ export async function playWav(buffer: ArrayBuffer, opts: { rate?: number } = {})
     source.start()
   })
 }
+
+/** 互換のための別名。 */
+export const playWav = playAudio

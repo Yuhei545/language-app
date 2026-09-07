@@ -10,6 +10,7 @@ const defaults = {
   geminiTtsModel: 'gemini-2.5-flash-preview-tts',
   geminiVoice: { en: 'Kore', ko: 'Aoede' },
   geminiVoiceB: { en: 'Puck', ko: 'Charon' },
+  geminiVoiceJa: 'Zephyr',
   sttEngine: 'auto',
   ttsVoice: { en: null, ko: null },
   ttsVoiceB: { en: null, ko: null },

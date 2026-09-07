@@ -367,8 +367,9 @@ export function SettingsPage() {
                   <span className="min-w-0">
                     <span className="block font-bold">Gemini の声(自然)</span>
                     <span className="mt-0.5 block text-xs leading-5 text-slate-500">
-                      英語・韓国語を Gemini で読み上げます。作った音声はこの端末に保存し、同じ文は 2 度と作りません。
-                      上限に達したら内蔵の声に自動で戻ります。日本語のナレーターは内蔵のままです。
+                      英語・韓国語と、日本語のナレーションを Gemini で読み上げます。作った音声はこの端末に保存し、同じ文は 2 度と作りません。
+                      同梱の会話レッスンは事前に作った音声を使うので Gemini を呼びません。
+                      カードなどで上限に達したら内蔵の声に自動で戻ります(会話レッスンは止めて知らせます)。
                     </span>
                   </span>
                 </label>
@@ -414,6 +415,13 @@ export function SettingsPage() {
                   value={settingsState.geminiVoiceB.ko}
                   onChange={(name) => update({ geminiVoiceB: { ...settingsState.geminiVoiceB, ko: name } })}
                 />
+                <GeminiVoiceSelect
+                  label="日本語(ナレーター)の声"
+                  lang="ja"
+                  value={settingsState.geminiVoiceJa}
+                  onChange={(name) => update({ geminiVoiceJa: name })}
+                />
+                <p className="text-xs leading-5 text-slate-500">同梱の会話レッスンの声は合成済みで固定です。ここでの選択は、自由な場面のレッスンやカードなど、その場で読み上げる文に使います。</p>
                 <label className="block">
                   <span className="mb-2 block text-sm font-bold text-slate-700">音声合成のモデル</span>
                   <input
