@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isLessonAudioReady } from '../../content/lessonAudio'
+import { loadAudioManifest, loadLessons } from '../../content/lessons'
 import { selectDueCards, type SrsState } from '../cards/srs'
+import { lessonStatuses, selectNextLesson, toCurriculumProgress, type CurriculumProgress } from '../lesson/curriculum'
 import { targetProgress } from '../chunks/dailyTargets'
 import { countAcquired } from '../chunks/ledger'
 import type { Chunk } from '../chunks/registry'
@@ -13,6 +16,7 @@ import {
   getLanguageProgress,
   getOrCreateProfile,
   getVocabProgress,
+  listCurriculumProgress,
   listPrepEvents,
   listVocabItems,
   upsertLanguageProgress,
@@ -59,6 +63,9 @@ export type HomeData = {
   /** 身についた表現の数と、この 1 週間で身についた数。 */
   acquiredCount: number
   acquiredThisWeek: number
+  /** 同梱の会話レッスン。今日終えたか、次に出るレッスン。 */
+  lessonComplete: boolean
+  nextLesson: { index: number; total: number; scene: string; kind: 'new' | 'retry' | 'passed' | 'locked' } | null
 }
 
 function localDateString(date: Date): string {
@@ -116,6 +123,23 @@ export function useHomeData(lang: 'en' | 'ko') {
           getVocabProgress(userId, vocabItems.map((item) => item.id)),
           loadChunkContext({ userId, lang, vocabItems, now }),
         ])
+        // 同梱レッスンの進み具合(007 が無ければ空。案内はレッスン画面で出す)
+        let lessonProgress: CurriculumProgress[] = []
+        try {
+          lessonProgress = (await listCurriculumProgress(userId, lang))
+            .map(toCurriculumProgress)
+            .filter((item): item is CurriculumProgress => item !== null)
+        } catch (lessonError) {
+          console.error('レッスンの進み具合を読めませんでした', lessonError)
+        }
+        const lessons = loadLessons(lang)
+        const manifest = loadAudioManifest(lang)
+        const lessonStatusList = lessonStatuses(lessons, lessonProgress, (id) => isLessonAudioReady(manifest, id))
+        const nextLessonStatus = selectNextLesson(lessonStatusList)
+        const lessonComplete = lessonProgress.some((item) => (
+          item.lastCompletedAt !== null && localDateString(new Date(item.lastCompletedAt)) === today
+        ))
+
         // 聞き流しの記録。台帳が無ければ 0 のまま(台帳の不足は chunkContext.error で伝える)
         let replayCount = 0
         if (!chunkContext.error) {
@@ -213,6 +237,15 @@ export function useHomeData(lang: 'en' | 'ko') {
             })),
             acquiredCount: acquired.total,
             acquiredThisWeek: acquired.recent,
+            lessonComplete,
+            nextLesson: nextLessonStatus
+              ? {
+                  index: nextLessonStatus.index + 1,
+                  total: lessons.length,
+                  scene: nextLessonStatus.lesson.scene_ja,
+                  kind: nextLessonStatus.kind,
+                }
+              : null,
           })
           if (chunkContext.error) {
             setError(chunkContext.error)

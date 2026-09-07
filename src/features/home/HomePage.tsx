@@ -30,7 +30,7 @@ const KIND_STYLE: Record<ChunkKind, string> = {
 }
 
 /** 推奨の順番と目安時間。研究の要点: 出す練習を先に、聞く量を足し、会話で締める。 */
-const RECOMMENDED_ORDER = '型を回す 6 分 → カード 5 分 → 聞いて書く 5 分 → 聞き流し 4 分 → ChatGPT 10 分。会話レッスンは週 2〜3 回'
+const RECOMMENDED_ORDER = '会話レッスン 20 分 → 型を回す 6 分 → カード 5 分 → 聞いて書く 5 分 → 聞き流し 4 分 → ChatGPT 10 分'
 
 function TargetChip({ target }: { target: HomeTarget }) {
   const done = target.seen >= target.goal
@@ -202,10 +202,18 @@ export function HomePage() {
       <section className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900">今日のタスク</h2>
-          <p className="text-xs font-bold text-slate-400">4つ</p>
+          <p className="text-xs font-bold text-slate-400">5つ</p>
         </div>
         <p className="mt-1 text-xs leading-5 text-slate-500">おすすめの順番: {RECOMMENDED_ORDER}</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <TaskRow
+            to="/lesson"
+            label="会話レッスン"
+            complete={data.lessonComplete}
+            remaining={data.nextLesson
+              ? `${data.nextLesson.index}/${data.nextLesson.total} ${data.nextLesson.scene}${data.nextLesson.kind === 'retry' ? '(もう一度)' : ''}`
+              : '音声を準備中'}
+          />
           <TaskRow
             to="/cards"
             label="単語カード"
