@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../app/LanguageContext'
 import { Toast } from '../../components/Toast'
+import { loadLessons } from '../../content/lessons'
 import { getSession } from '../../services/supabase/auth'
 import { listLessonDialogues } from '../../services/supabase/db'
 import type { LessonDialogueRow } from '../../services/supabase/types'
@@ -23,6 +24,7 @@ export function LessonHistoryPage() {
   const [selected, setSelected] = useState<LessonDialogueRow | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
+  const lessonOrder = new Map(loadLessons(language).map((lesson) => [lesson.id, lesson.order]))
 
   useEffect(() => {
     let active = true
@@ -80,7 +82,12 @@ export function LessonHistoryPage() {
               onClick={() => setSelected(row)}
               className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm"
             >
-              <span className="block font-bold text-slate-900">{row.scene_ja}</span>
+              <span className="block font-bold text-slate-900">
+                {row.curriculum_id && lessonOrder.has(row.curriculum_id) ? (
+                  <span className="mr-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-800">レッスン {lessonOrder.get(row.curriculum_id)}</span>
+                ) : null}
+                {row.scene_ja}
+              </span>
               <span className="mt-2 block text-xs text-slate-500">
                 {formatDate(row.created_at)} ・ 完了 {row.times_completed} 回
               </span>

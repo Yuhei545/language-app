@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CoreFrame, CoreVocab, CoreWord } from '../../content/coreSchema'
 import { loadCore } from '../../content/coreSchema'
+import { collectClips, isLessonAudioReady, type AudioManifest, type BundledClipRef } from '../../content/lessonAudio'
+import type { BundledLesson } from '../../content/lessonSchema'
+import { loadAudioManifest, loadLessons } from '../../content/lessons'
 import { generateDialogue } from '../../services/gemini/dialogue'
 import {
   hasVoiceFor,
@@ -8,11 +11,14 @@ import {
   speak,
   stopSpeaking,
 } from '../../services/speech'
+import { findBundledClip, prefetchBundledClips } from '../../services/speech/bundledAudio'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
 import {
+  ensureCurriculumDialogue,
   getLanguageProgress,
   getVocabProgress,
+  listCurriculumProgress,
   listMixingProgress,
   listPrepEvents,
   listVocabItems,
@@ -21,6 +27,7 @@ import {
   upsertVocabItems,
 } from '../../services/supabase/db'
 import type {
+  CurriculumProgressRow,
   LessonDialogueRow,
   MixingProgressRow,
   PrepEventRow,
@@ -32,6 +39,17 @@ import { chunksIn } from '../chunks/registry'
 import { loadChunkContext, type ChunkContext } from '../chunks/targetsStore'
 import { comboKey } from '../mixing/deal'
 import { slotPool } from '../mixing/combinations'
+import {
+  accuracyFromReport,
+  lessonAfter,
+  lessonStatuses,
+  PASS_THRESHOLD,
+  selectNextLesson,
+  toCurriculumProgress,
+  type CurriculumProgress,
+  type CurriculumStatus,
+  type SelfReport,
+} from './curriculum'
 import { buildDialogueLesson, PROMPT_ITEM_PREFIX, type DialogueLessonStep } from './dialoguePlan'
 import { estimateActionsMs } from './estimate'
 import type { LessonDialogue } from './lessonDialogueSchema'
@@ -40,8 +58,9 @@ import { planStep, type LessonAction } from './plan'
 import { buildSchedule } from './schedule'
 import type { LessonStep } from './types'
 
-export type LessonStatus = 'loading' | 'choosing' | 'generating' | 'ready' | 'running' | 'finished'
-export type LessonMode = 'words' | 'dialogue'
+export type LessonStatus = 'loading' | 'choosing' | 'generating' | 'ready' | 'preparing' | 'running' | 'finished'
+/** words: 単語だけの復習 / dialogue: 自由な場面(Gemini 生成) / curriculum: 同梱レッスン */
+export type LessonMode = 'words' | 'dialogue' | 'curriculum'
 export type CurrentLessonAction = 'cue' | 'pause' | 'answer' | null
 export type CurrentLessonSpeaker = 'A' | 'B' | 'you' | null
 type RunnableLessonStep = LessonStep | DialogueLessonStep
@@ -50,6 +69,24 @@ export type LessonRecallResult = {
   itemId: string
   stage: LessonStep['stage']
   matched: boolean
+}
+
+export type CurriculumOverview = {
+  statuses: CurriculumStatus[]
+  next: CurriculumStatus | null
+  total: number
+}
+
+export const CURRICULUM_MIGRATION_HINT =
+  'レッスンの進み具合を保存できません。Supabase の SQL Editor で supabase/migrations/007_curriculum.sql を実行してください。'
+  + '練習はこのまま続けられます'
+
+function curriculumDbError(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error)
+  if (/curriculum_id|best_prompt_accuracy|last_prompt_accuracy|schema cache/i.test(message)) {
+    return new Error(CURRICULUM_MIGRATION_HINT)
+  }
+  return error instanceof Error ? error : new Error(String(error))
 }
 
 type ProgressIdentity = {
@@ -159,6 +196,25 @@ function rowToDialogue(row: LessonDialogueRow): LessonDialogue {
   }
 }
 
+function buildOverview(
+  lessons: BundledLesson[],
+  manifest: AudioManifest | null,
+  rows: CurriculumProgressRow[],
+): CurriculumOverview {
+  const progress = rows
+    .map(toCurriculumProgress)
+    .filter((item): item is CurriculumProgress => item !== null)
+  const statuses = lessonStatuses(lessons, progress, (id) => isLessonAudioReady(manifest, id))
+  return { statuses, next: selectNextLesson(statuses), total: lessons.length }
+}
+
+type Prefetch = {
+  lessonId: string
+  controller: AbortController
+  /** 終わったら null、失敗なら Error。 */
+  result: Promise<Error | null>
+}
+
 export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow | null) {
   const [settings, setSettingsState] = useState<Settings>(getSettings)
   const settingsRef = useRef(settings)
@@ -176,6 +232,13 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const [recallResults, setRecallResults] = useState<LessonRecallResult[]>([])
   const [error, setError] = useState<unknown>(null)
   const [warnings, setWarnings] = useState<string[]>([])
+  /** 同梱カリキュラム。一覧と次のレッスン。 */
+  const [curriculum, setCurriculum] = useState<CurriculumOverview | null>(null)
+  const [curriculumLesson, setCurriculumLesson] = useState<BundledLesson | null>(null)
+  const [audioProgress, setAudioProgress] = useState<{ done: number; total: number } | null>(null)
+  const [selfReport, setSelfReport] = useState<SelfReport | null>(null)
+  const [passed, setPassed] = useState<boolean | null>(null)
+  const [reporting, setReporting] = useState(false)
   const generationRef = useRef(0)
   const actionIndexRef = useRef(0)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -196,6 +259,9 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const chunkContextRef = useRef<ChunkContext | null>(null)
   const pendingRef = useRef<EncounterEntry[]>([])
   const ledgerWarnedRef = useRef({ current: false })
+  const lessonsRef = useRef<BundledLesson[]>([])
+  const manifestRef = useRef<AudioManifest | null>(null)
+  const prefetchRef = useRef<Prefetch | null>(null)
 
   const currentStep = steps[currentIndex] ?? null
 
@@ -251,7 +317,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
 
   /**
    * 終えたステップに含まれるチャンクを台帳にためる。
-   * 会話: 台詞・核・思い出しは seen、応用の合図・締めは said。単語レッスン: 1 回目は seen、再出題は said。
+   * 会話: 台詞・核・思い出し・復習は seen、応用の合図・締めは said。単語レッスン: 1 回目は seen、再出題は said。
    */
   const noteStep = useCallback((step: RunnableLessonStep | undefined) => {
     const registry = chunkContextRef.current?.registry
@@ -267,7 +333,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
       }
       if (step.kind === 'prompt' || step.kind === 'closing') {
         kind = 'said'
-      } else if (step.kind === 'breakdown' || step.kind === 'line' || step.kind === 'recall') {
+      } else if (step.kind === 'breakdown' || step.kind === 'line' || step.kind === 'recall' || step.kind === 'review') {
         kind = 'seen'
       } else {
         return
@@ -298,9 +364,75 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     }
   }, [cancelActive])
 
+  const cancelPrefetch = useCallback(() => {
+    prefetchRef.current?.controller.abort()
+    prefetchRef.current = null
+  }, [])
+
+  /** 同梱レッスンを選び、ステップを組んで音声の先読みを始める。 */
+  const prepareCurriculumLesson = useCallback((lesson: BundledLesson) => {
+    cancelActive()
+    cancelPrefetch()
+    const built = buildDialogueLesson(lesson.dialogue, {
+      lang,
+      pauseSeconds: settingsRef.current.lessonPauseSeconds,
+      currentWeek: currentWeekRef.current,
+      review: lesson.review,
+    })
+    dialogueIdRef.current = null
+    completionRunRef.current = null
+    setMode('curriculum')
+    setCurriculumLesson(lesson)
+    setDialogue(lesson.dialogue)
+    setSteps(built.steps)
+    setCurrentIndex(0)
+    setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
+    setSelfReport(null)
+    setPassed(null)
+    setError(null)
+    setWarnings([])
+    setStatus('ready')
+
+    const refs: BundledClipRef[] = []
+    for (const clip of collectClips(lesson, lang)) {
+      const ref = findBundledClip(clip.text, clip.lang, clip.voice)
+      if (!ref) {
+        setAudioProgress(null)
+        setError(new Error(`このレッスンの音声はまだ用意されていません(${lesson.scene_ja})`))
+        return
+      }
+      refs.push(ref)
+    }
+    const controller = new AbortController()
+    setAudioProgress({ done: 0, total: refs.length })
+    const result = prefetchBundledClips(refs, {
+      signal: controller.signal,
+      onProgress: (done, total) => {
+        if (mountedRef.current && prefetchRef.current?.lessonId === lesson.id) {
+          setAudioProgress({ done, total })
+        }
+      },
+    })
+      .then(() => null)
+      .catch((prefetchError: unknown) => {
+        console.error('レッスンの音声を準備できませんでした', prefetchError)
+        return prefetchError instanceof Error ? prefetchError : new Error(String(prefetchError))
+      })
+    prefetchRef.current = { lessonId: lesson.id, controller, result }
+  }, [cancelActive, cancelPrefetch, lang])
+
+  const refreshCurriculum = useCallback((rows: CurriculumProgressRow[]) => {
+    const overview = buildOverview(lessonsRef.current, manifestRef.current, rows)
+    setCurriculum(overview)
+    return overview
+  }, [])
+
   useEffect(() => {
     let active = true
     cancelActive()
+    cancelPrefetch()
     actionIndexRef.current = 0
     startedAtRef.current = null
     setStatus('loading')
@@ -317,6 +449,11 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     setDialogue(null)
     setUpcomingPrepEvents([])
     setMode('words')
+    setCurriculum(null)
+    setCurriculumLesson(null)
+    setAudioProgress(null)
+    setSelfReport(null)
+    setPassed(null)
     userIdRef.current = null
     dialogueIdRef.current = null
     completionRunRef.current = null
@@ -331,6 +468,8 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
 
         const userId = authSession.user.id
         const core = loadCore(lang)
+        const lessons = loadLessons(lang)
+        const manifest = loadAudioManifest(lang)
         const [vocabItems, mixingRows, prepEvents, languageProgress] = await Promise.all([
           listVocabItems(userId, lang),
           listMixingProgress(userId, lang),
@@ -348,6 +487,15 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
           )),
           loadChunkContext({ userId, lang, vocabItems }),
         ])
+        // カリキュラムの進み具合。007 が無ければ空で進み、案内を出す
+        let progressRows: CurriculumProgressRow[] = []
+        let curriculumError: Error | null = null
+        try {
+          progressRows = await listCurriculumProgress(userId, lang)
+        } catch (progressError) {
+          console.error('レッスンの進み具合を読めませんでした', progressError)
+          curriculumError = curriculumDbError(progressError)
+        }
         const srsProgress = new Map<string, SrsState>(vocabProgress.map((progress) => [
           progress.vocab_item_id,
           {
@@ -387,14 +535,24 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
           knownWordsRef.current = knownWords
           wordStepsRef.current = nextSteps
           chunkContextRef.current = chunkContext
+          lessonsRef.current = lessons
+          manifestRef.current = manifest
           pendingRef.current = []
           setUpcomingPrepEvents(upcomingEvents)
+          const overview = refreshCurriculum(progressRows)
           if (chunkContext.error && !ledgerWarnedRef.current.current) {
             ledgerWarnedRef.current.current = true
             setError(chunkContext.error)
           }
 
-          if (initialDialogue) {
+          const replayLesson = initialDialogue?.curriculum_id
+            ? lessons.find((lesson) => lesson.id === initialDialogue.curriculum_id) ?? null
+            : null
+          if (initialDialogue && replayLesson && isLessonAudioReady(manifest, replayLesson.id)) {
+            // 履歴からのやり直し。ステップは同梱の JSON から組み、行は進み具合の記録に使う
+            prepareCurriculumLesson(replayLesson)
+            dialogueIdRef.current = initialDialogue.id
+          } else if (initialDialogue) {
             const savedDialogue = rowToDialogue(initialDialogue)
             const built = buildDialogueLesson(savedDialogue, {
               lang,
@@ -406,9 +564,14 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
             setMode('dialogue')
             setSteps(built.steps)
             setStatus('ready')
+          } else if (overview.next) {
+            prepareCurriculumLesson(overview.next.lesson)
           } else {
             setSteps([])
             setStatus('choosing')
+          }
+          if (curriculumError) {
+            setError(curriculumError)
           }
         }
       } catch (loadError) {
@@ -422,10 +585,11 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     return () => {
       active = false
       cancelActive()
+      cancelPrefetch()
       // 途中でやめても、ここまでの出会いは書く
       flushLedger()
     }
-  }, [cancelActive, flushLedger, initialDialogue, lang])
+  }, [cancelActive, cancelPrefetch, flushLedger, initialDialogue, lang, prepareCurriculumLesson, refreshCurriculum])
 
   useEffect(() => {
     if (status !== 'running' || paused || !currentStep) {
@@ -439,7 +603,8 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
           lang,
           pauseSeconds: settings.lessonPauseSeconds,
         })
-    const runId = lessonRunRef.current
+    // 同梱レッスンと Gemini の声では、機械的な声で続けず、読めなかったら止めて知らせる
+    const strict = mode === 'curriculum' || settingsRef.current.ttsProvider === 'gemini'
 
     const runPause = async (action: Extract<LessonAction, { type: 'pause' }>) => {
       // 間は声に出すための時間。録音はしない(自分で音読する)。
@@ -468,7 +633,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
         }
 
         if (action.type === 'speak') {
-          if (action.lang === 'ja' && !japaneseVoiceAvailableRef.current) {
+          if (action.lang === 'ja' && !strict && !japaneseVoiceAvailableRef.current) {
             await wait(1_500)
           } else {
             try {
@@ -483,10 +648,14 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
                   : action.rate ?? (action.lang === 'ja' ? undefined : settingsRef.current.ttsRate),
                 voiceURI: action.lang === 'ja' ? settingsRef.current.ttsVoiceJa ?? undefined : targetVoice,
                 pitch: isFallbackB ? 0.9 : undefined,
-                speaker: action.voice === 'B' ? 'B' : 'A',
+                speaker: action.lang === 'ja' ? 'narrator' : (action.voice === 'B' ? 'B' : 'A'),
+                onGeminiFailure: strict ? 'throw' : 'browser',
               })
               consecutiveSpeechFailuresRef.current = 0
             } catch (speechError) {
+              if (strict) {
+                throw speechError
+              }
               consecutiveSpeechFailuresRef.current += 1
               console.warn('読み上げに失敗したため次の行動へ進みます', speechError)
               if (consecutiveSpeechFailuresRef.current >= 3) {
@@ -544,6 +713,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     noteStep,
     currentStep,
     lang,
+    mode,
     paused,
     settings.lessonPauseSeconds,
     settings.lessonRecording,
@@ -553,6 +723,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     wait,
   ])
 
+  // 自由な場面のレッスンは終わった時点で完了にする(同梱レッスンは自己申告のあと)
   useEffect(() => {
     if (status !== 'finished' || mode !== 'dialogue' || !dialogue) {
       return
@@ -590,10 +761,60 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     void complete()
   }, [dialogue, lang, mode, status])
 
+  /** 同梱レッスンの終了時の自己申告。8 割以上で合格。進み具合と新しい表現のカードを保存する。 */
+  const reportSelfAssessment = useCallback(async (report: SelfReport) => {
+    const lesson = curriculumLesson
+    if (mode !== 'curriculum' || status !== 'finished' || reporting || selfReport !== null || !lesson) {
+      return
+    }
+    const accuracy = accuracyFromReport(report)
+    const isPassed = accuracy >= PASS_THRESHOLD
+    setSelfReport(report)
+    setPassed(isPassed)
+    setReporting(true)
+    const dialogueId = dialogueIdRef.current
+    const userId = userIdRef.current
+    try {
+      if (!userId) {
+        return
+      }
+      if (!dialogueId) {
+        throw new Error(CURRICULUM_MIGRATION_HINT)
+      }
+      await markDialogueCompleted(dialogueId, { promptAccuracy: accuracy })
+      await upsertVocabItems(lesson.dialogue.new_expressions.map((expression) => ({
+        user_id: userId,
+        lang,
+        week: currentWeekRef.current,
+        text: expression.text,
+        emoji: '💬',
+        hint_ja: expression.ja,
+        example: lesson.dialogue.turns[expression.turn_index]?.text ?? expression.text,
+        category: 'dialogue' as const,
+        source: 'bundled' as const,
+      })))
+      const rows = await listCurriculumProgress(userId, lang)
+      if (mountedRef.current) {
+        refreshCurriculum(rows)
+      }
+    } catch (reportError) {
+      if (mountedRef.current) {
+        setError(curriculumDbError(reportError))
+      }
+    } finally {
+      if (mountedRef.current) {
+        setReporting(false)
+      }
+    }
+  }, [curriculumLesson, lang, mode, refreshCurriculum, reporting, selfReport, status])
+
   const selectWordLesson = useCallback(() => {
     cancelActive()
+    cancelPrefetch()
     setMode('words')
     setDialogue(null)
+    setCurriculumLesson(null)
+    setAudioProgress(null)
     dialogueIdRef.current = null
     setSteps(wordStepsRef.current)
     setCurrentIndex(0)
@@ -602,7 +823,21 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     setCurrentSpeaker(null)
     setError(null)
     setStatus('ready')
-  }, [cancelActive])
+  }, [cancelActive, cancelPrefetch])
+
+  /** 一覧から任意の同梱レッスンを選ぶ。 */
+  const startCurriculumLesson = useCallback((lessonId: string) => {
+    const lesson = lessonsRef.current.find((item) => item.id === lessonId)
+    if (!lesson) {
+      setError(new Error(`レッスンが見つかりません: ${lessonId}`))
+      return
+    }
+    if (!isLessonAudioReady(manifestRef.current, lesson.id)) {
+      setError(new Error(`「${lesson.scene_ja}」の音声はまだ用意されていません`))
+      return
+    }
+    prepareCurriculumLesson(lesson)
+  }, [prepareCurriculumLesson])
 
   const startDialogueLesson = useCallback(async (sceneJa: string) => {
     const userId = userIdRef.current
@@ -612,10 +847,13 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     }
 
     cancelActive()
+    cancelPrefetch()
     const controller = new AbortController()
     generationAbortRef.current = controller
     setMode('dialogue')
     setDialogue(null)
+    setCurriculumLesson(null)
+    setAudioProgress(null)
     setSteps([])
     setError(null)
     setStatus('generating')
@@ -664,12 +902,16 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
         generationAbortRef.current = null
       }
     }
-  }, [cancelActive, lang, status])
+  }, [cancelActive, cancelPrefetch, lang, status])
 
-  const chooseDifferentScene = useCallback(() => {
+  /** 自由な場面(Gemini 生成)を選ぶ画面へ。 */
+  const chooseFreeScene = useCallback(() => {
     cancelActive()
+    cancelPrefetch()
     setMode('dialogue')
     setDialogue(null)
+    setCurriculumLesson(null)
+    setAudioProgress(null)
     dialogueIdRef.current = null
     setSteps([])
     setCurrentIndex(0)
@@ -678,12 +920,110 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     setCurrentSpeaker(null)
     setError(null)
     setStatus('choosing')
-  }, [cancelActive])
+  }, [cancelActive, cancelPrefetch])
 
-  const start = useCallback(() => {
+  /** 今日のレッスン(次のレッスン)に戻る。 */
+  const chooseCurriculum = useCallback(() => {
+    const next = curriculum?.next
+    if (next) {
+      prepareCurriculumLesson(next.lesson)
+    }
+  }, [curriculum, prepareCurriculumLesson])
+
+  const beginRun = useCallback((nextSteps: RunnableLessonStep[], checkBrowserVoices: boolean) => {
+    setSteps(nextSteps)
+    const nextWarnings: string[] = []
+    if (checkBrowserVoices) {
+      const japaneseVoiceAvailable = hasVoiceFor('ja')
+      japaneseVoiceAvailableRef.current = japaneseVoiceAvailable
+      if (!japaneseVoiceAvailable) {
+        nextWarnings.push('日本語の読み上げ音声が見つかりません。問いは画面の文字で確認してください')
+      }
+      if (!hasVoiceFor(lang)) {
+        nextWarnings.push(`${lang === 'en' ? '英語' : '韓国語'}の読み上げ音声が見つかりません`)
+      }
+    } else {
+      japaneseVoiceAvailableRef.current = true
+    }
+    setWarnings(nextWarnings)
+    consecutiveSpeechFailuresRef.current = 0
+    lessonRunRef.current += 1
+    actionIndexRef.current = 0
+    setCurrentIndex(0)
+    setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
+    setElapsedMs(0)
+    setRecallResults([])
+    setSelfReport(null)
+    setPassed(null)
+    setError(null)
+    setPaused(false)
+    startedAtRef.current = Date.now()
+    setStatus('running')
+  }, [lang])
+
+  const start = useCallback(async () => {
     if (status !== 'ready' && status !== 'finished') {
       return
     }
+
+    if (mode === 'curriculum') {
+      const lesson = curriculumLesson
+      if (!lesson) {
+        return
+      }
+      const nextSteps = buildDialogueLesson(lesson.dialogue, {
+        lang,
+        pauseSeconds: settingsRef.current.lessonPauseSeconds,
+        currentWeek: currentWeekRef.current,
+        review: lesson.review,
+      }).steps
+      cancelActive()
+      setSteps(nextSteps)
+      setError(null)
+      setStatus('preparing')
+
+      // 進み具合の行(無くても練習はできる。保存できない旨だけ知らせる)
+      const userId = userIdRef.current
+      if (userId && !dialogueIdRef.current) {
+        try {
+          const row = await ensureCurriculumDialogue({
+            user_id: userId,
+            lang,
+            curriculum_id: lesson.id,
+            scene_ja: lesson.dialogue.scene_ja,
+            title_ja: lesson.dialogue.title_ja,
+            dialogue: lesson.dialogue.turns,
+            new_expressions: lesson.dialogue.new_expressions,
+          })
+          dialogueIdRef.current = row.id
+          completionRunRef.current = null
+        } catch (dbError) {
+          console.error('レッスンの進み具合の行を用意できませんでした', dbError)
+          if (mountedRef.current) {
+            setError(curriculumDbError(dbError))
+          }
+        }
+      }
+
+      // 音声がすべて端末にそろってから始める(途切れないように)
+      const prefetch = prefetchRef.current
+      const prefetchError = prefetch && prefetch.lessonId === lesson.id
+        ? await prefetch.result
+        : new Error('音声の準備が始まっていません。レッスンを選び直してください')
+      if (!mountedRef.current) {
+        return
+      }
+      if (prefetchError) {
+        setError(prefetchError)
+        setStatus('ready')
+        return
+      }
+      beginRun(nextSteps, false)
+      return
+    }
+
     const nextSteps = mode === 'dialogue' && dialogue
       ? buildDialogueLesson(dialogue, {
           lang,
@@ -696,31 +1036,15 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     }
 
     cancelActive()
-    setSteps(nextSteps)
-    const japaneseVoiceAvailable = hasVoiceFor('ja')
-    japaneseVoiceAvailableRef.current = japaneseVoiceAvailable
-    const nextWarnings: string[] = []
-    if (!japaneseVoiceAvailable) {
-      nextWarnings.push('日本語の読み上げ音声が見つかりません。問いは画面の文字で確認してください')
+    beginRun(nextSteps, settingsRef.current.ttsProvider !== 'gemini')
+  }, [beginRun, cancelActive, curriculumLesson, dialogue, lang, mode, status, steps])
+
+  /** 音声の準備をやり直す(取得に失敗したとき)。 */
+  const retryAudio = useCallback(() => {
+    if (curriculumLesson) {
+      prepareCurriculumLesson(curriculumLesson)
     }
-    if (!hasVoiceFor(lang)) {
-      nextWarnings.push(`${lang === 'en' ? '英語' : '韓国語'}の読み上げ音声が見つかりません`)
-    }
-    setWarnings(nextWarnings)
-    consecutiveSpeechFailuresRef.current = 0
-    lessonRunRef.current += 1
-    actionIndexRef.current = 0
-    setCurrentIndex(0)
-    setCurrentAction(null)
-    setCurrentSpokenText(null)
-    setCurrentSpeaker(null)
-    setElapsedMs(0)
-    setRecallResults([])
-    setError(null)
-    setPaused(false)
-    startedAtRef.current = Date.now()
-    setStatus('running')
-  }, [cancelActive, dialogue, lang, mode, status, steps])
+  }, [curriculumLesson, prepareCurriculumLesson])
 
   const pause = useCallback(() => {
     if (status !== 'running' || paused) {
@@ -775,18 +1099,22 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     setStatus('finished')
   }, [cancelActive, status, updateElapsed])
 
-  // Gemini の声のとき、今のステップで読む文を先に作っておく(キャッシュ済みなら何もしない)
+  // Gemini の声のとき、今のステップで読む文を先に作っておく(同梱レッスンは事前合成済みなので不要)
   useEffect(() => {
-    if (status !== 'running' || !currentStep || !isDialogueStep(currentStep)) {
+    if (status !== 'running' || mode === 'curriculum' || !currentStep || !isDialogueStep(currentStep)) {
       return
     }
     const items = currentStep.actions.flatMap((action) => (
-      action.type === 'speak' && action.lang !== 'ja'
-        ? [{ text: action.text, lang: action.lang, speaker: (action.voice === 'B' ? 'B' : 'A') as 'A' | 'B' }]
+      action.type === 'speak'
+        ? [{
+            text: action.text,
+            lang: action.lang,
+            speaker: (action.lang === 'ja' ? 'narrator' : action.voice === 'B' ? 'B' : 'A') as 'A' | 'B' | 'narrator',
+          }]
         : []
     ))
     void prefetchSpeech(items)
-  }, [currentStep, status])
+  }, [currentStep, mode, status])
 
   const estimatedMinutes = useMemo(() => {
     if (steps.length === 0) {
@@ -803,6 +1131,17 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const promptAccuracy = promptResults.length > 0
     ? { matched: promptResults.filter((result) => result.matched).length, total: promptResults.length }
     : null
+
+  /** 今の同梱レッスンの位置と、合格後に出す次のレッスン。 */
+  const currentCurriculumStatus = curriculum && curriculumLesson
+    ? curriculum.statuses.find((item) => item.lesson.id === curriculumLesson.id) ?? null
+    : null
+  const nextCurriculumStatus = curriculum && curriculumLesson
+    ? lessonAfter(curriculum.statuses, curriculumLesson.id)
+    : null
+  const promptCount = curriculumLesson
+    ? curriculumLesson.dialogue.turns.reduce((total, turn) => total + (turn.prompts?.length ?? 0), 0)
+    : 0
 
   return {
     mode,
@@ -821,9 +1160,23 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     estimatedMinutes,
     elapsedMs,
     paused,
+    curriculum,
+    curriculumLesson,
+    currentCurriculumStatus,
+    nextCurriculumStatus,
+    promptCount,
+    audioProgress,
+    selfReport,
+    passed,
+    reporting,
     selectWordLesson,
+    startCurriculumLesson,
     startDialogueLesson,
-    chooseDifferentScene,
+    chooseFreeScene,
+    chooseDifferentScene: chooseFreeScene,
+    chooseCurriculum,
+    reportSelfAssessment,
+    retryAudio,
     start,
     pause,
     resume,

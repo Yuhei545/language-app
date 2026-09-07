@@ -5,6 +5,7 @@ import { Toast } from '../../components/Toast'
 import { unlockAudio } from '../../services/speech'
 import { getSettings, setSettings, subscribe, type Settings } from '../../services/settings'
 import type { LessonDialogueRow } from '../../services/supabase/types'
+import { SELF_REPORT_LABELS, type CurriculumStatus, type SelfReport } from './curriculum'
 import type { DialogueLessonStep } from './dialoguePlan'
 import type { LessonHistoryRouteState } from './LessonHistoryPage'
 import { ScenePicker } from './ScenePicker'
@@ -18,6 +19,8 @@ const STAGE_LABELS: Record<LessonStage, string> = {
   3: '2分後',
   4: '10分後',
 }
+
+const SELF_REPORT_ORDER: SelfReport[] = ['all', 'most', 'half', 'few']
 
 function formatElapsed(milliseconds: number): string {
   const totalSeconds = Math.floor(milliseconds / 1000)
@@ -51,6 +54,23 @@ function dialogueCue(
   return japaneseAction?.type === 'speak' ? japaneseAction.text : step.label
 }
 
+function percent(value: number | null | undefined): string {
+  return value === null || value === undefined ? '' : `${Math.round(value * 100)}%`
+}
+
+function statusLabel(status: CurriculumStatus): string {
+  switch (status.kind) {
+    case 'passed':
+      return `合格 ${percent(status.progress?.bestPromptAccuracy)}`
+    case 'retry':
+      return `前回 ${percent(status.progress?.lastPromptAccuracy)}`
+    case 'locked':
+      return '音声を準備中'
+    default:
+      return 'まだ'
+  }
+}
+
 export function LessonPage() {
   const { language } = useLanguage()
   const location = useLocation()
@@ -61,7 +81,7 @@ export function LessonPage() {
   const lesson = useLesson(language, initialDialogue)
   const [settings, setSettingsState] = useState<Settings>(getSettings)
   const [pageError, setPageError] = useState<unknown>(null)
-  const [entryChoice, setEntryChoice] = useState<'dialogue' | null>(initialDialogue ? 'dialogue' : null)
+  const [listOpen, setListOpen] = useState(false)
 
   useEffect(() => subscribe(setSettingsState), [])
 
@@ -79,6 +99,10 @@ export function LessonPage() {
   const cue = dialogueStep
     ? dialogueCue(dialogueStep, lesson.dialogue, lesson.steps, lesson.currentIndex)
     : lesson.currentStep?.item?.cueJa ?? ''
+  const curriculum = lesson.curriculum ?? null
+  const current = lesson.currentCurriculumStatus ?? null
+  const isCurriculum = lesson.mode === 'curriculum'
+  const audioReady = lesson.audioProgress !== null && lesson.audioProgress.done >= lesson.audioProgress.total
 
   const updateSettings = (partial: Partial<Settings>) => {
     try {
@@ -93,10 +117,15 @@ export function LessonPage() {
     try {
       unlockAudio()
       setPageError(null)
-      lesson.start()
+      void lesson.start()
     } catch (startError) {
       setPageError(startError)
     }
+  }
+
+  const pickLesson = (lessonId: string) => {
+    setListOpen(false)
+    lesson.startCurriculumLesson(lessonId)
   }
 
   const visibleError = pageError ?? lesson.error
@@ -104,6 +133,60 @@ export function LessonPage() {
     setPageError(null)
     lesson.clearError()
   }
+
+  const lessonList = curriculum && curriculum.statuses.length > 0 ? (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setListOpen((open) => !open)}
+        className="flex w-full items-center justify-between text-sm font-bold text-slate-800"
+        aria-expanded={listOpen}
+      >
+        <span>レッスン一覧({curriculum.statuses.filter((item) => item.kind === 'passed').length}/{curriculum.total} 合格)</span>
+        <span aria-hidden="true">{listOpen ? '▲' : '▼'}</span>
+      </button>
+      {listOpen ? (
+        <ol className="mt-3 space-y-2">
+          {curriculum.statuses.map((item) => (
+            <li key={item.lesson.id}>
+              <button
+                type="button"
+                onClick={() => pickLesson(item.lesson.id)}
+                disabled={!item.audioReady}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm ${item.lesson.id === lesson.curriculumLesson?.id ? 'bg-indigo-50' : 'bg-slate-50'} disabled:opacity-50`}
+              >
+                <span className="w-6 shrink-0 text-xs font-bold text-slate-400">{item.index + 1}</span>
+                <span className="min-w-0 flex-1 font-bold text-slate-800">{item.lesson.scene_ja}</span>
+                <span className={`shrink-0 text-xs font-bold ${item.kind === 'passed' ? 'text-teal-700' : 'text-slate-500'}`}>{statusLabel(item)}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+    </div>
+  ) : null
+
+  const alternatives = (
+    <div className="grid gap-2">
+      <button
+        type="button"
+        onClick={lesson.chooseFreeScene}
+        className="w-full rounded-2xl border border-indigo-200 bg-white px-5 py-3 text-sm font-bold text-indigo-800"
+      >
+        自由な場面で作る(Gemini)
+      </button>
+      <button
+        type="button"
+        onClick={lesson.selectWordLesson}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
+      >
+        単語だけの復習
+      </button>
+      <Link to="/lesson/history" className="text-center text-sm font-bold text-indigo-700">
+        履歴を見る
+      </Link>
+    </div>
+  )
 
   return (
     <section>
@@ -130,61 +213,78 @@ export function LessonPage() {
           今日のレッスンを組み立てています…
         </p>
       ) : lesson.status === 'choosing' || lesson.status === 'generating' ? (
-        entryChoice === 'dialogue' || lesson.status === 'generating' ? (
-          <div>
+        <div>
+          {curriculum?.next ? (
             <button
               type="button"
-              onClick={() => setEntryChoice(null)}
+              onClick={lesson.chooseCurriculum}
               disabled={lesson.status === 'generating'}
               className="mt-5 text-sm font-bold text-slate-500 disabled:opacity-40"
             >
-              ← レッスンの種類を選び直す
+              ← 今日のレッスンに戻る
             </button>
-            <ScenePicker
-              interests={settings.interests}
-              prepEvents={lesson.upcomingPrepEvents}
-              busy={lesson.status === 'generating'}
-              onCreate={(sceneJa) => void lesson.startDialogueLesson(sceneJa)}
-            />
-          </div>
-        ) : (
-          <div className="mt-7 grid gap-4">
-            <button
-              type="button"
-              onClick={() => setEntryChoice('dialogue')}
-              className="rounded-3xl border border-indigo-300 bg-gradient-to-br from-indigo-50 to-white p-6 text-left shadow-sm"
-            >
-              <span className="text-xs font-bold text-indigo-700">おすすめ</span>
-              <span className="mt-2 block text-xl font-bold text-slate-900">会話レッスン</span>
-              <span className="mt-2 block text-sm leading-6 text-slate-500">場面に合う会話を聞き、分解して、片方の役を話します。</span>
-            </button>
-            <button
-              type="button"
-              onClick={lesson.selectWordLesson}
-              className="rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-sm"
-            >
-              <span className="block text-xl font-bold text-slate-900">単語だけの復習</span>
-              <span className="mt-2 block text-sm leading-6 text-slate-500">今日の言葉を、間隔を空けながら声に出します。</span>
-            </button>
-            <Link to="/lesson/history" className="text-center text-sm font-bold text-indigo-700">
-              会話レッスンの履歴を見る
-            </Link>
-          </div>
-        )
-      ) : lesson.status === 'ready' ? (
+          ) : null}
+          <ScenePicker
+            interests={settings.interests}
+            prepEvents={lesson.upcomingPrepEvents}
+            busy={lesson.status === 'generating'}
+            onCreate={(sceneJa) => void lesson.startDialogueLesson(sceneJa)}
+          />
+          {lesson.status !== 'generating' ? (
+            <div className="mt-6 space-y-3">
+              {lessonList}
+              <button
+                type="button"
+                onClick={lesson.selectWordLesson}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
+              >
+                単語だけの復習
+              </button>
+              <Link to="/lesson/history" className="block text-center text-sm font-bold text-indigo-700">
+                会話レッスンの履歴を見る
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      ) : lesson.status === 'ready' || lesson.status === 'preparing' ? (
         <div className="mt-7 space-y-5">
           <div className="rounded-3xl border border-indigo-200 bg-gradient-to-b from-indigo-50 to-white p-6 text-center shadow-sm">
             <p className="text-6xl" aria-hidden="true">🎧</p>
-            <h2 className="mt-5 text-xl font-bold text-slate-900">
-              {lesson.mode === 'dialogue' && lesson.dialogue
+            {isCurriculum && current && curriculum ? (
+              <p className="mt-4 text-xs font-bold tracking-wider text-indigo-700">
+                {current.kind === 'retry'
+                  ? `レッスン ${current.index + 1}/${curriculum.total} ・ 前回 ${percent(current.progress?.lastPromptAccuracy)}。もう一度`
+                  : current.kind === 'passed'
+                    ? `レッスン ${current.index + 1}/${curriculum.total} ・ 合格済み(復習)`
+                    : `今日のレッスン ${current.index + 1}/${curriculum.total}`}
+              </p>
+            ) : null}
+            <h2 className="mt-3 text-xl font-bold text-slate-900">
+              {(lesson.mode === 'dialogue' || isCurriculum) && lesson.dialogue
                 ? lesson.dialogue.title_ja
                 : `今日のレッスン ${itemCount} 項目`}
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              {lesson.mode === 'dialogue' && lesson.dialogue
+              {(lesson.mode === 'dialogue' || isCurriculum) && lesson.dialogue
                 ? `${lesson.dialogue.scene_ja} ・ 新しい表現 ${lesson.dialogue.new_expressions.length} 個 ・ 約 ${lesson.estimatedMinutes} 分`
                 : `約 ${lesson.estimatedMinutes} 分。問いを聞いたら、模範が流れる前に声に出してみましょう。`}
             </p>
+            {isCurriculum && lesson.audioProgress ? (
+              <p className="mt-3 text-xs font-bold text-slate-500" role="status">
+                {audioReady
+                  ? '音声の準備ができました(自然な声・事前合成)'
+                  : `音声を準備しています ${lesson.audioProgress.done}/${lesson.audioProgress.total}`}
+              </p>
+            ) : null}
+            {isCurriculum && lesson.error && !audioReady ? (
+              <button
+                type="button"
+                onClick={lesson.retryAudio}
+                className="mt-3 rounded-full border border-indigo-200 bg-white px-4 py-2 text-xs font-bold text-indigo-800"
+              >
+                音声の準備をやり直す
+              </button>
+            ) : null}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -214,18 +314,33 @@ export function LessonPage() {
           <button
             type="button"
             onClick={startLesson}
-            disabled={lesson.steps.length === 0}
+            disabled={lesson.steps.length === 0 || lesson.status === 'preparing'}
             className="w-full rounded-2xl bg-indigo-700 px-5 py-5 text-lg font-bold text-white shadow-[0_16px_36px_rgba(67,56,202,0.24)] disabled:opacity-45"
           >
-            はじめる
+            {lesson.status === 'preparing' ? '音声を準備しています…' : 'はじめる'}
           </button>
+
+          {isCurriculum ? (
+            <>
+              {lessonList}
+              {alternatives}
+            </>
+          ) : curriculum?.next ? (
+            <button
+              type="button"
+              onClick={lesson.chooseCurriculum}
+              className="w-full rounded-2xl border border-indigo-200 bg-white px-5 py-3 text-sm font-bold text-indigo-800"
+            >
+              今日のレッスンに戻る
+            </button>
+          ) : null}
         </div>
       ) : lesson.status === 'running' && lesson.currentStep ? (
         <div className="mt-6">
           <div className="flex items-center justify-between gap-4 text-xs font-bold text-slate-500">
             <p>{lesson.currentIndex + 1}/{lesson.steps.length}</p>
             <p className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-800">
-              {lesson.mode === 'dialogue'
+              {lesson.mode !== 'words'
                 ? lesson.currentStepLabel
                 : lesson.currentStep.stage !== undefined
                   ? STAGE_LABELS[lesson.currentStep.stage]
@@ -244,7 +359,7 @@ export function LessonPage() {
           </div>
 
           <div className="mt-7 rounded-3xl border border-indigo-200 bg-white p-6 text-center shadow-sm">
-            {lesson.mode === 'dialogue' ? (
+            {lesson.mode !== 'words' ? (
               <p className="text-xs font-bold tracking-wider text-indigo-700">
                 話しているのは: {lesson.currentSpeaker === 'you'
                   ? 'あなた'
@@ -259,7 +374,7 @@ export function LessonPage() {
             <div className="mt-7 min-h-24 rounded-2xl bg-indigo-50 px-4 py-6">
               {lesson.currentAction === 'answer' ? (
                 <p className="text-xl font-bold leading-8 text-indigo-950">
-                  {lesson.mode === 'dialogue'
+                  {lesson.mode !== 'words'
                     ? lesson.currentSpokenText
                     : lesson.currentStep.item?.answer}
                 </p>
@@ -302,7 +417,9 @@ export function LessonPage() {
       ) : lesson.status === 'finished' ? (
         <div className="mt-8 rounded-3xl border border-indigo-200 bg-white p-6 text-center shadow-sm">
           <p className="text-5xl" aria-hidden="true">🎧</p>
-          <h2 className="mt-4 text-xl font-bold text-slate-900">今日のレッスンを終えました</h2>
+          <h2 className="mt-4 text-xl font-bold text-slate-900">
+            {isCurriculum && current ? `レッスン ${current.index + 1} を終えました` : '今日のレッスンを終えました'}
+          </h2>
           <div className="mt-6 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-4">
               <p className="text-2xl font-bold tabular-nums text-indigo-900">{itemCount}</p>
@@ -313,7 +430,37 @@ export function LessonPage() {
               <p className="mt-1 text-xs font-bold text-slate-500">経過時間</p>
             </div>
           </div>
-          {lesson.mode === 'dialogue' && lesson.dialogue ? (
+
+          {isCurriculum ? (
+            <div className="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 text-left" aria-labelledby="self-report-heading">
+              <h3 id="self-report-heading" className="text-sm font-bold text-slate-900">
+                応用の合図 {lesson.promptCount} 個のうち、言えたのは?
+              </h3>
+              {lesson.selfReport === null ? (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {SELF_REPORT_ORDER.map((report) => (
+                    <button
+                      key={report}
+                      type="button"
+                      onClick={() => void lesson.reportSelfAssessment(report)}
+                      disabled={lesson.reporting}
+                      className="rounded-xl bg-white px-3 py-3 text-sm font-bold text-indigo-900 shadow-sm disabled:opacity-50"
+                    >
+                      {SELF_REPORT_LABELS[report]}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm font-bold leading-6 text-slate-800" role="status">
+                  {lesson.passed
+                    ? `合格です。${lesson.nextCurriculumStatus ? `次回は ${lesson.nextCurriculumStatus.index + 1}/${curriculum?.total ?? ''}「${lesson.nextCurriculumStatus.lesson.scene_ja}」です` : '次のレッスンの音声ができるまでお待ちください'}`
+                    : '8 割に届かなかったので、次回も同じレッスンをもう一度やります(本家も 8 割で次へ進みます)'}
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {(lesson.mode === 'dialogue' || isCurriculum) && lesson.dialogue ? (
             <div className="mt-7 text-left">
               <h3 className="font-bold text-slate-900">会話全文</h3>
               <div className="mt-3 space-y-3">
@@ -336,21 +483,38 @@ export function LessonPage() {
               </div>
             </div>
           ) : null}
+
+          {isCurriculum && lesson.passed && lesson.nextCurriculumStatus ? (
+            <button
+              type="button"
+              onClick={() => pickLesson(lesson.nextCurriculumStatus!.lesson.id)}
+              className="mt-6 w-full rounded-2xl bg-indigo-700 px-5 py-4 font-bold text-white"
+            >
+              次のレッスンへ
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={startLesson}
-            className="mt-6 w-full rounded-2xl bg-indigo-700 px-5 py-4 font-bold text-white"
+            className={`${isCurriculum && lesson.passed && lesson.nextCurriculumStatus ? 'mt-3 border border-indigo-200 bg-white text-indigo-800' : 'mt-6 bg-indigo-700 text-white'} w-full rounded-2xl px-5 py-4 font-bold`}
           >
             もう一度
           </button>
-          {lesson.mode === 'dialogue' ? (
+          {isCurriculum ? (
+            <div className="mt-3 space-y-3 text-left">
+              {lessonList}
+              <Link
+                to="/"
+                className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-700"
+              >
+                ホームへ
+              </Link>
+            </div>
+          ) : lesson.mode === 'dialogue' ? (
             <>
               <button
                 type="button"
-                onClick={() => {
-                  lesson.chooseDifferentScene()
-                  setEntryChoice('dialogue')
-                }}
+                onClick={lesson.chooseFreeScene}
                 className="mt-3 w-full rounded-2xl border border-indigo-200 bg-white px-5 py-4 font-bold text-indigo-800"
               >
                 別の場面で
