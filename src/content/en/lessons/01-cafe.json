@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "id": "01-cafe",
+  "order": 1,
+  "scene_ja": "カフェで注文する",
+  "dialogue": {
+    "title_ja": "カフェで注文する",
+    "scene_ja": "カフェのカウンターで、店員に飲み物とケーキを注文する",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Hi there! What can I get for you?",
+        "ja": "こんにちは。ご注文は?",
+        "key": { "text": "What can I get for you", "ja": "ご注文は(何をお出ししましょう)" },
+        "note_ja": "店員が最初に言う定番の一言です。「何を差し上げましょう」の意味で、答えは飲み物や食べ物の名前だけで通じます。",
+        "prompts": [
+          { "cue_ja": "店員として「今日は何をお出ししましょう」と聞いてください", "answer": "What can I get for you today?", "ja": "今日は何をお出ししましょう" },
+          { "cue_ja": "「メニューをもらえますか」と言ってください", "answer": "Could I get the menu?", "ja": "メニューをもらえますか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Could I get a coffee, please?",
+        "ja": "コーヒーをもらえますか",
+        "key": { "text": "Could I get", "ja": "〜をもらえますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「水をもらえますか」と言ってください", "answer": "Could I get some water, please?", "ja": "水をもらえますか" },
+          { "cue_ja": "「2 人席をもらえますか」と言ってください", "answer": "Could I get a table for two?", "ja": "2 人席をお願いします" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Sure. Hot or iced?",
+        "ja": "はい。ホットとアイス、どちらにしますか",
+        "key": { "text": "Hot or iced", "ja": "ホットかアイスか" },
+        "note_ja": "or で 2 つの選択肢を並べる聞き方です。答えは Hot, please. のように単語だけで構いません。",
+        "prompts": [
+          { "cue_ja": "「ホットでお願いします」と答えてください", "answer": "Hot, please.", "ja": "ホットでお願いします" },
+          { "cue_ja": "店員として「大きいのと小さいの、どちらにしますか」と聞いてください", "answer": "Big or small?", "ja": "大きいのと小さいの、どちらにしますか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Iced, please. What do you recommend?",
+        "ja": "アイスでお願いします。おすすめは何ですか",
+        "key": { "text": "What do you recommend", "ja": "おすすめは何ですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「アイスでお願いします」と言ってください", "answer": "Iced, please.", "ja": "アイスでお願いします" },
+          { "cue_ja": "「ケーキは何がおすすめですか」と聞いてください", "answer": "What cake do you recommend?", "ja": "ケーキは何がおすすめですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "The lemon cake is really popular.",
+        "ja": "レモンケーキがとても人気です",
+        "key": { "text": "really popular", "ja": "とても人気" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「このコーヒーはとても人気です」と言ってください", "answer": "This coffee is really popular.", "ja": "このコーヒーはとても人気です" },
+          { "cue_ja": "「このカフェはとても人気です」と言ってください", "answer": "This cafe is really popular.", "ja": "このカフェはとても人気です" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Sounds good. I'll try it.",
+        "ja": "いいですね。それにします",
+        "key": { "text": "I'll try it", "ja": "それにします" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「いいですね。ケーキにします」と言ってください", "answer": "Sounds good. I'll try the cake.", "ja": "いいですね。ケーキにします" },
+          { "cue_ja": "「コーヒーにします」と言ってください", "answer": "I'll try the coffee.", "ja": "コーヒーにします" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Great. For here or to go?",
+        "ja": "かしこまりました。店内でお召し上がりですか、お持ち帰りですか",
+        "key": { "text": "For here or to go", "ja": "店内か持ち帰りか" },
+        "note_ja": "会計のときの定番の質問です。for here が店内、to go が持ち帰りです。",
+        "prompts": [
+          { "cue_ja": "「店内で」と答えてください", "answer": "For here, please.", "ja": "店内でお願いします" },
+          { "cue_ja": "店員として「それは持ち帰りですか」と聞いてください", "answer": "Is that to go?", "ja": "それは持ち帰りですか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "To go, please. Can I pay by card?",
+        "ja": "持ち帰りでお願いします。カードで払えますか",
+        "key": { "text": "pay by card", "ja": "カードで払う" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「現金で払えますか」と聞いてください", "answer": "Can I pay in cash?", "ja": "現金で払えますか" },
+          { "cue_ja": "「持ち帰りでお願いします」と言ってください", "answer": "To go, please.", "ja": "持ち帰りでお願いします" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "What can I get for you", "ja": "ご注文は", "note_ja": "店員が最初に言う定番の一言。答えは飲み物や食べ物の名前だけで通じます。", "turn_index": 0 },
+      { "text": "Hot or iced", "ja": "ホットかアイスか", "note_ja": "or で選択肢を並べる聞き方。単語だけで答えられます。", "turn_index": 2 },
+      { "text": "really popular", "ja": "とても人気", "note_ja": "おすすめを伝えるときの言い方です。", "turn_index": 4 },
+      { "text": "I'll try it", "ja": "それにします", "note_ja": "注文を決めるときの自然な一言。「試してみる」から来ています。", "turn_index": 5 },
+      { "text": "For here or to go", "ja": "店内か持ち帰りか", "note_ja": "会計時の定番の質問。to go が持ち帰りです。", "turn_index": 6 }
+    ]
+  },
+  "review": []
+}
