@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "07-lost-item",
+  "order": 7,
+  "scene_ja": "忘れ物を届け出る",
+  "dialogue": {
+    "title_ja": "忘れ物を届け出る",
+    "scene_ja": "駅の窓口で、電車に忘れた鞄について係の人に伝える",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Hi. How can I help you?",
+        "ja": "こんにちは。どうされましたか",
+        "key": { "text": "How can I help you", "ja": "どうされましたか(何かお手伝いできますか)" },
+        "note_ja": "窓口や店で係の人が最初に言う一言。「ご用件は?」の意味です。",
+        "prompts": [
+          { "cue_ja": "「今日はどうされましたか」と聞いてください", "answer": "How can I help you today?", "ja": "今日はどうされましたか" },
+          { "cue_ja": "「こんにちは。お手伝いしましょうか」と言ってください", "answer": "Hi. Can I help you?", "ja": "こんにちは。お手伝いしましょうか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "I left my bag on the train. I think it's lost.",
+        "ja": "電車に鞄を忘れました。なくしたと思います",
+        "key": { "text": "I left my bag on the train", "ja": "電車に鞄を忘れました" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「電車に携帯を忘れました」と言ってください", "answer": "I left my phone on the train.", "ja": "電車に携帯を忘れました" },
+          { "cue_ja": "「カフェに切符を忘れました」と言ってください", "answer": "I left my ticket at the cafe.", "ja": "カフェに切符を忘れました" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "I see. What does it look like?",
+        "ja": "なるほど。どんな見た目ですか",
+        "key": { "text": "What does it look like", "ja": "どんな見た目ですか" },
+        "note_ja": "I see. は「なるほど」の相づち。What does it look like? は色や形を聞く決まり文句です。",
+        "prompts": [
+          { "cue_ja": "「鞄はどんな見た目ですか」と聞いてください", "answer": "What does the bag look like?", "ja": "鞄はどんな見た目ですか" },
+          { "cue_ja": "「なるほど。何時でしたか」と聞いてください", "answer": "I see. What time was it?", "ja": "なるほど。何時でしたか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "It's a small black bag. My charger is in it.",
+        "ja": "小さい黒の鞄です。中に充電器が入っています",
+        "key": { "text": "a small black bag", "ja": "小さい黒の鞄" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「大きい黒の鞄です」と言ってください", "answer": "It's a big black bag.", "ja": "大きい黒の鞄です" },
+          { "cue_ja": "「中にパスポートが入っています」と言ってください", "answer": "My passport is in it.", "ja": "中にパスポートが入っています" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Which train were you on? Around what time?",
+        "ja": "どの電車に乗っていましたか。何時ごろですか",
+        "key": { "text": "Around what time", "ja": "何時ごろ" },
+        "note_ja": "around は「〜ごろ」。時刻をぼかして言うときに便利です。",
+        "prompts": [
+          { "cue_ja": "「何時ごろ着きましたか」と聞いてください", "answer": "Around what time did you get there?", "ja": "何時ごろ着きましたか" },
+          { "cue_ja": "「どのホームにいましたか」と聞いてください", "answer": "Which platform were you on?", "ja": "どのホームにいましたか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "The express train to the airport, about an hour ago.",
+        "ja": "空港行きの急行で、1 時間ほど前です",
+        "key": { "text": "about an hour ago", "ja": "1 時間ほど前" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「10 分ほど前です」と言ってください", "answer": "About ten minutes ago.", "ja": "10 分ほど前です" },
+          { "cue_ja": "「ダウンタウン行きの電車で、1 時間ほど前です」と言ってください", "answer": "The train to downtown, about an hour ago.", "ja": "ダウンタウン行きの電車で、1 時間ほど前です" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Hold on, let me check. Actually, someone turned in a bag like that.",
+        "ja": "少々お待ちください。あ、そのような鞄が届いています",
+        "key": { "text": "turned in", "ja": "届け出た" },
+        "note_ja": "turn in は「(拾い物を)届け出る」。someone turned in 〜 で「誰かが〜を届けた」です。",
+        "prompts": [
+          { "cue_ja": "「誰かが携帯を届けました」と言ってください", "answer": "Someone turned in a phone.", "ja": "誰かが携帯を届けました" },
+          { "cue_ja": "「少々お待ちください。窓口を確認します」と言ってください", "answer": "Hold on, let me check the desk.", "ja": "少々お待ちください。窓口を確認します" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "That's it! Thanks, that really helps.",
+        "ja": "それです! ありがとう、本当に助かります",
+        "key": { "text": "That's it", "ja": "それです" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「それです! 本当にありがとう」と言ってください", "answer": "That's it! Thanks a lot.", "ja": "それです! 本当にありがとう" },
+          { "cue_ja": "「ありがとう、本当に助かります」と言ってください", "answer": "Thanks, that really helps.", "ja": "ありがとう、本当に助かります" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "How can I help you", "ja": "どうされましたか", "note_ja": "窓口や店で係の人が最初に言う決まり文句です。", "turn_index": 0 },
+      { "text": "I see", "ja": "なるほど", "note_ja": "相手の話を受け止める相づちです。", "turn_index": 2 },
+      { "text": "What does it look like", "ja": "どんな見た目ですか", "note_ja": "物や人の見た目を聞く決まり文句です。", "turn_index": 2 },
+      { "text": "Around what time", "ja": "何時ごろ", "note_ja": "around で時刻をぼかして聞きます。", "turn_index": 4 },
+      { "text": "about an hour ago", "ja": "1 時間ほど前", "note_ja": "ago は「〜前」。about で「ほど」とぼかします。", "turn_index": 5 },
+      { "text": "turned in", "ja": "届け出た", "note_ja": "拾い物を窓口に届けるときの言い方です。", "turn_index": 6 }
+    ]
+  },
+  "review": [
+    { "from": "06-restaurant", "text": "Could we sit by the window?", "ja": "窓際に座れますか", "speaker": "B" },
+    { "from": "06-restaurant", "text": "Could we get the check after that, too?", "ja": "そのあとでお会計もお願いできますか", "speaker": "B" },
+    { "from": "05-shopping", "text": "Do you have this in a bigger size?", "ja": "これの大きいサイズはありますか", "speaker": "B" },
+    { "from": "03-hotel", "text": "What time is checkout?", "ja": "チェックアウトは何時ですか", "speaker": "B" },
+    { "from": "03-hotel", "text": "Do you have a reservation?", "ja": "ご予約はありますか", "speaker": "A" }
+  ]
+}

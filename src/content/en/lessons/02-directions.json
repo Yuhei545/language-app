@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "id": "02-directions",
+  "order": 2,
+  "scene_ja": "道を尋ねる",
+  "dialogue": {
+    "title_ja": "道を尋ねる",
+    "scene_ja": "街で通りがかりの人に、駅への行き方を尋ねる",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Hi there. Are you looking for something?",
+        "ja": "こんにちは。何かお探しですか",
+        "key": { "text": "Are you looking for", "ja": "〜を探していますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「駅を探していますか」と聞いてください", "answer": "Are you looking for the station?", "ja": "駅を探していますか" },
+          { "cue_ja": "「カフェを探していますか」と聞いてください", "answer": "Are you looking for a cafe?", "ja": "カフェを探していますか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "I think I'm lost. How do I get to the station?",
+        "ja": "道に迷ったみたいです。駅へはどう行けばいいですか",
+        "key": { "text": "How do I get to", "ja": "〜へはどう行けばいいですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「空港へはどう行けばいいですか」と聞いてください", "answer": "How do I get to the airport?", "ja": "空港へはどう行けばいいですか" },
+          { "cue_ja": "「ホテルへはどう行けばいいですか」と聞いてください", "answer": "How do I get to the hotel?", "ja": "ホテルへはどう行けばいいですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Go straight and turn left at the cafe.",
+        "ja": "まっすぐ行って、カフェのところで左に曲がってください",
+        "key": { "text": "turn left", "ja": "左に曲がる" },
+        "note_ja": "go straight がまっすぐ、turn left / turn right が左折・右折です。at のあとに目印を言います。",
+        "prompts": [
+          { "cue_ja": "「まっすぐ行って、駅のところで右に曲がってください」と言ってください", "answer": "Go straight and turn right at the station.", "ja": "まっすぐ行って、駅のところで右に曲がってください" },
+          { "cue_ja": "「ホテルのところで左に曲がってください」と言ってください", "answer": "Turn left at the hotel.", "ja": "ホテルのところで左に曲がってください" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Is it far from here?",
+        "ja": "ここから遠いですか",
+        "key": { "text": "far from here", "ja": "ここから遠い" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「空港はここから遠いですか」と聞いてください", "answer": "Is the airport far from here?", "ja": "空港はここから遠いですか" },
+          { "cue_ja": "「ホテルはここから遠いですか」と聞いてください", "answer": "Is the hotel far from here?", "ja": "ホテルはここから遠いですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Not really. It's about five minutes on foot.",
+        "ja": "そうでもないです。歩いて 5 分くらいです",
+        "key": { "text": "on foot", "ja": "徒歩で" },
+        "note_ja": "about が「〜くらい」、on foot が「徒歩で」です。by train なら「電車で」になります。",
+        "prompts": [
+          { "cue_ja": "「歩いて 10 分くらいです」と言ってください", "answer": "It's about ten minutes on foot.", "ja": "歩いて 10 分くらいです" },
+          { "cue_ja": "「電車で 5 分くらいです」と言ってください", "answer": "It's about five minutes by train.", "ja": "電車で 5 分くらいです" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Thanks. Is there a cafe near the station?",
+        "ja": "ありがとう。駅の近くにカフェはありますか",
+        "key": { "text": "Is there", "ja": "〜はありますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「この近くにホテルはありますか」と聞いてください", "answer": "Is there a hotel near here?", "ja": "この近くにホテルはありますか" },
+          { "cue_ja": "「ホテルの近くに駅はありますか」と聞いてください", "answer": "Is there a station near the hotel?", "ja": "ホテルの近くに駅はありますか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Sure. There's one right in front of the station.",
+        "ja": "ええ。駅の真ん前に 1 軒あります",
+        "key": { "text": "in front of", "ja": "〜の前に" },
+        "note_ja": "right は「ちょうど・真ん前に」の強めです。in front of で「〜の前」を表します。",
+        "prompts": [
+          { "cue_ja": "「ホテルの真ん前です」と言ってください", "answer": "It's right in front of the hotel.", "ja": "ホテルの真ん前です" },
+          { "cue_ja": "「カフェは駅の前にあります」と言ってください", "answer": "The cafe is in front of the station.", "ja": "カフェは駅の前にあります" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Great. Thanks, that really helps!",
+        "ja": "よかった。ありがとう、すごく助かります",
+        "key": { "text": "that really helps", "ja": "すごく助かります" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「ありがとう、すごく助かります」と言ってください", "answer": "Thanks, that really helps.", "ja": "ありがとう、すごく助かります" },
+          { "cue_ja": "「分かりました。ありがとう」と言ってください", "answer": "Got it. Thanks!", "ja": "分かりました。ありがとう" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "Go straight and turn left", "ja": "まっすぐ行って左に曲がる", "note_ja": "道案内の基本形。left を right に変えれば右折です。", "turn_index": 2 },
+      { "text": "about five minutes on foot", "ja": "歩いて 5 分くらい", "note_ja": "所要時間の言い方。on foot が徒歩、by train が電車です。", "turn_index": 4 },
+      { "text": "Is there", "ja": "〜はありますか", "note_ja": "場所や物があるかを聞く一番シンプルな形です。", "turn_index": 5 },
+      { "text": "right in front of", "ja": "〜の真ん前に", "note_ja": "in front of が「前」、right で「ちょうど」と強めます。", "turn_index": 6 }
+    ]
+  },
+  "review": [
+    { "from": "01-cafe", "text": "Could I get a coffee, please?", "ja": "コーヒーをもらえますか", "speaker": "B" },
+    { "from": "01-cafe", "text": "What do you recommend?", "ja": "おすすめは何ですか", "speaker": "B" },
+    { "from": "01-cafe", "text": "For here or to go?", "ja": "店内か持ち帰りか", "speaker": "A" },
+    { "from": "01-cafe", "text": "Can I pay by card?", "ja": "カードで払えますか", "speaker": "B" }
+  ]
+}

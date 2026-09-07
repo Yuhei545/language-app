@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "10-shows",
+  "order": 10,
+  "scene_ja": "番組や音楽の感想を話す",
+  "dialogue": {
+    "title_ja": "番組や音楽の感想を話す",
+    "scene_ja": "友だちと、最新話の感想と好きな曲の話をする",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Have you seen the latest episode?",
+        "ja": "最新話、見た?",
+        "key": { "text": "Have you seen", "ja": "〜は見た?" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「あの動画、見た?」と聞いてください", "answer": "Have you seen that video?", "ja": "あの動画、見た?" },
+          { "cue_ja": "「新しい話、見た?」と聞いてください", "answer": "Have you seen the new episode?", "ja": "新しい話、見た?" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "I binge-watched the whole season last night. The ending totally got me.",
+        "ja": "昨夜、シーズン全部を一気見した。ラストにやられたよ",
+        "key": { "text": "The ending totally got me", "ja": "ラストにやられた" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「シーズン全部を一気見した」と言ってください", "answer": "I binge-watched the whole season.", "ja": "シーズン全部を一気見した" },
+          { "cue_ja": "「ラストにやられた」と言ってください", "answer": "The ending totally got me.", "ja": "ラストにやられた" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Same here! The main character is so relatable.",
+        "ja": "私も! 主人公にすごく共感する",
+        "key": { "text": "Same here", "ja": "私も" },
+        "note_ja": "Same here. は「私も同じ」。Me too. より少しくだけた相づちです。",
+        "prompts": [
+          { "cue_ja": "「私も! 主人公が最高」と言ってください", "answer": "Same here! The main character is amazing.", "ja": "私も! 主人公が最高" },
+          { "cue_ja": "「主人公にすごく共感する」と言ってください", "answer": "The main character is so relatable.", "ja": "主人公にすごく共感する" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Right? That song at the end is stuck in my head.",
+        "ja": "でしょ? ラストの曲が頭から離れない",
+        "key": { "text": "stuck in my head", "ja": "頭から離れない" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「この曲が頭から離れない」と言ってください", "answer": "This song is stuck in my head.", "ja": "この曲が頭から離れない" },
+          { "cue_ja": "「ラストの曲が最高」と言ってください", "answer": "That song at the end is amazing.", "ja": "ラストの曲が最高" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "I know! I've been listening to it on repeat.",
+        "ja": "分かる! ずっとリピートで聴いてる",
+        "key": { "text": "on repeat", "ja": "リピートで" },
+        "note_ja": "on repeat は「繰り返しで」。I've been listening to 〜 で「ずっと聴いている」です。",
+        "prompts": [
+          { "cue_ja": "「新しいアルバムをリピートで聴いてる」と言ってください", "answer": "I've been listening to their new album on repeat.", "ja": "新しいアルバムをリピートで聴いてる" },
+          { "cue_ja": "「一日中聴いてる」と言ってください", "answer": "I've been listening to it all day.", "ja": "一日中聴いてる" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Me too. The lyrics hit different in English.",
+        "ja": "私も。歌詞が英語だと違って響く",
+        "key": { "text": "hit different", "ja": "違って響く(刺さる)" },
+        "note_ja": "hit different は「いつもと違って刺さる」というくだけた言い方です。",
+        "prompts": [
+          { "cue_ja": "「私も。歌詞が最高」と言ってください", "answer": "Me too. The lyrics are amazing.", "ja": "私も。歌詞が最高" },
+          { "cue_ja": "「歌詞はライブだと違って響く」と言ってください", "answer": "The lyrics hit different live.", "ja": "歌詞はライブだと違って響く" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "By the way, I saw them live last year. It was amazing.",
+        "ja": "ところで、去年ライブで見たよ。最高だった",
+        "key": { "text": "I saw them live", "ja": "ライブで見た" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「去年ライブで見たよ」と言ってください", "answer": "I saw them live last year.", "ja": "去年ライブで見たよ" },
+          { "cue_ja": "「ところで、字幕で見たよ」と言ってください", "answer": "By the way, I watched it with subtitles.", "ja": "ところで、字幕で見たよ" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "No way! You have to tell me about it sometime.",
+        "ja": "うそでしょ! そのうち聞かせてよ",
+        "key": { "text": "tell me about it", "ja": "それについて聞かせて" },
+        "note_ja": "No way! は「うそでしょ、まさか」。驚いたときの相づちです。",
+        "prompts": [
+          { "cue_ja": "「うそでしょ! 聞かせて」と言ってください", "answer": "No way! Tell me about it.", "ja": "うそでしょ! 聞かせて" },
+          { "cue_ja": "「そのうち見てみて」と言ってください", "answer": "You have to check it out sometime.", "ja": "そのうち見てみて" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "Same here", "ja": "私も", "note_ja": "相手に同意する相づち。Me too. と同じ意味です。", "turn_index": 2 },
+      { "text": "I've been listening to", "ja": "ずっと聴いている", "note_ja": "続けて聴いていることを言う形です。", "turn_index": 4 },
+      { "text": "on repeat", "ja": "リピートで", "note_ja": "同じ曲を繰り返し聴くときの言い方です。", "turn_index": 4 },
+      { "text": "Me too", "ja": "私も", "note_ja": "一番短い同意の相づちです。", "turn_index": 5 },
+      { "text": "No way", "ja": "うそでしょ", "note_ja": "驚いたときの相づち。信じられない、の意味です。", "turn_index": 7 },
+      { "text": "tell me about it", "ja": "それについて聞かせて", "note_ja": "話を詳しく聞きたいときの言い方です。", "turn_index": 7 }
+    ]
+  },
+  "review": [
+    { "from": "09-catch-up", "text": "I've been into that show lately.", "ja": "最近あの番組にハマってる", "speaker": "B" },
+    { "from": "09-catch-up", "text": "It was great seeing you.", "ja": "会えてよかった", "speaker": "B" },
+    { "from": "08-weekend", "text": "What have you been up to?", "ja": "最近どうしてた?", "speaker": "B" },
+    { "from": "08-weekend", "text": "Let me know when you get there.", "ja": "着いたら知らせて", "speaker": "B" },
+    { "from": "06-restaurant", "text": "Could we get the check after that, too?", "ja": "そのあとでお会計もお願いできますか", "speaker": "B" }
+  ]
+}

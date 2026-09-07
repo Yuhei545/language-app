@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "id": "09-catch-up",
+  "order": 9,
+  "scene_ja": "久しぶりに会って近況を話す",
+  "dialogue": {
+    "title_ja": "久しぶりに会って近況を話す",
+    "scene_ja": "久しぶりに会った友だちと、最近ハマっているものや仕事の話をする",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Hi, long time no see! How's it going?",
+        "ja": "やあ、久しぶり! 調子はどう?",
+        "key": { "text": "long time no see", "ja": "久しぶり" },
+        "note_ja": "long time no see は「久しぶり」の決まり文句。文法は気にせず、そのまま覚えます。",
+        "prompts": [
+          { "cue_ja": "「久しぶり! 元気だった?」と言ってください", "answer": "Long time no see! How have you been?", "ja": "久しぶり! 元気だった?" },
+          { "cue_ja": "「やあ! 調子はどう?」と言ってください", "answer": "Hi! How's it going?", "ja": "やあ! 調子はどう?" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Pretty good. I've been into that show lately.",
+        "ja": "まあまあ。最近あの番組にハマってる",
+        "key": { "text": "I've been into", "ja": "〜にハマっている" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「最近この曲にハマってる」と言ってください", "answer": "I've been into this song lately.", "ja": "最近この曲にハマってる" },
+          { "cue_ja": "「最近カフェにハマってる」と言ってください", "answer": "I've been into cafes lately.", "ja": "最近カフェにハマってる" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Oh really? Which one? I'm still catching up on the last season.",
+        "ja": "へえ、そうなの? どれ? 私はまだ前のシーズンを追いかけてる",
+        "key": { "text": "I'm still catching up on", "ja": "まだ〜を追いかけている" },
+        "note_ja": "Oh really? は「へえ、そうなの?」。Which one? は「どれ?」と 1 つを聞き返す言い方です。",
+        "prompts": [
+          { "cue_ja": "「どれ? まだ追いかけてる」と言ってください", "answer": "Which one? I'm still catching up on it.", "ja": "どれ? まだ追いかけてる" },
+          { "cue_ja": "「へえ、そうなの? 去年ライブで見たよ」と言ってください", "answer": "Oh really? I saw them live last year.", "ja": "へえ、そうなの? 去年ライブで見たよ" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "The new one. It's kind of slow at first, but it gets better.",
+        "ja": "新しいやつ。最初はちょっとゆっくりだけど、だんだん良くなる",
+        "key": { "text": "kind of slow at first", "ja": "最初はちょっとゆっくり" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「最初はちょっとゆっくり」と言ってください", "answer": "It's kind of slow at first.", "ja": "最初はちょっとゆっくり" },
+          { "cue_ja": "「だんだん良くなる。見てみて」と言ってください", "answer": "It gets better. You have to check it out.", "ja": "だんだん良くなる。見てみて" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "I totally get that. Anyway, how's work these days?",
+        "ja": "分かる。ところで、最近仕事はどう?",
+        "key": { "text": "how's work these days", "ja": "最近仕事はどう?" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「最近仕事はどう?」と聞いてください", "answer": "How's work these days?", "ja": "最近仕事はどう?" },
+          { "cue_ja": "「ところで、家族はどう?」と聞いてください", "answer": "Anyway, how's your family?", "ja": "ところで、家族はどう?" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Kind of tired, to be honest. But I'm about to take a week off.",
+        "ja": "正直ちょっと疲れてる。でも、もうすぐ 1 週間休みを取るんだ",
+        "key": { "text": "take a week off", "ja": "1 週間休みを取る" },
+        "note_ja": "take 〜 off で「〜の休みを取る」。a day off なら 1 日休みです。",
+        "prompts": [
+          { "cue_ja": "「もうすぐ 1 週間休みを取る」と言ってください", "answer": "I'm about to take a week off.", "ja": "もうすぐ 1 週間休みを取る" },
+          { "cue_ja": "「正直ちょっと疲れてる」と言ってください", "answer": "Kind of tired, to be honest.", "ja": "正直ちょっと疲れてる" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "That sounds fun. Let's meet up when you're back.",
+        "ja": "いいね。戻ったら会おう",
+        "key": { "text": "when you're back", "ja": "戻ったら" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「戻ったら会おう」と言ってください", "answer": "Let's meet up when you're back.", "ja": "戻ったら会おう" },
+          { "cue_ja": "「戻ったらメッセージして」と言ってください", "answer": "Text me when you're back.", "ja": "戻ったらメッセージして" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Totally. It was great seeing you. Say hi to your family for me.",
+        "ja": "もちろん。会えてよかった。家族によろしく",
+        "key": { "text": "It was great seeing you", "ja": "会えてよかった" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「会えてよかった」と言ってください", "answer": "It was great seeing you.", "ja": "会えてよかった" },
+          { "cue_ja": "「同僚によろしく」と言ってください", "answer": "Say hi to your coworker for me.", "ja": "同僚によろしく" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "long time no see", "ja": "久しぶり", "note_ja": "久しぶりに会ったときの決まり文句です。", "turn_index": 0 },
+      { "text": "Oh really", "ja": "へえ、そうなの?", "note_ja": "相手の話に興味を示す相づちです。", "turn_index": 2 },
+      { "text": "Which one", "ja": "どれ?", "note_ja": "複数の中から 1 つを聞き返すときの言い方です。", "turn_index": 2 },
+      { "text": "take a week off", "ja": "1 週間休みを取る", "note_ja": "take 〜 off で休みを取る。a day off で 1 日休みです。", "turn_index": 5 },
+      { "text": "when you're back", "ja": "戻ったら", "note_ja": "旅行や休みから戻る「戻ったら」の言い方です。", "turn_index": 6 }
+    ]
+  },
+  "review": [
+    { "from": "08-weekend", "text": "Are you free this weekend?", "ja": "今週末は空いてる?", "speaker": "A" },
+    { "from": "08-weekend", "text": "Let's meet up around two at the cafe downtown.", "ja": "2 時ごろ、ダウンタウンのカフェで会おう", "speaker": "A" },
+    { "from": "07-lost-item", "text": "Around what time?", "ja": "何時ごろですか", "speaker": "A" },
+    { "from": "05-shopping", "text": "Could I try it on?", "ja": "試着してもいいですか", "speaker": "B" },
+    { "from": "05-shopping", "text": "How about this one?", "ja": "こちらはいかがですか", "speaker": "A" }
+  ]
+}

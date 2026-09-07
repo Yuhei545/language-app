@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "id": "03-hotel",
+  "order": 3,
+  "scene_ja": "ホテルにチェックインする",
+  "dialogue": {
+    "title_ja": "ホテルにチェックインする",
+    "scene_ja": "ホテルのフロントで、予約を伝えてチェックインする",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Good evening. Do you have a reservation?",
+        "ja": "こんばんは。ご予約はありますか",
+        "key": { "text": "Do you have a reservation", "ja": "ご予約はありますか" },
+        "note_ja": "Good evening は夕方からの挨拶です。朝は Good morning、昼は Good afternoon と言います。",
+        "prompts": [
+          { "cue_ja": "「今夜のご予約はありますか」と聞いてください", "answer": "Do you have a reservation for tonight?", "ja": "今夜のご予約はありますか" },
+          { "cue_ja": "「こんばんは。2 人席はありますか」と言ってください", "answer": "Good evening. Do you have a table for two?", "ja": "こんばんは。2 人席はありますか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "I have a reservation under Sato.",
+        "ja": "佐藤で予約しています",
+        "key": { "text": "a reservation under", "ja": "〜の名前で予約" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「田中で予約しています」と言ってください", "answer": "I have a reservation under Tanaka.", "ja": "田中で予約しています" },
+          { "cue_ja": "「2 人で予約しています」と言ってください", "answer": "I have a reservation for two.", "ja": "2 人で予約しています" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Thanks. Could I see your passport, please?",
+        "ja": "ありがとうございます。パスポートを見せていただけますか",
+        "key": { "text": "Could I see your passport", "ja": "パスポートを見せてもらえますか" },
+        "note_ja": "Could I see 〜 は「〜を見せてもらえますか」。店やフロントでよく聞かれます。",
+        "prompts": [
+          { "cue_ja": "「メニューを見せてもらえますか」と言ってください", "answer": "Could I see the menu, please?", "ja": "メニューを見せてもらえますか" },
+          { "cue_ja": "「切符を見せてもらえますか」と聞いてください", "answer": "Could I see your ticket?", "ja": "切符を見せてもらえますか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Here you go. What time is checkout?",
+        "ja": "どうぞ。チェックアウトは何時ですか",
+        "key": { "text": "What time is checkout", "ja": "チェックアウトは何時ですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「朝食は何時ですか」と聞いてください", "answer": "What time is breakfast?", "ja": "朝食は何時ですか" },
+          { "cue_ja": "「チェックインは何時ですか」と聞いてください", "answer": "What time is check-in?", "ja": "チェックインは何時ですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Checkout is at eleven. Breakfast is from seven to ten.",
+        "ja": "チェックアウトは 11 時です。朝食は 7 時から 10 時までです",
+        "key": { "text": "from seven to ten", "ja": "7 時から 10 時まで" },
+        "note_ja": "from A to B で「A から B まで」。時間にも場所にも使えます。",
+        "prompts": [
+          { "cue_ja": "「朝食は 6 時から 9 時までです」と言ってください", "answer": "Breakfast is from six to nine.", "ja": "朝食は 6 時から 9 時までです" },
+          { "cue_ja": "「カフェは 7 時から 10 時まで開いています」と言ってください", "answer": "The cafe is open from seven to ten.", "ja": "カフェは 7 時から 10 時まで開いています" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Got it. Is there Wi-Fi in the room?",
+        "ja": "分かりました。部屋に Wi-Fi はありますか",
+        "key": { "text": "Is there Wi-Fi", "ja": "Wi-Fi はありますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「部屋に充電器はありますか」と聞いてください", "answer": "Is there a charger in the room?", "ja": "部屋に充電器はありますか" },
+          { "cue_ja": "「カフェに Wi-Fi はありますか」と聞いてください", "answer": "Is there Wi-Fi in the cafe?", "ja": "カフェに Wi-Fi はありますか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Of course. The password is on this card.",
+        "ja": "もちろんです。パスワードはこのカードに書いてあります",
+        "key": { "text": "Of course", "ja": "もちろん" },
+        "note_ja": "Of course は「もちろん」。頼まれごとに快く応じるときの返事です。",
+        "prompts": [
+          { "cue_ja": "「もちろん。どうぞ」と言ってください", "answer": "Of course. Here you go.", "ja": "もちろん。どうぞ" },
+          { "cue_ja": "「もちろん。ごゆっくりどうぞ」と言ってください", "answer": "Of course. Take your time.", "ja": "もちろん。ごゆっくりどうぞ" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Thanks, that really helps. Could I get a charger, too?",
+        "ja": "ありがとう、助かります。充電器ももらえますか",
+        "key": { "text": "Could I get a charger", "ja": "充電器をもらえますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「水ももらえますか」と言ってください", "answer": "Could I get some water, too?", "ja": "水ももらえますか" },
+          { "cue_ja": "「携帯の充電器をもらえますか」と言ってください", "answer": "Could I get a charger for my phone?", "ja": "携帯の充電器をもらえますか" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "Good evening", "ja": "こんばんは", "note_ja": "夕方からの挨拶。朝は Good morning です。", "turn_index": 0 },
+      { "text": "Could I see your passport", "ja": "パスポートを見せてもらえますか", "note_ja": "Could I see 〜 で「〜を見せてもらえますか」。", "turn_index": 2 },
+      { "text": "Here you go", "ja": "どうぞ", "note_ja": "物を渡すときの一言です。", "turn_index": 3 },
+      { "text": "Breakfast is from seven to ten", "ja": "朝食は 7 時から 10 時まで", "note_ja": "from A to B で時間の範囲を言います。", "turn_index": 4 },
+      { "text": "Of course", "ja": "もちろん", "note_ja": "頼まれごとに快く応じる返事です。", "turn_index": 6 }
+    ]
+  },
+  "review": [
+    { "from": "02-directions", "text": "How do I get to the station?", "ja": "駅へはどう行けばいいですか", "speaker": "B" },
+    { "from": "02-directions", "text": "Is it far from here?", "ja": "ここから遠いですか", "speaker": "B" },
+    { "from": "01-cafe", "text": "I'll try it.", "ja": "それにします", "speaker": "B" },
+    { "from": "01-cafe", "text": "What can I get for you?", "ja": "ご注文は", "speaker": "A" }
+  ]
+}

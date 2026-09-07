@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "06-restaurant",
+  "order": 6,
+  "scene_ja": "レストランで注文と会計",
+  "dialogue": {
+    "title_ja": "レストランで注文と会計",
+    "scene_ja": "レストランで席に案内され、注文して会計を頼む",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Good evening. A table for two?",
+        "ja": "こんばんは。2 名様ですか",
+        "key": { "text": "A table for two", "ja": "2 人席" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「3 名様ですか」と聞いてください", "answer": "A table for three?", "ja": "3 名様ですか" },
+          { "cue_ja": "「2 人席はありますか」と聞いてください", "answer": "Do you have a table for two?", "ja": "2 人席はありますか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Yes, please. Could we sit by the window?",
+        "ja": "はい、お願いします。窓際に座れますか",
+        "key": { "text": "sit by the window", "ja": "窓際に座る" },
+        "note_ja": "Yes, please. は「はい、お願いします」。頼まれたことに丁寧に応じる一言です。",
+        "prompts": [
+          { "cue_ja": "「外に座れますか」と聞いてください", "answer": "Could we sit outside?", "ja": "外に座れますか" },
+          { "cue_ja": "「あちらに座れますか」と聞いてください", "answer": "Could we sit over there?", "ja": "あちらに座れますか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Of course. Here's the menu. Today's special is grilled fish.",
+        "ja": "もちろんです。メニューをどうぞ。本日のおすすめは焼き魚です",
+        "key": { "text": "Today's special is", "ja": "本日のおすすめは" },
+        "note_ja": "today's special は「本日のおすすめ料理」。店員が最初に勧めてくれることが多いです。",
+        "prompts": [
+          { "cue_ja": "「本日のおすすめはコーヒーとケーキです」と言ってください", "answer": "Today's special is coffee and cake.", "ja": "本日のおすすめはコーヒーとケーキです" },
+          { "cue_ja": "「メニューをどうぞ」と言ってください", "answer": "Here's the menu.", "ja": "メニューをどうぞ" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Sounds good. I'll try the special. What do you recommend to drink?",
+        "ja": "いいですね。おすすめにします。飲み物は何がおすすめですか",
+        "key": { "text": "What do you recommend to drink", "ja": "飲み物は何がおすすめですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「食べ物は何がおすすめですか」と聞いてください", "answer": "What do you recommend to eat?", "ja": "食べ物は何がおすすめですか" },
+          { "cue_ja": "「おすすめにします」と言ってください", "answer": "I'll try the special.", "ja": "おすすめにします" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "The coffee here is pretty good. Or water, if you like.",
+        "ja": "ここのコーヒーはなかなかいいですよ。お水でもよければ",
+        "key": { "text": "pretty good", "ja": "なかなかいい" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「ここのケーキはなかなかいいですよ」と言ってください", "answer": "The cake here is pretty good.", "ja": "ここのケーキはなかなかいいですよ" },
+          { "cue_ja": "「コーヒーはなかなかよかったです」と言ってください", "answer": "The coffee was pretty good.", "ja": "コーヒーはなかなかよかったです" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Coffee, please. Could we get the check after that, too?",
+        "ja": "コーヒーでお願いします。そのあとでお会計もお願いできますか",
+        "key": { "text": "Could we get the check", "ja": "お会計をお願いできますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「お会計をお願いします」と言ってください", "answer": "Could we get the check, please?", "ja": "お会計をお願いします" },
+          { "cue_ja": "「お水ももらえますか」と聞いてください", "answer": "Could we get some water, too?", "ja": "お水ももらえますか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Sure. Anything else? Dessert is on the house today.",
+        "ja": "はい。他には? 今日はデザートをサービスします",
+        "key": { "text": "on the house", "ja": "店のおごり" },
+        "note_ja": "on the house は「店のおごり(無料)」。Anything else? は「他には?」という追加注文の確認です。",
+        "prompts": [
+          { "cue_ja": "「他には?」と聞いてください", "answer": "Anything else?", "ja": "他には?" },
+          { "cue_ja": "「今日はコーヒーをサービスします」と言ってください", "answer": "The coffee is on the house today.", "ja": "今日はコーヒーをサービスします" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "That's so kind. The coffee was amazing, too.",
+        "ja": "ご親切に。コーヒーもとてもおいしかったです",
+        "key": { "text": "That's so kind", "ja": "ご親切に" },
+        "note_ja": "That's so kind. は「ご親切に、ありがとう」。サービスしてもらったときの返し方です。",
+        "prompts": [
+          { "cue_ja": "「ご親切に。ありがとう」と言ってください", "answer": "That's so kind. Thanks!", "ja": "ご親切に。ありがとう" },
+          { "cue_ja": "「コーヒーはとてもおいしかったです」と言ってください", "answer": "The coffee was amazing.", "ja": "コーヒーはとてもおいしかったです" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "Yes, please", "ja": "はい、お願いします", "note_ja": "頼まれたことに丁寧に応じる一言です。", "turn_index": 1 },
+      { "text": "sit by the window", "ja": "窓際に座る", "note_ja": "by 〜 で「〜のそばに」。sit outside なら外の席です。", "turn_index": 1 },
+      { "text": "Today's special is", "ja": "本日のおすすめは", "note_ja": "店員が最初に勧める料理の言い方です。", "turn_index": 2 },
+      { "text": "Anything else", "ja": "他には", "note_ja": "追加注文があるかの確認。No, that's all. で「以上です」。", "turn_index": 6 },
+      { "text": "on the house", "ja": "店のおごり", "note_ja": "無料でサービスするときの決まり文句です。", "turn_index": 6 },
+      { "text": "That's so kind", "ja": "ご親切に", "note_ja": "サービスや気遣いへのお礼です。", "turn_index": 7 }
+    ]
+  },
+  "review": [
+    { "from": "05-shopping", "text": "Could I try it on?", "ja": "試着してもいいですか", "speaker": "B" },
+    { "from": "05-shopping", "text": "I'll take it.", "ja": "これにします", "speaker": "B" },
+    { "from": "04-airport", "text": "Where are you flying to today?", "ja": "今日はどちらへ飛ばれますか", "speaker": "A" },
+    { "from": "04-airport", "text": "Can I take it on the plane?", "ja": "機内に持ち込めますか", "speaker": "B" },
+    { "from": "02-directions", "text": "Is there a cafe near the station?", "ja": "駅の近くにカフェはありますか", "speaker": "B" }
+  ]
+}

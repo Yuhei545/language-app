@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "id": "08-weekend",
+  "order": 8,
+  "scene_ja": "友だちと週末の予定を立てる",
+  "dialogue": {
+    "title_ja": "友だちと週末の予定を立てる",
+    "scene_ja": "友だちと、週末に会う日時と場所を決める",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Hi! Are you free this weekend?",
+        "ja": "やあ! 今週末は空いてる?",
+        "key": { "text": "Are you free this weekend", "ja": "今週末は空いてる?" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「今夜は空いてる?」と聞いてください", "answer": "Are you free tonight?", "ja": "今夜は空いてる?" },
+          { "cue_ja": "「仕事のあと空いてる?」と聞いてください", "answer": "Are you free after work?", "ja": "仕事のあと空いてる?" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "I think so. What have you been up to?",
+        "ja": "たぶんね。最近どうしてた?",
+        "key": { "text": "What have you been up to", "ja": "最近どうしてた?" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「最近何してた?」と聞いてください", "answer": "What have you been up to lately?", "ja": "最近何してた?" },
+          { "cue_ja": "「調子はどう?」と聞いてください", "answer": "How's it going?", "ja": "調子はどう?" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Not much. Let's grab a coffee sometime. How about Saturday?",
+        "ja": "特に何も。そのうちコーヒーでも行こうよ。土曜はどう?",
+        "key": { "text": "Let's grab a coffee sometime", "ja": "そのうちコーヒーでも行こう" },
+        "note_ja": "Not much. は「特に何も」。What have you been up to? への定番の返しです。",
+        "prompts": [
+          { "cue_ja": "「仕事のあとコーヒーでも行こう」と言ってください", "answer": "Let's grab a coffee after work.", "ja": "仕事のあとコーヒーでも行こう" },
+          { "cue_ja": "「日曜はどう?」と聞いてください", "answer": "How about Sunday?", "ja": "日曜はどう?" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Saturday works for me. What time?",
+        "ja": "土曜で大丈夫。何時にする?",
+        "key": { "text": "works for me", "ja": "(私は)都合がいい" },
+        "note_ja": "〜 works for me. は「〜で大丈夫、都合がいい」。日時の提案に乗るときの言い方です。",
+        "prompts": [
+          { "cue_ja": "「今夜で大丈夫」と言ってください", "answer": "Tonight works for me.", "ja": "今夜で大丈夫" },
+          { "cue_ja": "「2 時で大丈夫。あなたは?」と言ってください", "answer": "Two works for me. What about you?", "ja": "2 時で大丈夫。あなたは?" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Let's meet up around two at the cafe downtown.",
+        "ja": "2 時ごろ、ダウンタウンのカフェで会おう",
+        "key": { "text": "Let's meet up around two", "ja": "2 時ごろ会おう" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「3 時に駅で会おう」と言ってください", "answer": "Let's meet up at the station at three.", "ja": "3 時に駅で会おう" },
+          { "cue_ja": "「今週末に会おう」と言ってください", "answer": "Let's meet up this weekend.", "ja": "今週末に会おう" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Sounds fun. Let me know when you get there.",
+        "ja": "楽しみ。着いたら知らせて",
+        "key": { "text": "Let me know when you get there", "ja": "着いたら知らせて" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「カフェに着いたら知らせて」と言ってください", "answer": "Let me know when you get to the cafe.", "ja": "カフェに着いたら知らせて" },
+          { "cue_ja": "「空いてる時に知らせて」と言ってください", "answer": "Let me know when you are free.", "ja": "空いてる時に知らせて" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Will do. Actually, let's hang out after that, too.",
+        "ja": "了解。それと、そのあとも遊ぼうよ",
+        "key": { "text": "Will do", "ja": "了解、そうするよ" },
+        "note_ja": "Will do. は「そうするよ、了解」。頼まれたことを引き受ける短い返事です。",
+        "prompts": [
+          { "cue_ja": "「了解。じゃあね」と言ってください", "answer": "Will do. See you then.", "ja": "了解。じゃあね" },
+          { "cue_ja": "「今週末に遊ぼう」と言ってください", "answer": "Let's hang out this weekend.", "ja": "今週末に遊ぼう" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Totally. It's been a while. See you Saturday!",
+        "ja": "もちろん。久しぶりだね。じゃあ土曜に!",
+        "key": { "text": "It's been a while", "ja": "久しぶりだね" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「久しぶりだね。調子はどう?」と言ってください", "answer": "It's been a while. How's it going?", "ja": "久しぶりだね。調子はどう?" },
+          { "cue_ja": "「じゃあ明日!」と言ってください", "answer": "See you tomorrow!", "ja": "じゃあ明日!" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "Not much", "ja": "特に何も", "note_ja": "近況を聞かれたときの定番の返し。そのあとに話題を足します。", "turn_index": 2 },
+      { "text": "works for me", "ja": "都合がいい", "note_ja": "提案された日時に乗るときの言い方です。", "turn_index": 3 },
+      { "text": "Will do", "ja": "了解", "note_ja": "頼まれたことを引き受ける短い返事です。", "turn_index": 6 },
+      { "text": "See you", "ja": "じゃあね", "note_ja": "別れ際の挨拶。あとに曜日や時間を続けます。", "turn_index": 7 }
+    ]
+  },
+  "review": [
+    { "from": "07-lost-item", "text": "I left my bag on the train.", "ja": "電車に鞄を忘れました", "speaker": "B" },
+    { "from": "07-lost-item", "text": "What does it look like?", "ja": "どんな見た目ですか", "speaker": "A" },
+    { "from": "06-restaurant", "text": "Today's special is grilled fish.", "ja": "本日のおすすめは焼き魚です", "speaker": "A" },
+    { "from": "06-restaurant", "text": "That's so kind.", "ja": "ご親切に", "speaker": "B" },
+    { "from": "04-airport", "text": "Which gate is it?", "ja": "どのゲートですか", "speaker": "B" }
+  ]
+}

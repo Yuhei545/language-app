@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "04-airport",
+  "order": 4,
+  "scene_ja": "空港で搭乗手続きをする",
+  "dialogue": {
+    "title_ja": "空港で搭乗手続きをする",
+    "scene_ja": "空港のカウンターで、搭乗手続きをして荷物を預ける",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Good morning. Where are you flying to today?",
+        "ja": "おはようございます。今日はどちらへ飛ばれますか",
+        "key": { "text": "Where are you flying to", "ja": "どちらへ飛ばれますか" },
+        "note_ja": "flying to 〜 は「〜行きの便に乗る」。答えは To のあとに都市名を言えば十分です。",
+        "prompts": [
+          { "cue_ja": "「おはようございます。今日はどちらへ行かれますか」と聞いてください", "answer": "Good morning. Where are you going today?", "ja": "おはようございます。今日はどちらへ行かれますか" },
+          { "cue_ja": "「東京行きです」と答えてください", "answer": "To Tokyo.", "ja": "東京行きです" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "To Seoul. Here's my passport.",
+        "ja": "ソウルです。パスポートをどうぞ",
+        "key": { "text": "Here's my passport", "ja": "パスポートをどうぞ" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「切符をどうぞ」と言ってください", "answer": "Here's my ticket.", "ja": "切符をどうぞ" },
+          { "cue_ja": "「パスポートと切符をどうぞ」と言ってください", "answer": "Here's my passport and ticket.", "ja": "パスポートと切符をどうぞ" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Thanks. Do you have any bags to check in?",
+        "ja": "ありがとうございます。お預けになる荷物はありますか",
+        "key": { "text": "any bags to check in", "ja": "預ける荷物" },
+        "note_ja": "空港の check in は「荷物を預ける」の意味でも使います。",
+        "prompts": [
+          { "cue_ja": "「荷物はありますか」と聞いてください", "answer": "Do you have any bags?", "ja": "荷物はありますか" },
+          { "cue_ja": "「預ける荷物が 1 つあります」と言ってください", "answer": "I have one bag to check in.", "ja": "預ける荷物が 1 つあります" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Just this bag. Can I take it on the plane?",
+        "ja": "この鞄だけです。機内に持ち込めますか",
+        "key": { "text": "Can I take it on the plane", "ja": "機内に持ち込めますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「これは機内に持ち込めますか」と聞いてください", "answer": "Can I take this on the plane?", "ja": "これは機内に持ち込めますか" },
+          { "cue_ja": "「この鞄は持っていっていいですか」と聞いてください", "answer": "Can I take this bag with me?", "ja": "この鞄は持っていっていいですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Sure, that's okay. Would you like a window or an aisle seat?",
+        "ja": "はい、大丈夫です。窓側と通路側、どちらがよろしいですか",
+        "key": { "text": "Would you like", "ja": "〜はいかがですか" },
+        "note_ja": "Would you like 〜 は丁寧な「〜はいかがですか」。窓側が window seat、通路側が aisle seat です。",
+        "prompts": [
+          { "cue_ja": "「窓側の席はいかがですか」と聞いてください", "answer": "Would you like a window seat?", "ja": "窓側の席はいかがですか" },
+          { "cue_ja": "「コーヒーと水、どちらがよろしいですか」と聞いてください", "answer": "Would you like coffee or water?", "ja": "コーヒーと水、どちらがよろしいですか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "A window seat, please. Which gate is it?",
+        "ja": "窓側でお願いします。どのゲートですか",
+        "key": { "text": "Which gate is it", "ja": "どのゲートですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「ソウル行きはどのゲートですか」と聞いてください", "answer": "Which gate is the flight to Seoul?", "ja": "ソウル行きはどのゲートですか" },
+          { "cue_ja": "「どのホームですか」と聞いてください", "answer": "Which platform is it?", "ja": "どのホームですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Gate two. Boarding is at ten.",
+        "ja": "2 番ゲートです。搭乗は 10 時からです",
+        "key": { "text": "Boarding is at ten", "ja": "搭乗は 10 時から" },
+        "note_ja": "boarding は「搭乗」。Boarding is at 〜 で搭乗開始の時刻を言います。",
+        "prompts": [
+          { "cue_ja": "「搭乗は 9 時からです」と言ってください", "answer": "Boarding is at nine.", "ja": "搭乗は 9 時からです" },
+          { "cue_ja": "「便は 10 時半です」と言ってください", "answer": "The flight is at ten thirty.", "ja": "便は 10 時半です" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Great, thanks. Is the gate far from here?",
+        "ja": "ありがとうございます。ゲートはここから遠いですか",
+        "key": { "text": "far from here", "ja": "ここから遠い" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「2 番ゲートはここから遠いですか」と聞いてください", "answer": "Is gate two far from here?", "ja": "2 番ゲートはここから遠いですか" },
+          { "cue_ja": "「空港はここから遠いですか」と聞いてください", "answer": "Is the airport far from here?", "ja": "空港はここから遠いですか" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "Good morning", "ja": "おはようございます", "note_ja": "朝の挨拶。昼は Good afternoon です。", "turn_index": 0 },
+      { "text": "Where are you flying to", "ja": "どちらへ飛ばれますか", "note_ja": "空港のカウンターでの定番の質問です。", "turn_index": 0 },
+      { "text": "Here's my", "ja": "私の〜をどうぞ", "note_ja": "物を差し出しながら言う一言。Here's my passport. のように使います。", "turn_index": 1 },
+      { "text": "any bags to check in", "ja": "預ける荷物", "note_ja": "check in は荷物を預けるときにも使います。", "turn_index": 2 },
+      { "text": "Would you like", "ja": "〜はいかがですか", "note_ja": "丁寧に選択肢や物を勧める言い方です。", "turn_index": 4 },
+      { "text": "a window or an aisle seat", "ja": "窓側か通路側の席", "note_ja": "飛行機で必ず聞かれる 2 択です。", "turn_index": 4 }
+    ]
+  },
+  "review": [
+    { "from": "03-hotel", "text": "I have a reservation under Sato.", "ja": "佐藤で予約しています", "speaker": "B" },
+    { "from": "03-hotel", "text": "What time is checkout?", "ja": "チェックアウトは何時ですか", "speaker": "B" },
+    { "from": "03-hotel", "text": "Here you go.", "ja": "どうぞ", "speaker": "B" },
+    { "from": "02-directions", "text": "How do I get to the station?", "ja": "駅へはどう行けばいいですか", "speaker": "B" },
+    { "from": "02-directions", "text": "Go straight and turn left at the cafe.", "ja": "まっすぐ行って、カフェのところで左に曲がってください", "speaker": "A" }
+  ]
+}

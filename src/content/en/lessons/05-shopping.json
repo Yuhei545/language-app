@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "05-shopping",
+  "order": 5,
+  "scene_ja": "店で服を選ぶ",
+  "dialogue": {
+    "title_ja": "店で服を選ぶ",
+    "scene_ja": "服屋で、サイズを聞いて試着し、買う",
+    "turns": [
+      {
+        "speaker": "A",
+        "text": "Hi! Are you looking for anything in particular?",
+        "ja": "こんにちは。何か特にお探しですか",
+        "key": { "text": "anything in particular", "ja": "何か特に" },
+        "note_ja": "in particular は「特に」。店員の定番の声かけで、見ているだけなら I'm just looking. と返します。",
+        "prompts": [
+          { "cue_ja": "「今日は何か特にお探しですか」と聞いてください", "answer": "Are you looking for anything in particular today?", "ja": "今日は何か特にお探しですか" },
+          { "cue_ja": "「大きいサイズをお探しですか」と聞いてください", "answer": "Are you looking for a bigger size?", "ja": "大きいサイズをお探しですか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "I'm just looking, thanks. Actually, do you have this in a bigger size?",
+        "ja": "見ているだけです、ありがとう。あ、実はこれの大きいサイズはありますか",
+        "key": { "text": "Do you have this in a bigger size", "ja": "これの大きいサイズはありますか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「見ているだけです、ありがとう」と言ってください", "answer": "I'm just looking, thanks.", "ja": "見ているだけです、ありがとう" },
+          { "cue_ja": "「これの別のサイズはありますか」と聞いてください", "answer": "Do you have this in another size?", "ja": "これの別のサイズはありますか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Let me check. What size do you usually wear?",
+        "ja": "確認しますね。ふだんはどのサイズを着ていますか",
+        "key": { "text": "What size do you usually wear", "ja": "ふだんはどのサイズですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「これはどのサイズですか」と聞いてください", "answer": "What size is this?", "ja": "これはどのサイズですか" },
+          { "cue_ja": "「サイズを確認させてください」と言ってください", "answer": "Let me check the size.", "ja": "サイズを確認させてください" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Medium, I think. Could I try it on?",
+        "ja": "たぶん M です。試着してもいいですか",
+        "key": { "text": "Could I try it on", "ja": "試着してもいいですか" },
+        "note_ja": "try 〜 on で「試着する」。it を this や the bigger one に変えて使えます。",
+        "prompts": [
+          { "cue_ja": "「これを試着してもいいですか」と聞いてください", "answer": "Could I try this on?", "ja": "これを試着してもいいですか" },
+          { "cue_ja": "「大きい方を試着してもいいですか」と聞いてください", "answer": "Could I try the bigger one on?", "ja": "大きい方を試着してもいいですか" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Sure. The fitting room is over there.",
+        "ja": "どうぞ。試着室はあちらです",
+        "key": { "text": "over there", "ja": "あちらに" },
+        "note_ja": "over there は「あちら」。指さしながら使います。fitting room が試着室です。",
+        "prompts": [
+          { "cue_ja": "「駅はあちらです」と言ってください", "answer": "The station is over there.", "ja": "駅はあちらです" },
+          { "cue_ja": "「試着室は左にあります」と言ってください", "answer": "The fitting room is on the left.", "ja": "試着室は左にあります" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "It's a little too big. Do you have this in a smaller size?",
+        "ja": "少し大きすぎます。これの小さいサイズはありますか",
+        "key": { "text": "a little too big", "ja": "少し大きすぎる" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「少し小さすぎます」と言ってください", "answer": "It's a little too small.", "ja": "少し小さすぎます" },
+          { "cue_ja": "「少し高すぎます」と言ってください", "answer": "It's a little too expensive.", "ja": "少し高すぎます" }
+        ]
+      },
+      {
+        "speaker": "A",
+        "text": "Of course. How about this one? It's twenty dollars.",
+        "ja": "もちろんです。こちらはいかがですか。20 ドルです",
+        "key": { "text": "How about this one", "ja": "こちらはいかがですか" },
+        "note_ja": "",
+        "prompts": [
+          { "cue_ja": "「こちらはいかがですか。10 ドルです」と言ってください", "answer": "How about this one? It's ten dollars.", "ja": "こちらはいかがですか。10 ドルです" },
+          { "cue_ja": "「大きい方はいかがですか」と言ってください", "answer": "How about the bigger one?", "ja": "大きい方はいかがですか" }
+        ]
+      },
+      {
+        "speaker": "B",
+        "text": "Perfect. I'll take it. Can I pay by card?",
+        "ja": "ぴったりです。これにします。カードで払えますか",
+        "key": { "text": "I'll take it", "ja": "これにします(買います)" },
+        "note_ja": "買い物では I'll take it. が「これを買います」。カフェで習った I'll try it. とセットで覚えます。",
+        "prompts": [
+          { "cue_ja": "「こちらにします」と言ってください", "answer": "I'll take this one.", "ja": "こちらにします" },
+          { "cue_ja": "「これにします。カードをどうぞ」と言ってください", "answer": "I'll take it. Here's my card.", "ja": "これにします。カードをどうぞ" }
+        ]
+      }
+    ],
+    "new_expressions": [
+      { "text": "anything in particular", "ja": "何か特に", "note_ja": "店員の声かけの定番。in particular が「特に」です。", "turn_index": 0 },
+      { "text": "do you usually wear", "ja": "ふだん着ているのは", "note_ja": "wear は服や靴を「着ている・履いている」。", "turn_index": 2 },
+      { "text": "try it on", "ja": "試着する", "note_ja": "try 〜 on で試着。on が「身につける」の感じを出します。", "turn_index": 3 },
+      { "text": "fitting room", "ja": "試着室", "note_ja": "店で試着室を探すときに使います。", "turn_index": 4 },
+      { "text": "over there", "ja": "あちらに", "note_ja": "少し離れた場所を指すときの言い方です。", "turn_index": 4 },
+      { "text": "How about this one", "ja": "こちらはいかがですか", "note_ja": "別のものを勧めるときの言い方。How about 〜 で提案します。", "turn_index": 6 }
+    ]
+  },
+  "review": [
+    { "from": "04-airport", "text": "Which gate is it?", "ja": "どのゲートですか", "speaker": "B" },
+    { "from": "04-airport", "text": "Would you like a window or an aisle seat?", "ja": "窓側と通路側、どちらがよろしいですか", "speaker": "A" },
+    { "from": "03-hotel", "text": "Could I get a charger, too?", "ja": "充電器ももらえますか", "speaker": "B" },
+    { "from": "01-cafe", "text": "Hot or iced?", "ja": "ホットかアイスか", "speaker": "A" },
+    { "from": "01-cafe", "text": "Can I pay by card?", "ja": "カードで払えますか", "speaker": "B" }
+  ]
+}
