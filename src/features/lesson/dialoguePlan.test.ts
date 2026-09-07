@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDialogueLesson, MAX_RECALLS_PER_BOUNDARY, type DialogueLessonStep } from './dialoguePlan'
+import { buildDialogueLesson, MAX_RECALLS_PER_BOUNDARY, type DialogueLessonStep, type ReviewItem } from './dialoguePlan'
 import type { LessonDialogue } from './lessonDialogueSchema'
 
 const dialogue: LessonDialogue = {
@@ -210,5 +210,49 @@ describe('buildDialogueLesson (Pimsleur 忠実版)', () => {
     expect(legacyKinds.filter((kind) => kind === 'explain')).toHaveLength(0)
     expect(legacyKinds.filter((kind) => kind === 'line')).toHaveLength(turnCount)
     expect(built.items.map((item) => item.id)).toEqual(dialogue.turns.map((_turn, index) => `line:${index}`))
+  })
+})
+
+describe('buildDialogueLesson: 前のレッスンの復習', () => {
+  const review: ReviewItem[] = [
+    { from: '01-cafe', text: 'Could I get a coffee, please?', ja: 'コーヒーをもらえますか', speaker: 'B' },
+    { from: '01-cafe', text: 'What can I get for you?', ja: 'ご注文は', speaker: 'A' },
+  ]
+  const { steps } = buildDialogueLesson(dialogue, { lang: 'en', pauseSeconds: 4, currentWeek: 1, review })
+  const reviews = steps.filter((step) => step.kind === 'review')
+
+  it('復習は 1 行目の途中から出て、各項目 2 回ずつ', () => {
+    const firstReview = steps.findIndex((step) => step.kind === 'review')
+    expect(firstReview).toBeGreaterThan(firstStepOfTurn(steps, 1))
+    expect(firstReview).toBeLessThan(firstStepOfTurn(steps, 2))
+    for (const index of [0, 1]) {
+      expect(reviews.filter((step) => step.item?.id === `review:${index}`)).toHaveLength(2)
+    }
+    expect(reviews[0].label).toBe('前回の復習(1回目)')
+  })
+
+  it('復習のステップは 合図 → 間 → 出典の話者の声で答え', () => {
+    const step = reviews.find((item) => item.item?.id === 'review:1')
+    expect(step?.speaker).toBe('A')
+    expect(step?.actions).toEqual([
+      { type: 'speak', text: '「ご注文は」と言ってみましょう', lang: 'ja', voice: 'narrator' },
+      { type: 'pause', ms: 4000, recordable: true },
+      { type: 'speak', text: 'What can I get for you?', lang: 'en', voice: 'A' },
+    ])
+  })
+
+  it('復習の 2 回目は 1 回目より後ろに出る(同じ区切りに続けない)', () => {
+    const positions = steps
+      .map((step, index) => ({ step, index }))
+      .filter(({ step }) => step.kind === 'review' && step.item?.id === 'review:0')
+      .map(({ index }) => index)
+    expect(positions[1] - positions[0]).toBeGreaterThan(2)
+  })
+
+  it('復習を渡さなければ従来と同じ', () => {
+    const plain = buildDialogueLesson(dialogue, { lang: 'en', pauseSeconds: 4, currentWeek: 1 })
+    const withEmpty = buildDialogueLesson(dialogue, { lang: 'en', pauseSeconds: 4, currentWeek: 1, review: [] })
+    expect(withEmpty.steps.map((step) => step.label)).toEqual(plain.steps.map((step) => step.label))
+    expect(plain.steps.some((step) => step.kind === 'review')).toBe(false)
   })
 })

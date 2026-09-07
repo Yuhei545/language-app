@@ -23,7 +23,7 @@ export type LessonDialogue = {
   new_expressions: NewExpression[]
 }
 
-export type DialogueIssueCode = 'turns' | 'alternation' | 'length' | 'expressions' | 'ratio' | 'script' | 'key' | 'prompts' | 'targets'
+export type DialogueIssueCode = 'turns' | 'alternation' | 'length' | 'expressions' | 'ratio' | 'script' | 'key' | 'prompts' | 'targets' | 'review'
 export type DialogueIssue = { code: DialogueIssueCode; message: string }
 
 export type DialogueValidation =

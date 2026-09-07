@@ -11,6 +11,8 @@ export type DialogueLessonStepKind =
   | 'explain'
   | 'prompt'
   | 'recall'
+  /** 前のレッスンの復習(同梱カリキュラム)。 */
+  | 'review'
   | 'replay'
   | 'closing'
   | 'summary'
@@ -49,6 +51,22 @@ export const SUMMARY_NARRATION_JA = 'おつかれさまでした。今日の表�
 
 /** 応用の合図(組み替え練習)の項目 id の接頭辞。正答率の集計に使う。 */
 export const PROMPT_ITEM_PREFIX = 'prompt:'
+/** 前のレッスンの復習の項目 id の接頭辞。 */
+export const REVIEW_ITEM_PREFIX = 'review:'
+
+/** 前のレッスンの復習項目(同梱カリキュラム)。 */
+export type ReviewItem = {
+  /** 出典のレッスン id(1 つ前・2 つ前・4 つ前のいずれか)。 */
+  from: string
+  /** 答え(対象言語)。出典の台詞・核・応用の答えのどれかに含まれる。 */
+  text: string
+  /** 合図の元になる日本語。 */
+  ja: string
+  speaker: 'A' | 'B'
+}
+
+/** 復習は 1 行目の途中(0 秒)から出し、2 回目はその 10 分後。 */
+export const REVIEW_OFFSETS_SEC = [0, 600] as const
 
 /** 1 つの区切り(ステップの間)で出す再出題は最大 2 つ。それ以上は次の区切りへ送る。 */
 export const MAX_RECALLS_PER_BOUNDARY = 2
@@ -177,21 +195,25 @@ function buildTurnSteps(
 }
 
 type RecallState = {
+  kind: 'recall' | 'review'
   item: LessonItem
   speaker: 'A' | 'B'
   groupIndex: number
-  /** 項目を初めて教え終えた時点(見積もりのミリ秒)。再出題の期限はここから数える。 */
-  introducedAt: number
-  nextStage: number
+  /**
+   * 期限の起点(見積もりのミリ秒)。再出題は項目を教え終えた時点から、
+   * 復習は前回出した時点から数える。
+   */
+  anchorAt: number
+  offsetsSec: readonly number[]
   lastStepIndex: number
   recallCount: number
 }
 
 function recallStep(state: RecallState, lang: 'en' | 'ko', pause: LessonAction): DialogueLessonStep {
-  const stage = state.nextStage as Exclude<LessonStage, 0>
+  const stage = Math.min(state.recallCount + 1, 4) as Exclude<LessonStage, 0>
   return {
-    kind: 'recall',
-    label: `思い出す(${STAGE_LABELS[stage]})`,
+    kind: state.kind,
+    label: state.kind === 'review' ? `前回の復習(${STAGE_LABELS[stage]})` : `思い出す(${STAGE_LABELS[stage]})`,
     speaker: state.speaker,
     item: state.item,
     stage,
@@ -208,11 +230,12 @@ function recallStep(state: RecallState, lang: 'en' | 'ko', pause: LessonAction):
  * 導入(会話を 2 回) → 各行を順に[核 → 文全体 → 解説 → 応用 2 つ] → 通し再生 → あなたが B の役で会話 → まとめ。
  * 前の行の再出題は、次の行の途中(ステップの間)に、経過時間の見積もりが 5 秒/25 秒/2 分/10 分を
  * 過ぎたものから差し込む。同じ行の中では出さず、同じ項目が続かないように間を空ける。
+ * 前のレッスンの復習(review)は 1 行目の途中から同じ仕組みで差し込み、10 分後にもう一度出す。
  * 長さは内容で決まり、上限は設けない。
  */
 export function buildDialogueLesson(
   dialogue: LessonDialogue,
-  opts: { lang: 'en' | 'ko'; pauseSeconds: number; currentWeek: number },
+  opts: { lang: 'en' | 'ko'; pauseSeconds: number; currentWeek: number; review?: ReviewItem[] },
 ): { steps: DialogueLessonStep[]; items: LessonItem[] } {
   const { lang } = opts
   const pause: LessonAction = { type: 'pause', ms: opts.pauseSeconds * 1000, recordable: true }
@@ -237,24 +260,41 @@ export function buildDialogueLesson(
   const items = groups.map((group) => group.item)
 
   const body: DialogueLessonStep[] = []
-  const states: RecallState[] = []
+  const states: RecallState[] = (opts.review ?? []).map((review, index) => ({
+    kind: 'review',
+    item: {
+      id: `${REVIEW_ITEM_PREFIX}${index}`,
+      kind: 'word',
+      cueJa: cueFor(review.ja),
+      answer: review.text,
+    },
+    speaker: review.speaker,
+    groupIndex: -1,
+    anchorAt: 0,
+    offsetsSec: REVIEW_OFFSETS_SEC,
+    lastStepIndex: -MIN_STEPS_BETWEEN_RECALLS,
+    recallCount: 0,
+  }))
   let now = estimateActionsMs(intro.actions)
 
   const push = (step: DialogueLessonStep) => {
     body.push(step)
     now += estimateActionsMs(step.actions)
   }
-  const dueAt = (state: RecallState) => state.introducedAt + RECALL_OFFSETS_SEC[state.nextStage - 1] * 1000
+  const dueAt = (state: RecallState) => state.anchorAt + state.offsetsSec[state.recallCount] * 1000
   const emitRecall = (state: RecallState) => {
     push(recallStep(state, lang, pause))
     state.lastStepIndex = body.length - 1
-    state.nextStage += 1
     state.recallCount += 1
+    if (state.kind === 'review') {
+      // 復習の 2 回目は、1 回目を出した時点から数える
+      state.anchorAt = now
+    }
   }
   const emitDueRecalls = (currentGroup: number) => {
     const due = states
       .filter((state) => (
-        state.nextStage <= RECALL_OFFSETS_SEC.length
+        state.recallCount < state.offsetsSec.length
         && state.groupIndex < currentGroup
         && body.length - 1 - state.lastStepIndex >= MIN_STEPS_BETWEEN_RECALLS
         && dueAt(state) <= now
@@ -272,11 +312,12 @@ export function buildDialogueLesson(
       push(step)
       if (stepIndex === 0) {
         states.push({
+          kind: 'recall',
           item: group.item,
           speaker: group.speaker,
           groupIndex,
-          introducedAt: now,
-          nextStage: 1,
+          anchorAt: now,
+          offsetsSec: RECALL_OFFSETS_SEC,
           lastStepIndex: body.length - 1,
           recallCount: 0,
         })
@@ -284,9 +325,9 @@ export function buildDialogueLesson(
     })
   })
 
-  // 終盤の行はまだ再出題の機会が少ないので、締めの前に 1 回だけ思い出させる。
+  // 終盤の行はまだ再出題の機会が少ないので、締めの前に 1 回だけ思い出させる(復習も 2 回に満たなければ出す)。
   states
-    .filter((state) => state.recallCount < MIN_RECALLS_BEFORE_REPLAY && state.nextStage <= RECALL_OFFSETS_SEC.length)
+    .filter((state) => state.recallCount < Math.min(MIN_RECALLS_BEFORE_REPLAY, state.offsetsSec.length))
     .forEach(emitRecall)
 
   const replay: DialogueLessonStep = {
