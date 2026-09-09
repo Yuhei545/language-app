@@ -26,6 +26,8 @@ export type SynthesizedAudio = {
 
 type Part = { inlineData?: { data?: string; mimeType?: string } }
 
+const END_MARK_PATTERN = /[.!?。！？…]\s*$/u
+
 function extractAudio(response: { candidates?: Array<{ content?: { parts?: Part[] } }> }): SynthesizedAudio {
   const part = response.candidates?.[0]?.content?.parts?.find((candidate) => candidate.inlineData?.data)
   const data = part?.inlineData?.data
@@ -54,11 +56,17 @@ async function request(
   model: string,
   opts: TtsRequestOptions,
 ): Promise<SynthesizedAudio> {
+  let client: GoogleGenAI
   try {
-    const client = await resolveClient(opts)
+    client = await resolveClient(opts)
+  } catch (error) {
+    throw toGeminiError(error)
+  }
+
+  const generate = async (requestText: string): Promise<SynthesizedAudio> => {
     const response = await client.models.generateContent({
       model,
-      contents: [{ role: 'user', parts: [{ text }] }],
+      contents: [{ role: 'user', parts: [{ text: requestText }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -74,8 +82,25 @@ async function request(
       },
     })
     return extractAudio(response)
+  }
+
+  try {
+    return await generate(text)
   } catch (error) {
-    throw toGeminiError(error)
+    const geminiError = toGeminiError(error)
+    if (geminiError.kind !== 'parse' || END_MARK_PATTERN.test(text)) {
+      throw geminiError
+    }
+
+    // 終わりの記号が無い短い文(go)は finishReason OTHER で音声が返らないことがある(2026-09 実測)。
+    // 記号を足すと返るので、API に送る文だけに 1 回だけ足してやり直す。
+    const retryText = `${text.trimEnd()}.`
+    console.warn(`音声がないため、文末に「.」を足して1回だけやり直します: ${JSON.stringify(text)}`)
+    try {
+      return await generate(retryText)
+    } catch (retryError) {
+      throw toGeminiError(retryError)
+    }
   }
 }
 

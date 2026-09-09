@@ -6,6 +6,7 @@
  *   npm run lessons:audio -- --lang en --dry-run  件数と推定リクエスト数だけ
  *   npm run lessons:audio -- --lang en --model gemini-2.5-flash-preview-tts  使用モデルを 1 つに固定
  *   npm run lessons:audio -- --lang en --batch 20  1 回にまとめる文の数(1〜30、既定: 6)
+ *   npm run lessons:audio -- --lang en --batch 1 --interval 1000  リクエストの間隔(ミリ秒、既定 6500)
  *   npm run lessons:check                          進み具合
  *   npm run lessons:audio -- --lang en --prune    文面を直した後に、使われないクリップを消す
  *   npm run lessons:audio -- --preview-voices     ナレーター候補の声を 1 文ずつ作って聴き比べる
@@ -90,6 +91,7 @@ type Args = {
   limit: number | null
   model: string | null
   batchSize: number
+  intervalMs: number
 }
 
 function parseArgs(argv: string[]): Args {
@@ -104,6 +106,7 @@ function parseArgs(argv: string[]): Args {
     limit: null,
     model: null,
     batchSize: BATCH_SIZE,
+    intervalMs: MIN_INTERVAL_MS,
   }
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
@@ -132,6 +135,15 @@ function parseArgs(argv: string[]): Args {
       case '--narrator': args.narrator = next(); break
       case '--limit': args.limit = Number(next()); break
       case '--model': args.model = next(); break
+      case '--interval': {
+        const value = next()
+        const intervalMs = Number(value)
+        if (!Number.isInteger(intervalMs) || intervalMs < 0 || intervalMs > 60_000) {
+          throw new Error(`--interval は 0 以上 60000 以下の整数で指定してください: ${value}`)
+        }
+        args.intervalMs = intervalMs
+        break
+      }
       case '--batch': {
         const value = next()
         const batchSize = Number(value)
@@ -262,6 +274,7 @@ function durationMs(audio: SynthesizedAudio): number {
 }
 
 type Pending = { lesson: BundledLesson; clip: Clip; hash: string }
+type FailedClip = { lang: TtsLang; voice: ClipVoice; text: string; message: string }
 
 type QuotaStop = { kind: 'quota-day'; message: string }
 type ModelSwitch = { kind: 'model' }
@@ -296,6 +309,7 @@ class Synthesizer {
     readonly manifest: AudioManifest,
     private readonly limit: number | null,
     models: readonly string[],
+    private readonly minIntervalMs: number = MIN_INTERVAL_MS,
   ) {
     const known = manifest.models.find((model) => models.includes(model))
     if (known) {
@@ -311,7 +325,7 @@ class Synthesizer {
   }
 
   private async throttle(): Promise<void> {
-    const wait = this.lastRequestAt + MIN_INTERVAL_MS - Date.now()
+    const wait = this.lastRequestAt + this.minIntervalMs - Date.now()
     if (wait > 0) {
       await sleep(wait)
     }
@@ -573,13 +587,37 @@ async function synthesize(args: Args): Promise<void> {
   }
 
   const models = args.model ? [args.model] : TTS_MODEL_FALLBACKS
-  const synthesizer = new Synthesizer(createClient(loadApiKey()), manifest, args.limit, models)
+  const synthesizer = new Synthesizer(createClient(loadApiKey()), manifest, args.limit, models, args.intervalMs)
   let done = 0
-  const stop = (message: string) => {
+  let consecutiveFailures = 0
+  const failedClips: FailedClip[] = []
+  const printFailedClips = () => {
+    if (failedClips.length === 0) {
+      return
+    }
+    console.error(`作れなかったクリップ: ${failedClips.length} 件`)
+    for (const failed of failedClips) {
+      console.error(`  ${failed.lang}/${failed.voice} ${JSON.stringify(failed.text)}: ${failed.message}`)
+    }
+  }
+  const stop = (message: string): never => {
     refreshComplete(lang, lessons, manifest)
     writeManifest(lang, manifest)
     console.error(`\n${message}(残り ${pending.length - done} クリップ)`)
+    printFailedClips()
     process.exit(2)
+  }
+  const recordFailure = (item: Pending, error: unknown) => {
+    failedClips.push({
+      lang: item.clip.lang,
+      voice: item.clip.voice,
+      text: item.clip.text,
+      message: safeMessage(error),
+    })
+    consecutiveFailures += 1
+    if (consecutiveFailures >= 10) {
+      stop('クリップの合成が 10 件連続で失敗したため停止します')
+    }
   }
 
   try {
@@ -591,30 +629,49 @@ async function synthesize(args: Args): Promise<void> {
         const texts = batch.map((item) => item.clip.text)
         let audios: SynthesizedAudio[] | null = null
         if (batch.length > 1) {
-          const result = await synthesizer.batch(texts, clipLang, voiceName)
-          if (result && 'kind' in result) {
-            stop(`無料枠の上限。明日再開してください: ${result.message}`)
-          }
-          audios = result as SynthesizedAudio[] | null
-          if (audios && !audios.every((audio, index) => plausible(audio, texts[index], clipLang))) {
-            console.warn('  切り分けた長さが不自然なので、1 文ずつ作り直します')
-            audios = null
+          try {
+            const result = await synthesizer.batch(texts, clipLang, voiceName)
+            if (result && 'kind' in result) {
+              stop(`無料枠の上限。明日再開してください: ${result.message}`)
+            }
+            audios = result as SynthesizedAudio[] | null
+            if (audios && !audios.every((audio, index) => plausible(audio, texts[index], clipLang))) {
+              console.warn('  切り分けた長さが不自然なので、1 文ずつ作り直します')
+              audios = null
+            }
+          } catch (error) {
+            if (error instanceof SynthesisStop) {
+              throw error
+            }
+            console.warn(`  まとめた音声の合成に失敗したので、1 文ずつ作り直します: ${safeMessage(error)}`)
           }
         }
         if (!audios) {
-          audios = []
           for (const item of batch) {
-            const result = await synthesizer.single(item.clip.text, clipLang, voiceName)
+            let result: SynthesizedAudio | QuotaStop
+            try {
+              result = await synthesizer.single(item.clip.text, clipLang, voiceName)
+            } catch (error) {
+              if (error instanceof SynthesisStop) {
+                throw error
+              }
+              recordFailure(item, error)
+              continue
+            }
             if ('kind' in result) {
               stop(`無料枠の上限。明日再開してください: ${result.message}`)
             }
-            audios.push(result as SynthesizedAudio)
+            saveClip(lang, item, result as SynthesizedAudio, manifest)
+            done += 1
+            consecutiveFailures = 0
           }
+        } else {
+          consecutiveFailures = 0
+          batch.forEach((item, index) => {
+            saveClip(lang, item, audios[index], manifest)
+            done += 1
+          })
         }
-        batch.forEach((item, index) => {
-          saveClip(lang, item, audios[index], manifest)
-          done += 1
-        })
         refreshComplete(lang, lessons, manifest)
         writeManifest(lang, manifest)
         console.log(`  ${done}/${pending.length} ${clipLang}/${voice} ${batch[0].lesson.id} …(${synthesizer.requests} 回目)`)
@@ -630,6 +687,7 @@ async function synthesize(args: Args): Promise<void> {
   }
   refreshComplete(lang, lessons, manifest)
   writeManifest(lang, manifest)
+  printFailedClips()
   console.log(`[${lang}] 完了。リクエスト ${synthesizer.requests} 回`)
   printStatus(lang)
 }
