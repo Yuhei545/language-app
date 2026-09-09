@@ -18,6 +18,7 @@ const defaults = {
   interests: [],
   parentName: { en: '', ko: '' },
   mixingLevel: 1,
+  twoWordLevel: 2,
   lessonPauseSeconds: 4,
   lessonRecording: false,
   micDeviceId: null,

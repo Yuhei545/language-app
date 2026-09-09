@@ -1,6 +1,8 @@
 export type SttEngine = 'auto' | 'webspeech' | 'gemini'
 export type Interest = 'travel' | 'friends' | 'content'
 export type MixingLevel = 1 | 2 | 3
+/** 2 語で言うの語数。2 語 → 3 語(主語を足す)→ 4 語(時や場所を足す)。 */
+export type TwoWordLevel = 2 | 3 | 4
 export type PersonalWordKind = 'place' | 'person' | 'thing' | 'media'
 /** 型を回す・即答の確かめ方。self は答えを見て自分で判定(Gemini を使わない)。 */
 export type PatternCheck = 'auto' | 'record' | 'self'
@@ -34,6 +36,7 @@ export type Settings = {
   interests: Interest[]
   parentName: { en: string; ko: string }
   mixingLevel: MixingLevel
+  twoWordLevel: TwoWordLevel
   lessonPauseSeconds: number
   lessonRecording: boolean
   micDeviceId: string | null
@@ -69,6 +72,7 @@ const DEFAULT_SETTINGS: Settings = {
   interests: [],
   parentName: { en: '', ko: '' },
   mixingLevel: 1,
+  twoWordLevel: 2,
   lessonPauseSeconds: 4,
   lessonRecording: false,
   micDeviceId: null,
@@ -147,6 +151,7 @@ function isSettings(value: unknown): value is Settings {
     && typeof value.parentName.en === 'string'
     && typeof value.parentName.ko === 'string'
     && (value.mixingLevel === 1 || value.mixingLevel === 2 || value.mixingLevel === 3)
+    && (value.twoWordLevel === 2 || value.twoWordLevel === 3 || value.twoWordLevel === 4)
     && typeof value.lessonPauseSeconds === 'number'
     && Number.isFinite(value.lessonPauseSeconds)
     && value.lessonPauseSeconds >= 2
@@ -176,6 +181,9 @@ export function getSettings(): Settings {
         mixingLevel: parsed.mixingLevel === undefined
           ? DEFAULT_SETTINGS.mixingLevel
           : parsed.mixingLevel,
+        twoWordLevel: parsed.twoWordLevel === undefined
+          ? DEFAULT_SETTINGS.twoWordLevel
+          : parsed.twoWordLevel,
         lessonPauseSeconds: pauseSeconds === undefined
           ? DEFAULT_SETTINGS.lessonPauseSeconds
           : typeof pauseSeconds === 'number'
