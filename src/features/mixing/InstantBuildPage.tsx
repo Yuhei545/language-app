@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { useLanguage } from '../../app/LanguageContext'
 import { PatternPage } from './PatternPage'
+import { PiecesPage } from './PiecesPage'
 import { QuickPage } from './QuickPage'
 import { TopicPage } from './TopicPage'
+import { TwoWordPage } from './TwoWordPage'
 
-type Tab = 'pattern' | 'topic' | 'quick'
+type Tab = 'twoword' | 'pattern' | 'pieces' | 'topic' | 'quick'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
+  { id: 'twoword', label: '2 語で言う', hint: '動詞 25 語で、まず 2 語' },
   { id: 'pattern', label: '型を回す', hint: '日本語を聞いて、すぐ言う' },
+  { id: 'pieces', label: 'ピースをつなぐ', hint: 'かたまりをはめて、文をつなぐ' },
   { id: 'topic', label: 'お題で言う', hint: '自分の言葉で伝える' },
   { id: 'quick', label: '即答', hint: '質問に 2 秒で返す' },
 ]
@@ -21,10 +25,10 @@ export function InstantBuildPage() {
       <p className="text-sm font-bold text-violet-700">INSTANT BUILD</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">瞬間組み立て</h1>
       <p className="mt-3 text-sm leading-6 text-slate-500">
-        意味を思いついてから声に出るまでを短くする練習です。3 つの段階を、この順で進みます。
+        意味を思いついてから声に出るまでを短くする練習です。短い部品から始めて、この順で長くしていきます。
       </p>
 
-      <div className="mt-6 flex gap-2" role="tablist" aria-label="練習の段階">
+      <div className="mt-6 grid grid-cols-3 gap-2" role="tablist" aria-label="練習の段階">
         {TABS.map((item) => (
           <button
             key={item.id}
@@ -32,7 +36,7 @@ export function InstantBuildPage() {
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`min-w-0 flex-1 rounded-2xl px-2 py-3 text-sm font-bold transition-colors ${tab === item.id ? 'bg-violet-700 text-white shadow-sm' : 'bg-white text-slate-600'}`}
+            className={`min-w-0 rounded-2xl px-2 py-3 text-sm font-bold transition-colors ${tab === item.id ? 'bg-violet-700 text-white shadow-sm' : 'bg-white text-slate-600'}`}
           >
             {item.label}
           </button>
@@ -43,7 +47,9 @@ export function InstantBuildPage() {
       </p>
 
       <div className="mt-6">
+        {tab === 'twoword' ? <TwoWordPage lang={language} /> : null}
         {tab === 'pattern' ? <PatternPage lang={language} /> : null}
+        {tab === 'pieces' ? <PiecesPage lang={language} /> : null}
         {tab === 'topic' ? <TopicPage lang={language} /> : null}
         {tab === 'quick' ? <QuickPage lang={language} /> : null}
       </div>

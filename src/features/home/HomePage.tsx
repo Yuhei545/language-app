@@ -30,7 +30,7 @@ const KIND_STYLE: Record<ChunkKind, string> = {
 }
 
 /** 推奨の順番と目安時間。研究の要点: 出す練習を先に、聞く量を足し、会話で締める。 */
-const RECOMMENDED_ORDER = '会話レッスン 20 分 → 型を回す 6 分 → カード 5 分 → 聞いて書く 5 分 → 聞き流し 4 分 → ChatGPT 10 分'
+const RECOMMENDED_ORDER = '会話レッスン 20 分 → 2 語で言う 3 分 → 型を回す 6 分 → ピースをつなぐ 6 分 → カード 5 分 → 聞いて書く 5 分 → 聞き流し 4 分 → ChatGPT 10 分'
 
 function TargetChip({ target }: { target: HomeTarget }) {
   const done = target.seen >= target.goal
@@ -177,7 +177,7 @@ export function HomePage() {
               ))}
             </ul>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              型を回す・カード・聞いて書く・レッスン・ChatGPT に出てきます。数字は出会った回数(8 回・言えた 3 回・2 つの場面で「身についた」)。
+              型を回す・ピースをつなぐ・カード・聞いて書く・レッスン・ChatGPT に出てきます。数字は出会った回数(8 回・言えた 3 回・2 つの場面で「身についた」)。
             </p>
           </>
         ) : (
