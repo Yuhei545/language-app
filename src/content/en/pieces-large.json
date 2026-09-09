@@ -1,0 +1,547 @@
+{
+  "version": 1,
+  "pieces": [
+    {
+      "id": "p35", "no": 35, "kind": "large", "text": "I hope", "display": "I hope (that) 〜", "ja": "〜だといいな",
+      "note_ja": "実際に起こりうることに使います。実現しそうにないことは I wish 〜。",
+      "example": { "text": "I hope I can catch the bus.", "ja": "バスに間に合うといいな" },
+      "combos": [
+        { "text": "I can catch the bus", "ja": "バスに間に合う", "uses": ["p01"] },
+        { "text": "we can play baseball tomorrow", "ja": "明日野球ができる", "uses": ["p01"] },
+        { "text": "she will come to the event", "ja": "彼女がイベントに来る", "uses": ["p05"] },
+        { "text": "it won't rain tomorrow", "ja": "明日雨が降らない", "uses": ["p05"] },
+        { "text": "there is an available spot", "ja": "空きがある", "uses": ["p10"] },
+        { "text": "it won't take too long", "ja": "そんなに長くかからない", "uses": ["p05", "p30"] }
+      ]
+    },
+    {
+      "id": "p36", "no": 36, "kind": "large", "text": "I'm glad", "display": "I'm glad (that) 〜", "ja": "〜でよかった",
+      "note_ja": "起きたことへの安心や喜びを伝えます。",
+      "example": { "text": "I'm glad it didn't take so long.", "ja": "そんなに長くかからなくてよかった" },
+      "combos": [
+        { "text": "I got to talk to the manager today", "ja": "今日マネージャーと話せた", "uses": ["p02"] },
+        { "text": "you're feeling better", "ja": "あなたが元気になった", "uses": ["p07", "p33"] },
+        { "text": "I don't have to wake up early tomorrow", "ja": "明日早起きしなくていい", "uses": ["p08"] },
+        { "text": "there is a convenience store here", "ja": "ここにコンビニがある", "uses": ["p10"] },
+        { "text": "it didn't take so long", "ja": "そんなに長くかからなかった", "uses": ["p30"] }
+      ]
+    },
+    {
+      "id": "p37", "no": 37, "kind": "large", "text": "I feel like", "display": "I feel like 〜", "ja": "〜な気がする",
+      "note_ja": "後ろに文を置くと「〜な気がする」。〜ing を置くと「〜したい気分」(ピース 17)。",
+      "example": { "text": "I feel like I should take a break.", "ja": "休憩したほうがいい気がする" },
+      "combos": [
+        { "text": "I can speak English more fluently now", "ja": "今もっと流暢に話せる", "uses": ["p01"] },
+        { "text": "I can talk about anything with you", "ja": "何でも話せる", "uses": ["p01"] },
+        { "text": "I should take a break", "ja": "休憩したほうがいい", "uses": ["p04"] },
+        { "text": "we should book in advance", "ja": "前もって予約したほうがいい", "uses": ["p04"] },
+        { "text": "I should change the title", "ja": "タイトルを変えたほうがいい", "uses": ["p04"] },
+        { "text": "I'm improving", "ja": "上達している", "uses": ["p07"] },
+        { "text": "it's getting worse", "ja": "悪化してきている", "uses": ["p07"] },
+        { "text": "I have to do something", "ja": "何かをしなきゃいけない", "uses": ["p08"] },
+        { "text": "I forgot to lock the door", "ja": "ドアの鍵をかけ忘れた", "uses": ["p12"] },
+        { "text": "I tend to talk to myself when I'm nervous", "ja": "緊張するとひとり言を言いがち", "uses": ["p15"] },
+        { "text": "I've heard of it", "ja": "聞いたことがある", "uses": ["p26"] },
+        { "text": "this song makes me sleepy", "ja": "この曲を聞くと眠くなる", "uses": ["p32"] }
+      ]
+    },
+    {
+      "id": "p38", "no": 38, "kind": "large", "text": "I think", "display": "I think (that) 〜", "ja": "〜だと思う",
+      "note_ja": "「〜ではないと思う」は I don't think 〜 と、前を否定にします。",
+      "example": { "text": "I think she's coming.", "ja": "彼女、来ると思うよ" },
+      "combos": [
+        { "text": "I can finish this by Friday", "ja": "金曜までに終えられる", "uses": ["p01"] },
+        { "text": "I should drink more water", "ja": "もっと水を飲んだほうがいい", "uses": ["p04"] },
+        { "text": "the battery will last more than 6 hours", "ja": "電池は 6 時間以上持つ", "uses": ["p05"] },
+        { "text": "she's coming", "ja": "彼女は来る", "uses": ["p07"] },
+        { "text": "I have to charge my bus card", "ja": "バスのカードをチャージしなきゃ", "uses": ["p08"] },
+        { "text": "there is a bathroom downstairs", "ja": "下の階にトイレがある", "uses": ["p10"] },
+        { "text": "I forgot to cc her", "ja": "彼女を CC に入れ忘れた", "uses": ["p12"] },
+        { "text": "he tends to forget things", "ja": "彼は物を忘れがち", "uses": ["p15"] },
+        { "text": "she's about to leave", "ja": "彼女は今出るところ", "uses": ["p23"] },
+        { "text": "you've mentioned that before", "ja": "前にもそれを言っていた", "uses": ["p26"] },
+        { "text": "I've replied to her already", "ja": "もう彼女に返信した", "uses": ["p28"] }
+      ]
+    },
+    {
+      "id": "p39", "no": 39, "kind": "large", "text": "I thought", "display": "I thought (that) 〜", "ja": "〜だと思ってた",
+      "note_ja": "「思っていたけど実際は違った」場面でよく使います。後ろは過去形に。",
+      "example": { "text": "I thought he would be late.", "ja": "彼は遅れるだろうと思ってた" },
+      "combos": [
+        { "text": "he would be late", "ja": "彼は遅れるだろう", "uses": ["p06"] },
+        { "text": "it would be harder", "ja": "もっと難しいだろう", "uses": ["p06"] },
+        { "text": "the rain would stop", "ja": "雨が止むだろう", "uses": ["p06"] },
+        { "text": "I would have to wash it every day", "ja": "毎日洗わなきゃいけない", "uses": ["p06", "p08"] },
+        { "text": "there was an ATM here", "ja": "ここに ATM がある", "uses": ["p10"] },
+        { "text": "I forgot to turn off the light", "ja": "電気を消し忘れた", "uses": ["p12"] },
+        { "text": "you decided to go to NYU", "ja": "NYU に行くと決めた", "uses": ["p13"] },
+        { "text": "he used to work for that company", "ja": "彼は昔その会社で働いていた", "uses": ["p16"] },
+        { "text": "you were ready to leave", "ja": "出発の準備ができている", "uses": ["p19"] },
+        { "text": "you were used to dogs", "ja": "あなたは犬に慣れている", "uses": ["p20"] },
+        { "text": "it would take this long", "ja": "こんなに長くかかる", "uses": ["p06", "p30"] }
+      ]
+    },
+    {
+      "id": "p40", "no": 40, "kind": "large", "text": "I heard", "display": "I heard (that) 〜", "ja": "〜らしい",
+      "note_ja": "聞いた情報を伝えます。Did you hear that 〜? なら「〜って聞いた?」。",
+      "example": { "text": "I heard there are many events in August.", "ja": "8 月にたくさんイベントがあるらしいよ" },
+      "combos": [
+        { "text": "anyone can come", "ja": "誰でも来ていい", "uses": ["p01"] },
+        { "text": "Sophie is doing a live stream this afternoon", "ja": "ソフィーが今日ライブ配信する", "uses": ["p07"] },
+        { "text": "he's moving to London soon", "ja": "彼はもうすぐロンドンに引っ越す", "uses": ["p07"] },
+        { "text": "we don't have to pay for anything", "ja": "何も払わなくていい", "uses": ["p08"] },
+        { "text": "the gas prices might go up again", "ja": "ガソリンの値段がまた上がるかも", "uses": ["p09"] },
+        { "text": "there are many events in August", "ja": "8 月にたくさんイベントがある", "uses": ["p10"] },
+        { "text": "there might be wild animals around here", "ja": "この辺に野生動物がいるかも", "uses": ["p09", "p10"] },
+        { "text": "you used to live in Italy", "ja": "以前イタリアに住んでいた", "uses": ["p16"] },
+        { "text": "you've been to many countries", "ja": "いろんな国に行ったことがある", "uses": ["p26"] },
+        { "text": "you've been studying English for the TOEIC test", "ja": "TOEIC のためにずっと英語を勉強している", "uses": ["p27"] }
+      ]
+    },
+    {
+      "id": "p41", "no": 41, "kind": "large", "text": "I realized", "display": "I realized (that) 〜", "ja": "〜ってことに気づいた",
+      "note_ja": "ちょうど今気づいたなら I just realized that 〜。",
+      "example": { "text": "I realized that I forgot to charge my phone.", "ja": "スマホを充電し忘れたことに気づいた" },
+      "combos": [
+        { "text": "I have to renew my license in 2 months", "ja": "2 か月後に免許を更新しなきゃ", "uses": ["p08"] },
+        { "text": "there is a bakery next to the post office", "ja": "郵便局の隣にパン屋がある", "uses": ["p10"] },
+        { "text": "I forgot to attach the files", "ja": "ファイルを添付し忘れた", "uses": ["p12"] },
+        { "text": "I tend to get distracted by my phone", "ja": "スマホに気を取られがち", "uses": ["p15"] },
+        { "text": "I always pack at the last minute", "ja": "いつもギリギリに荷造りする", "uses": ["p15"] },
+        { "text": "I've never played basketball", "ja": "バスケをしたことがない", "uses": ["p26"] },
+        { "text": "I've been learning English for 10 years", "ja": "英語を 10 年勉強している", "uses": ["p27"] },
+        { "text": "I haven't taken any annual leave this year", "ja": "今年まだ有休を取っていない", "uses": ["p28"] },
+        { "text": "it takes an hour to get to the airport", "ja": "空港まで 1 時間かかる", "uses": ["p30"] }
+      ]
+    },
+    {
+      "id": "p42", "no": 42, "kind": "large", "text": "I remember", "display": "I remember (that) 〜", "ja": "そういえば〜だったなぁ",
+      "note_ja": "昔を振り返るときの独り言にも使えます。",
+      "example": { "text": "I remember we used to go to the bakery after school.", "ja": "そういえば放課後よくあのパン屋に行ったよね" },
+      "combos": [
+        { "text": "I couldn't pronounce his name for so long", "ja": "彼の名前を長く発音できなかった", "uses": ["p03"] },
+        { "text": "we had to transfer in Dubai", "ja": "ドバイで乗り換えなきゃいけなかった", "uses": ["p08"] },
+        { "text": "there was a 100 yen shop here", "ja": "ここに 100 円ショップがあった", "uses": ["p10"] },
+        { "text": "we used to go to the bakery after school", "ja": "放課後よくパン屋に行った", "uses": ["p16"] },
+        { "text": "this used to be a parking lot", "ja": "ここは駐車場だった", "uses": ["p16"] },
+        { "text": "I almost fell off a bike in this park", "ja": "この公園で自転車から落ちそうになった", "uses": ["p24"] },
+        { "text": "it took so long to get to the UK", "ja": "イギリスに着くのにすごく時間がかかった", "uses": ["p30"] },
+        { "text": "I used to be able to eat two bowls of ramen", "ja": "昔は 2 杯ラーメンを食べられた", "uses": ["p16", "p02"] },
+        { "text": "I was gonna buy a bottle of wine, but I couldn't find a good one", "ja": "ワインを買おうとしたけど、いいのが見つからなかった", "uses": ["p21", "p03"] }
+      ]
+    },
+    {
+      "id": "p43", "no": 43, "kind": "large", "text": "I forgot", "display": "I forgot (that) 〜", "ja": "〜ってこと忘れてた",
+      "note_ja": "動詞が入る I forgot to 〜(ピース 12)と違い、後ろに文が入ります。",
+      "example": { "text": "I forgot that I've booked a train ticket already.", "ja": "もう電車の切符を予約したこと、忘れてた" },
+      "combos": [
+        { "text": "she can play the piano", "ja": "彼女はピアノが弾ける", "uses": ["p01"] },
+        { "text": "the plumber is coming tomorrow", "ja": "明日水道屋さんが来る", "uses": ["p07"] },
+        { "text": "we have to wake up early tomorrow", "ja": "明日早起きしなきゃ", "uses": ["p08"] },
+        { "text": "we don't have to take off our shoes", "ja": "靴を脱がなくていい", "uses": ["p08"] },
+        { "text": "my grandma might come too", "ja": "おばあちゃんも来るかも", "uses": ["p09"] },
+        { "text": "there is dessert", "ja": "デザートがある", "uses": ["p10"] },
+        { "text": "she used to be an English teacher", "ja": "彼女は昔英語の先生だった", "uses": ["p16"] },
+        { "text": "I was gonna go to the pharmacy", "ja": "薬局に行くつもりだった", "uses": ["p21"] },
+        { "text": "you've been to Japan", "ja": "あなたは日本に行ったことがある", "uses": ["p26"] },
+        { "text": "I've booked a train ticket already", "ja": "もう電車の切符を予約した", "uses": ["p28"] },
+        { "text": "it takes a few months to receive the results", "ja": "結果が来るのに数か月かかる", "uses": ["p30"] }
+      ]
+    },
+    {
+      "id": "p44", "no": 44, "kind": "large", "text": "I know", "display": "I know (that) 〜, but 〜", "ja": "〜というのはわかってる、けど",
+      "note_ja": "後ろに but が続くことがほとんどです。",
+      "example": { "text": "I know that there is ice cream at home, but...", "ja": "家にアイスがあるのはわかってるんだけど……" },
+      "combos": [
+        { "text": "I can do it, but I'm scared", "ja": "できるのはわかってるけど、怖い", "uses": ["p01"] },
+        { "text": "I should study more, but I get lazy", "ja": "もっと勉強すべきだけど、だらけちゃう", "uses": ["p04"] },
+        { "text": "I shouldn't stay up late, but I want to watch one more episode", "ja": "夜更かしはよくないけど、もう 1 話見たい", "uses": ["p04"] },
+        { "text": "I don't have to write down everything, but I prefer to", "ja": "全部書かなくていいけど、そのほうが好き", "uses": ["p08"] },
+        { "text": "there is ice cream at home, but I want some gelato", "ja": "家にアイスがあるけど、ジェラートが食べたい", "uses": ["p10"] },
+        { "text": "I'm supposed to put nuts in it, but I don't have any", "ja": "ナッツを入れるべきだけど、ない", "uses": ["p22"] },
+        { "text": "it takes a long time to get there, but we have to go", "ja": "時間はかかるけど、行かなきゃ", "uses": ["p30"] },
+        { "text": "it doesn't look good, but it should taste OK", "ja": "見た目はよくないけど、味は大丈夫なはず", "uses": ["p33", "p04"] }
+      ]
+    },
+    {
+      "id": "p45", "no": 45, "kind": "large", "text": "I didn't know", "display": "I didn't know (that) 〜", "ja": "〜なんて知らなかった",
+      "note_ja": "今知ったことにも、少し前に知ったことにも使えます。",
+      "example": { "text": "I didn't know that you were coming.", "ja": "あなたが来ること、知らなかった" },
+      "combos": [
+        { "text": "you could order on the app", "ja": "アプリで注文できる", "uses": ["p01"] },
+        { "text": "cats could jump so high", "ja": "猫がそんなに高く飛べる", "uses": ["p01"] },
+        { "text": "a laptop would cost that much", "ja": "ノートパソコンがそんなに高い", "uses": ["p06"] },
+        { "text": "you were coming", "ja": "あなたが来る", "uses": ["p07"] },
+        { "text": "you were waiting for me", "ja": "私を待っていた", "uses": ["p07"] },
+        { "text": "there was a pizza shop here", "ja": "ここにピザ屋がある", "uses": ["p10"] },
+        { "text": "you ended up buying that car", "ja": "結局その車を買った", "uses": ["p14"] },
+        { "text": "my mom used to work for an IT company", "ja": "母が昔 IT 会社で働いていた", "uses": ["p16"] },
+        { "text": "you were supposed to book in advance", "ja": "前もって予約するものだった", "uses": ["p22"] },
+        { "text": "she's been to Japan", "ja": "彼女は日本に行ったことがある", "uses": ["p26"] },
+        { "text": "it would take more than 2 hours by train", "ja": "電車で 2 時間以上かかる", "uses": ["p06", "p30"] }
+      ]
+    },
+    {
+      "id": "p46", "no": 46, "kind": "large", "text": "Did I tell you", "display": "Did I tell you (that) 〜?", "ja": "〜って話したっけ?",
+      "note_ja": "話のきっかけにも使えます。",
+      "example": { "text": "Did I tell you that I'm going to the Philippines next month?", "ja": "来月フィリピンに行くって話したっけ?" },
+      "combos": [
+        { "text": "I got to meet Lauren in Tokyo", "ja": "東京でローレンに会えた", "uses": ["p02"] },
+        { "text": "I got to go to Canada for work", "ja": "仕事でカナダに行けた", "uses": ["p02"] },
+        { "text": "I'm going to the Philippines next month", "ja": "来月フィリピンに行く", "uses": ["p07"] },
+        { "text": "we're renovating our house", "ja": "今、家を改装している", "uses": ["p07"] },
+        { "text": "I have to go to the head office tomorrow", "ja": "明日本社に行かなきゃ", "uses": ["p08"] },
+        { "text": "I might move to another branch", "ja": "別の支店に異動するかも", "uses": ["p09"] },
+        { "text": "there are robots in our company", "ja": "会社にロボットがいる", "uses": ["p10"] },
+        { "text": "I decided to go on a diet", "ja": "ダイエットすることにした", "uses": ["p13"] },
+        { "text": "I ended up giving him chocolate", "ja": "結局彼にチョコをあげた", "uses": ["p14"] },
+        { "text": "I used to live abroad", "ja": "海外に住んでいた", "uses": ["p16"] },
+        { "text": "you look like Anne Hathaway", "ja": "アン・ハサウェイに似ている", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p47", "no": 47, "kind": "large", "text": "I'm lucky", "display": "I'm lucky 〜", "ja": "〜でラッキー",
+      "note_ja": "主語が複数なら We're lucky。",
+      "example": { "text": "I'm lucky I haven't left home yet.", "ja": "まだ家を出てなくてラッキーだった" },
+      "combos": [
+        { "text": "there is a laundromat near my house", "ja": "家の近くにコインランドリーがある", "uses": ["p10"] },
+        { "text": "I forgot to book an appointment", "ja": "予約を忘れていた", "uses": ["p12"] },
+        { "text": "we decided to stay longer", "ja": "もう少しいることにした", "uses": ["p13"] },
+        { "text": "we ended up booking this flight", "ja": "結局こっちの便にした", "uses": ["p14"] },
+        { "text": "I haven't left home yet", "ja": "まだ家を出ていない", "uses": ["p28"] }
+      ]
+    },
+    {
+      "id": "p48", "no": 48, "kind": "large", "text": "I'm worried", "display": "I'm worried (that) 〜", "ja": "〜が心配だ",
+      "note_ja": "will や might と一緒に使われることが多いです。",
+      "example": { "text": "I'm worried that I'll look too casual.", "ja": "服装がカジュアルすぎないか心配だ" },
+      "combos": [
+        { "text": "I'll forget to grab the room key", "ja": "部屋の鍵を持ち忘れる", "uses": ["p05", "p12"] },
+        { "text": "I'll look too casual", "ja": "カジュアルに見えすぎる", "uses": ["p05", "p33"] },
+        { "text": "it would spill", "ja": "こぼれる", "uses": ["p06"] },
+        { "text": "I might miss the bus", "ja": "バスを逃すかも", "uses": ["p09"] },
+        { "text": "I might not be able to get tickets", "ja": "チケットが取れないかも", "uses": ["p25"] }
+      ]
+    },
+    {
+      "id": "p49", "no": 49, "kind": "large", "text": "I'm sure", "display": "I'm sure (that) 〜", "ja": "きっと〜だよ",
+      "note_ja": "相手を勇気づけるときにもよく使います。",
+      "example": { "text": "I'm sure the rain will stop soon.", "ja": "きっと雨はすぐに止むよ" },
+      "combos": [
+        { "text": "you can do it", "ja": "あなたならできる", "uses": ["p01"] },
+        { "text": "you can find it", "ja": "見つけられる", "uses": ["p01"] },
+        { "text": "the rain will stop soon", "ja": "雨はすぐ止む", "uses": ["p05"] },
+        { "text": "she will like it", "ja": "彼女は気に入る", "uses": ["p05"] },
+        { "text": "you'll get used to it soon", "ja": "すぐ慣れる", "uses": ["p05", "p20"] },
+        { "text": "he's still sleeping", "ja": "彼はまだ寝ている", "uses": ["p07"] },
+        { "text": "there is a cafe nearby", "ja": "近くにカフェがある", "uses": ["p10"] },
+        { "text": "he's been to Tokyo before", "ja": "彼は東京に行ったことがある", "uses": ["p26"] },
+        { "text": "the meeting has finished", "ja": "会議はもう終わった", "uses": ["p28"] },
+        { "text": "this photo will remind her of our trip", "ja": "この写真で旅行を思い出す", "uses": ["p31"] }
+      ]
+    },
+    {
+      "id": "p50", "no": 50, "kind": "large", "text": "Make sure", "display": "Make sure (that) 〜", "ja": "ちゃんと〜してね",
+      "note_ja": "後ろの文は未来のことでも現在形にします。",
+      "example": { "text": "Can you make sure you turn off the computer?", "ja": "ちゃんとパソコンの電源を切っておいてくれる?" },
+      "combos": [
+        { "text": "all the doors are locked", "ja": "全部のドアの鍵が閉まっている", "uses": ["p01"] },
+        { "text": "your phone number is correct", "ja": "電話番号が合っている", "uses": ["p01"] },
+        { "text": "you turn off the computer", "ja": "パソコンの電源を切る", "uses": ["p01"] },
+        { "text": "I send you the photos", "ja": "写真を送る", "uses": ["p05"] },
+        { "text": "I set an alarm this time", "ja": "今回はアラームをかける", "uses": ["p05"] },
+        { "text": "I take the medicine", "ja": "薬を飲む", "uses": ["p08"] },
+        { "text": "the files are saved", "ja": "ファイルが保存されている", "uses": ["p08"] },
+        { "text": "there is enough ice for the party", "ja": "十分な量の氷がある", "uses": ["p10"] }
+      ]
+    },
+    {
+      "id": "p51", "no": 51, "kind": "large", "text": "Sometimes", "display": "Sometimes 〜", "ja": "〜な時もある",
+      "note_ja": "文の前に置くだけで「時々〜する」になります。",
+      "example": { "text": "Sometimes I don't have to make dinner.", "ja": "夕飯を作らなくてもいい時もあるの" },
+      "combos": [
+        { "text": "you can see the Orion", "ja": "オリオン座が見える", "uses": ["p01"] },
+        { "text": "I can't focus on anything", "ja": "何にも集中できない", "uses": ["p01"] },
+        { "text": "I get to talk to the CEO there", "ja": "そこで CEO と話せる", "uses": ["p02"] },
+        { "text": "I have to go to the head office", "ja": "本社に行かないといけない", "uses": ["p08"] },
+        { "text": "I don't have to make dinner", "ja": "夕飯を作らなくていい", "uses": ["p08"] },
+        { "text": "there is a long line in front of the shop", "ja": "お店の前に長い列ができる", "uses": ["p10"] },
+        { "text": "I forget to eat breakfast", "ja": "朝ごはんを食べ忘れる", "uses": ["p12"] },
+        { "text": "it takes hours to get there because of the traffic", "ja": "渋滞で何時間もかかる", "uses": ["p30"] },
+        { "text": "that dog reminds me of my old dog", "ja": "あの犬を見ると昔の愛犬を思い出す", "uses": ["p31"] },
+        { "text": "being on the bus makes me sick", "ja": "バスに乗ると気分が悪くなる", "uses": ["p32"] }
+      ]
+    },
+    {
+      "id": "p52", "no": 52, "kind": "large", "text": "I can't believe", "display": "I can't believe (that) 〜!", "ja": "〜だなんて!",
+      "note_ja": "嬉しい驚きにも、がっかりや怒りにも使えます。",
+      "example": { "text": "I can't believe I'm going to the US!", "ja": "私がアメリカに行くなんて!" },
+      "combos": [
+        { "text": "I'm going to the US", "ja": "アメリカに行く", "uses": ["p07"] },
+        { "text": "I forgot to bring a towel to the gym", "ja": "ジムにタオルを忘れた", "uses": ["p12"] },
+        { "text": "she's been studying for 3 hours", "ja": "彼女は 3 時間も勉強している", "uses": ["p27"] },
+        { "text": "the book made her cry", "ja": "その本で彼女が泣いた", "uses": ["p32"] }
+      ]
+    },
+    {
+      "id": "p53", "no": 53, "kind": "large", "text": "I guess", "display": "I guess 〜", "ja": "〜じゃないかな",
+      "note_ja": "根拠は薄いけれど、控えめに言いたいときに。文末に置くこともあります。",
+      "example": { "text": "I guess I should take it easy today.", "ja": "たぶん今日は安静にしておいたほうがいいかな" },
+      "combos": [
+        { "text": "I can talk about my experiences abroad", "ja": "海外での経験について話せる", "uses": ["p01"] },
+        { "text": "we can download the file", "ja": "そのファイルをダウンロードできる", "uses": ["p01"] },
+        { "text": "I could go", "ja": "行けなくはない", "uses": ["p03"] },
+        { "text": "I could stay a bit longer", "ja": "もう少し長くいられる", "uses": ["p03"] },
+        { "text": "I should take it easy today", "ja": "今日は安静にしたほうがいい", "uses": ["p04"] },
+        { "text": "I'll go to the cafe and do some work", "ja": "カフェで仕事でもする", "uses": ["p05"] },
+        { "text": "I'm getting used to the new job", "ja": "新しい仕事に慣れてきた", "uses": ["p07", "p20"] },
+        { "text": "I have to wait here", "ja": "ここで待たなきゃいけない", "uses": ["p08"] },
+        { "text": "I'm used to long drives", "ja": "長距離運転に慣れている", "uses": ["p20"] },
+        { "text": "I'm supposed to use superglue", "ja": "接着剤を使わなきゃいけない", "uses": ["p22"] }
+      ]
+    },
+    {
+      "id": "p54", "no": 54, "kind": "large", "text": "It says", "display": "It says (that) 〜", "ja": "〜だって・〜と書いてある",
+      "note_ja": "看板や標識、新聞など「書いてある」情報にも使えます。",
+      "example": { "text": "It says it might rain tomorrow.", "ja": "明日雨が降るかもだって" },
+      "combos": [
+        { "text": "you can bring a friend", "ja": "友だちを連れて行っていい", "uses": ["p01"] },
+        { "text": "you should have 100 grams of protein a day", "ja": "1 日 100g のタンパク質を取るべき", "uses": ["p04"] },
+        { "text": "the package will arrive in 2-3 days", "ja": "荷物は 2、3 日で届く", "uses": ["p05"] },
+        { "text": "they will open at 10 am", "ja": "10 時にオープンする", "uses": ["p05"] },
+        { "text": "it's updating", "ja": "アップデート中だ", "uses": ["p07"] },
+        { "text": "we don't have to bring any food", "ja": "食べ物は何も持ってこなくていい", "uses": ["p08"] },
+        { "text": "it might rain tomorrow", "ja": "明日雨が降るかも", "uses": ["p09"] },
+        { "text": "there is a free trial", "ja": "無料体験がある", "uses": ["p10"] },
+        { "text": "it takes 20 minutes to get there by bus", "ja": "バスで 20 分かかる", "uses": ["p30"] }
+      ]
+    },
+    {
+      "id": "p55", "no": 55, "kind": "large", "text": "That means", "display": "That means 〜", "ja": "つまり〜",
+      "note_ja": "前の話を受けて、推測や説明を続けます。That doesn't mean 〜 は「〜というわけじゃない」。",
+      "example": { "text": "There is road work. That means we have to go around.", "ja": "道路工事してる。ってことは、回り道しなきゃいけない" },
+      "combos": [
+        { "text": "he can drive a manual car too", "ja": "彼はマニュアル車も運転できる", "uses": ["p01"] },
+        { "text": "you can still eat it", "ja": "まだ食べられる", "uses": ["p01"] },
+        { "text": "he's still studying in the library", "ja": "彼はまだ図書館で勉強している", "uses": ["p07"] },
+        { "text": "they're still cleaning the room", "ja": "まだ部屋を掃除している", "uses": ["p07"] },
+        { "text": "we have to go around", "ja": "回り道しなきゃいけない", "uses": ["p08"] },
+        { "text": "we're not supposed to go in", "ja": "入っちゃいけない", "uses": ["p22"] },
+        { "text": "he hasn't come home yet", "ja": "彼はまだ家に帰っていない", "uses": ["p28"] },
+        { "text": "she hasn't read it yet", "ja": "彼女はまだ読んでいない", "uses": ["p28"] }
+      ]
+    },
+    {
+      "id": "p56", "no": 56, "kind": "large", "text": "Is it OK if", "display": "Is it OK if 〜?", "ja": "〜してもいいですか?",
+      "note_ja": "主語が I 以外でも使えるのが便利なところです。",
+      "example": { "text": "Is it OK if it takes 10 more minutes?", "ja": "もう 10 分かかっても大丈夫ですか?" },
+      "combos": [
+        { "text": "I try this on", "ja": "これを試着する", "uses": ["p01"] },
+        { "text": "I invite him", "ja": "彼を呼ぶ", "uses": ["p01"] },
+        { "text": "I can't come at the starting time", "ja": "開始時間に来られない", "uses": ["p01"] },
+        { "text": "there is a gap", "ja": "隙間がある", "uses": ["p10"] },
+        { "text": "it takes 10 more minutes", "ja": "もう 10 分かかる", "uses": ["p30"] },
+        { "text": "it looks blue, not green", "ja": "緑じゃなくて青く見える", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p57", "no": 57, "kind": "large", "text": "I don't know why", "display": "I don't know why 〜", "ja": "なんで〜なのかわからない",
+      "note_ja": "つぶやきにも使えます。I don't know why, but 〜 で「なんでかわからないけど」。",
+      "example": { "text": "I don't know why I can't fall asleep.", "ja": "なんで眠れないんだろう" },
+      "combos": [
+        { "text": "I can't fall asleep", "ja": "眠れない", "uses": ["p01"] },
+        { "text": "I can't scan the code", "ja": "コードをスキャンできない", "uses": ["p01"] },
+        { "text": "I'm doing this", "ja": "こんなことをしている", "uses": ["p07"] },
+        { "text": "I have to wear this", "ja": "これを着なきゃいけない", "uses": ["p08"] },
+        { "text": "there are so many people today", "ja": "今日こんなに人がいる", "uses": ["p10"] },
+        { "text": "I forgot to tell you", "ja": "伝え忘れた", "uses": ["p12"] },
+        { "text": "he decided to go to that college", "ja": "彼はその大学に行くと決めた", "uses": ["p13"] },
+        { "text": "I used to collect these cards", "ja": "昔このカードを集めていた", "uses": ["p16"] },
+        { "text": "it reminds me of my grandpa", "ja": "おじいちゃんを思い出す", "uses": ["p31"] },
+        { "text": "the building looks so familiar", "ja": "その建物が見覚えがある", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p58", "no": 58, "kind": "large", "text": "You know how", "display": "You know how 〜?", "ja": "〜じゃん?",
+      "note_ja": "相手と共通の認識があることを話に出すときの切り出しです。",
+      "example": { "text": "You know how you can share your screen on Zoom?", "ja": "Zoom で画面シェアできるじゃん?" },
+      "combos": [
+        { "text": "you can share your screen on Zoom", "ja": "Zoom で画面シェアできる", "uses": ["p01"] },
+        { "text": "you can save a post on Instagram", "ja": "インスタで投稿を保存できる", "uses": ["p01"] },
+        { "text": "they're doing a sale right now", "ja": "今セールをやっている", "uses": ["p07"] },
+        { "text": "we're running out of rice", "ja": "お米がなくなってきている", "uses": ["p07"] },
+        { "text": "there is a bakery in the station", "ja": "駅の中にパン屋がある", "uses": ["p10"] },
+        { "text": "I used to live downtown", "ja": "前はダウンタウンに住んでいた", "uses": ["p16"] },
+        { "text": "there used to be a dentist here", "ja": "前はここに歯医者があった", "uses": ["p16"] },
+        { "text": "he is so excited for the festival", "ja": "彼はお祭りを楽しみにしている", "uses": ["p18"] },
+        { "text": "she's used to looking after babies", "ja": "彼女は赤ちゃんの世話に慣れている", "uses": ["p20"] },
+        { "text": "it's been raining so much", "ja": "最近すごく雨が降っている", "uses": ["p27"] }
+      ]
+    },
+    {
+      "id": "p59", "no": 59, "kind": "large", "text": "Remember how", "display": "Remember how 〜?", "ja": "〜なの覚えてる?",
+      "note_ja": "自分たちだけが知っている経験に使います。",
+      "example": { "text": "Remember how we used to go to the cafe after school?", "ja": "放課後よくあのカフェ行ってたの、覚えてる?" },
+      "combos": [
+        { "text": "we got to see Mt. Fuji on our way to the airport", "ja": "空港に行く途中で富士山が見えた", "uses": ["p02"] },
+        { "text": "we used to go to the cafe after school", "ja": "放課後よくカフェに行った", "uses": ["p16"] },
+        { "text": "we were supposed to study but ended up watching a movie", "ja": "勉強するはずが映画を見てしまった", "uses": ["p22", "p14"] }
+      ]
+    },
+    {
+      "id": "p60", "no": 60, "kind": "large", "text": "I like how", "display": "I like how 〜", "ja": "〜なのがいいね",
+      "note_ja": "like は「好き」だけでなく「いいね・面白い」の意味でも使います。",
+      "example": { "text": "I like how there are massage chairs in the gym.", "ja": "ジムにマッサージ機があるの、いいね" },
+      "combos": [
+        { "text": "we can check each other's schedules online", "ja": "お互いの予定をネットで確認できる", "uses": ["p01"] },
+        { "text": "Tama is looking at us through the small window", "ja": "タマが小さい窓からこっちを見ている", "uses": ["p07"] },
+        { "text": "there are massage chairs in the gym", "ja": "ジムにマッサージ機がある", "uses": ["p10"] }
+      ]
+    },
+    {
+      "id": "p61", "no": 61, "kind": "large", "text": "I was like,", "display": "I was like, 〜", "ja": "〜って感じだった",
+      "note_ja": "その時に思ったこと・言ったことをそのまま伝えます。フォーマルな場では I said 〜。",
+      "example": { "text": "I was like, I was just about to do it.", "ja": "今ちょうどやるところだったのに、って感じだった" },
+      "combos": [
+        { "text": "I can do that", "ja": "それ私がやれる", "uses": ["p01"] },
+        { "text": "I could do that", "ja": "できなくはない", "uses": ["p03"] },
+        { "text": "I'm still thinking", "ja": "まだ考えている", "uses": ["p07"] },
+        { "text": "I have to get it done today", "ja": "今日中に終わらせなきゃ", "uses": ["p08"] },
+        { "text": "let me check with my manager", "ja": "マネージャーに確認させて", "uses": ["p11"] },
+        { "text": "I was just about to do it", "ja": "今ちょうどやるところだった", "uses": ["p23"] },
+        { "text": "I haven't done it before", "ja": "やったことがない", "uses": ["p26"] },
+        { "text": "I've been waiting for so long", "ja": "ずっと待っていた", "uses": ["p27"] },
+        { "text": "that looks good", "ja": "美味しそう", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p62", "no": 62, "kind": "large", "text": "At least", "display": "At least 〜", "ja": "〜なだけよかったね",
+      "note_ja": "よくないことの中に前向きな面を見つけるときに。",
+      "example": { "text": "At least I got to try the new video game.", "ja": "新しいゲームを試せただけよかった" },
+      "combos": [
+        { "text": "I got to try the new video game", "ja": "新しいゲームを試せた", "uses": ["p02"] },
+        { "text": "I don't have to redo the whole thing", "ja": "全部やり直さなくていい", "uses": ["p08"] },
+        { "text": "there was a play area for kids", "ja": "キッズスペースがあった", "uses": ["p10"] },
+        { "text": "I didn't forget to buy milk", "ja": "牛乳を買い忘れなかった", "uses": ["p12"] }
+      ]
+    },
+    {
+      "id": "p63", "no": 63, "kind": "large", "text": "It seems like", "display": "It seems like 〜", "ja": "〜みたいだね",
+      "note_ja": "見た目だけでなく、いろいろな情報から推測するときに使います。",
+      "example": { "text": "It seems like it's gonna rain in the afternoon.", "ja": "午後は雨が降りそうだね" },
+      "combos": [
+        { "text": "they can speak French too", "ja": "彼らはフランス語も話せる", "uses": ["p01"] },
+        { "text": "we all have to attend the workshop", "ja": "みんなワークショップに参加しないといけない", "uses": ["p08"] },
+        { "text": "there are many students today", "ja": "今日は学生が多い", "uses": ["p10"] },
+        { "text": "everyone is ready to leave", "ja": "みんな出かける準備ができた", "uses": ["p19"] },
+        { "text": "he's used to giving presentations", "ja": "彼はプレゼンに慣れている", "uses": ["p20"] },
+        { "text": "it's gonna rain in the afternoon", "ja": "午後は雨が降る", "uses": ["p21"] },
+        { "text": "she's been here before", "ja": "彼女はここに来たことがある", "uses": ["p26"] },
+        { "text": "some people have left already", "ja": "もう出た人もいる", "uses": ["p28"] },
+        { "text": "I should have left earlier", "ja": "もっと早く出ればよかった", "uses": ["p29"] }
+      ]
+    },
+    {
+      "id": "p64", "no": 64, "kind": "large", "text": "I wonder if", "display": "I wonder if 〜", "ja": "〜なのかな",
+      "note_ja": "独り言にも会話にも。お店では I'm wondering if 〜? と丁寧にします。",
+      "example": { "text": "I wonder if we can pay by card.", "ja": "カードで支払えるかな" },
+      "combos": [
+        { "text": "we can pay by card", "ja": "カードで支払える", "uses": ["p01"] },
+        { "text": "I could talk to her", "ja": "彼女と話せる", "uses": ["p03"] },
+        { "text": "I should buy it", "ja": "買ったほうがいい", "uses": ["p04"] },
+        { "text": "she'll like my gift", "ja": "彼女がプレゼントを気に入る", "uses": ["p05"] },
+        { "text": "Tina's coming", "ja": "ティーナが来る", "uses": ["p07"] },
+        { "text": "I have to attend the meeting", "ja": "会議に出なきゃいけない", "uses": ["p08"] },
+        { "text": "there is an ATM nearby", "ja": "近くに ATM がある", "uses": ["p10"] },
+        { "text": "they've been to the aquarium", "ja": "彼らは水族館に行ったことがある", "uses": ["p26"] },
+        { "text": "it takes long to download it", "ja": "ダウンロードに時間がかかる", "uses": ["p30"] },
+        { "text": "this looks too formal", "ja": "この服装はフォーマルすぎる", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p65", "no": 65, "kind": "large", "text": "Let's see if", "display": "Let's see if 〜", "ja": "〜かどうか様子を見てみよう",
+      "note_ja": "「やってみよう・聞いてみよう」の意味にもなります。",
+      "example": { "text": "Let's see if there is anything good.", "ja": "何かいいものがあるかな、見てみよう" },
+      "combos": [
+        { "text": "they can make it mild", "ja": "辛さを抑えてもらえる", "uses": ["p01"] },
+        { "text": "we can check in early", "ja": "早くチェックインできる", "uses": ["p01"] },
+        { "text": "the camera is working", "ja": "カメラがちゃんと動いている", "uses": ["p07"] },
+        { "text": "there is anything good", "ja": "何かいいものがある", "uses": ["p10"] },
+        { "text": "he ended up winning", "ja": "結局彼が勝った", "uses": ["p14"] },
+        { "text": "the photo looks good", "ja": "写真がうまく撮れている", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p66", "no": 66, "kind": "large", "text": "I'm not sure if", "display": "I'm not sure if 〜", "ja": "〜かどうかわからない",
+      "note_ja": "やんわり反対したいときにも使えます。",
+      "example": { "text": "I'm not sure if John is coming.", "ja": "ジョンが来るのかはわからない" },
+      "combos": [
+        { "text": "I can make it", "ja": "都合をつけられる", "uses": ["p01"] },
+        { "text": "I can remember all the words", "ja": "全部の単語を覚えられる", "uses": ["p01"] },
+        { "text": "I should go to the training today", "ja": "今日トレーニングに行くべき", "uses": ["p04"] },
+        { "text": "she'll say yes", "ja": "彼女がうんと言う", "uses": ["p05", "p06"] },
+        { "text": "John is coming", "ja": "ジョンが来る", "uses": ["p07"] },
+        { "text": "it's working", "ja": "それが効いている", "uses": ["p07"] },
+        { "text": "I have to pick up my luggage", "ja": "荷物を受け取らなきゃいけない", "uses": ["p08"] },
+        { "text": "there is a change machine there", "ja": "そこに両替機がある", "uses": ["p10"] },
+        { "text": "he has seen this movie", "ja": "彼はこの映画を見たことがある", "uses": ["p26"] },
+        { "text": "it looks OK", "ja": "見た目は大丈夫", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p67", "no": 67, "kind": "large", "text": "Please don't tell me", "display": "Please don't tell me 〜", "ja": "まさか〜じゃないよね",
+      "note_ja": "主に独り言として使われます。please は省略できます。",
+      "example": { "text": "Please don't tell me it's raining.", "ja": "まさか雨降ってないよね" },
+      "combos": [
+        { "text": "he can't come today", "ja": "彼が今日来られない", "uses": ["p01"] },
+        { "text": "it's raining", "ja": "雨が降っている", "uses": ["p07"] },
+        { "text": "you're texting during class", "ja": "授業中にメッセージしている", "uses": ["p07"] },
+        { "text": "I have to start all over again", "ja": "最初からやり直さなきゃいけない", "uses": ["p08"] },
+        { "text": "there's no bathroom here", "ja": "ここにトイレがない", "uses": ["p10"] },
+        { "text": "I forgot to send him an email", "ja": "彼にメールし忘れた", "uses": ["p12"] },
+        { "text": "I was supposed to freeze it", "ja": "冷凍しなきゃいけなかった", "uses": ["p22"] },
+        { "text": "the clothes haven't dried yet", "ja": "服がまだ乾いていない", "uses": ["p28"] },
+        { "text": "the battery has died already", "ja": "もう電池が切れた", "uses": ["p28"] }
+      ]
+    },
+    {
+      "id": "p68", "no": 68, "kind": "large", "text": "Is it just me, or", "display": "Is it just me, or 〜?", "ja": "〜と思うのは私だけ?",
+      "note_ja": "後ろは疑問文の形になります。",
+      "example": { "text": "Is it just me, or are you getting hungry too?", "ja": "お腹がすいてきたの、私だけ?" },
+      "combos": [
+        { "text": "can you hear the noise too", "ja": "その音が聞こえる", "uses": ["p01"] },
+        { "text": "are you getting hungry too", "ja": "お腹がすいてきた", "uses": ["p07"] },
+        { "text": "does this remind you of Finding Nemo", "ja": "ニモを思い出す", "uses": ["p31"] },
+        { "text": "does the statue look a bit strange", "ja": "その像が少し変に見える", "uses": ["p33"] }
+      ]
+    },
+    {
+      "id": "p69", "no": 69, "kind": "large", "text": "It's not like", "display": "It's not like 〜", "ja": "〜っていうわけじゃない",
+      "note_ja": "やんわり否定するときの形です。",
+      "example": { "text": "It's not like I have to get it done today.", "ja": "今日終わらせなきゃいけないっていうわけじゃないんだけどね" },
+      "combos": [
+        { "text": "I can see him every day", "ja": "毎日彼に会える", "uses": ["p01"] },
+        { "text": "we can control the weather", "ja": "天気をコントロールできる", "uses": ["p01"] },
+        { "text": "I'm carrying it all day", "ja": "一日中それを持ち歩いている", "uses": ["p07"] },
+        { "text": "I was watching the TV show", "ja": "そのテレビ番組を見ていた", "uses": ["p07"] },
+        { "text": "I have to get it done today", "ja": "今日終わらせなきゃいけない", "uses": ["p08"] },
+        { "text": "there is a sale every month", "ja": "毎月セールがある", "uses": ["p10"] },
+        { "text": "I've done it many times", "ja": "何度もやったことがある", "uses": ["p26"] },
+        { "text": "I've decided to do it", "ja": "やると決めた", "uses": ["p13", "p28"] }
+      ]
+    },
+    {
+      "id": "p70", "no": 70, "kind": "large", "text": "They said", "display": "They said (that) 〜", "ja": "〜って言ってた",
+      "note_ja": "誰が言ったかを主語にします。世間一般なら They say 〜、習慣なら She says 〜。",
+      "example": { "text": "They said there is dessert.", "ja": "デザートがあるって言ってたよ" },
+      "combos": [
+        { "text": "I should stay home for another 2 days", "ja": "あと 2 日家にいたほうがいい", "uses": ["p04"] },
+        { "text": "we should write a journal in English", "ja": "英語で日記を書いたほうがいい", "uses": ["p04"] },
+        { "text": "there is dessert", "ja": "デザートがある", "uses": ["p10"] },
+        { "text": "he's going to come to the event", "ja": "彼はイベントに来る", "uses": ["p21"] },
+        { "text": "I was supposed to send the documents in advance", "ja": "書類を前もって送るはずだった", "uses": ["p22"] },
+        { "text": "the sauce makes it sour", "ja": "そのソースで酸っぱくなる", "uses": ["p32"] }
+      ]
+    }
+  ]
+}

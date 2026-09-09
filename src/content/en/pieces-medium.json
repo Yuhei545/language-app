@@ -1,0 +1,839 @@
+{
+  "version": 1,
+  "small": [
+    { "text": "turn off the alarm", "ja": "アラームを止める" },
+    { "text": "make the bed", "ja": "ベッドを整える" },
+    { "text": "brush my teeth", "ja": "歯磨きをする" },
+    { "text": "get changed", "ja": "着替える" },
+    { "text": "put on glasses", "ja": "眼鏡をかける" },
+    { "text": "have breakfast", "ja": "朝食を食べる" },
+    { "text": "pack a lunch box", "ja": "お弁当を詰める" },
+    { "text": "take out the garbage", "ja": "ごみを出す" },
+    { "text": "put on sunscreen", "ja": "日焼け止めを塗る" },
+    { "text": "feed the cat", "ja": "猫にえさをやる" },
+    { "text": "leave home", "ja": "家を出発する" },
+    { "text": "say hi to the neighbors", "ja": "近所の人に挨拶する" },
+    { "text": "get to the office", "ja": "オフィスに着く" },
+    { "text": "work from home", "ja": "家で仕事をする" },
+    { "text": "have a meeting", "ja": "ミーティングがある" },
+    { "text": "do the laundry", "ja": "洗濯をする" },
+    { "text": "do the dishes", "ja": "お皿を洗う" },
+    { "text": "tidy up the room", "ja": "部屋を片づける" },
+    { "text": "vacuum the floor", "ja": "掃除機をかける" },
+    { "text": "run errands", "ja": "用事を済ませる" },
+    { "text": "reply to emails", "ja": "メールに返信する" },
+    { "text": "take a nap", "ja": "昼寝をする" },
+    { "text": "take a break", "ja": "休憩する" },
+    { "text": "make tea", "ja": "お茶を入れる" },
+    { "text": "grab a coffee", "ja": "コーヒーを買う" },
+    { "text": "catch up with friends", "ja": "友だちと近況を話す" },
+    { "text": "go grocery shopping", "ja": "食料品の買い物に行く" },
+    { "text": "pick up the children", "ja": "子どもを迎えに行く" },
+    { "text": "drop off the children", "ja": "子どもを送る" },
+    { "text": "take the train", "ja": "電車に乗る" },
+    { "text": "drive home", "ja": "車で帰る" },
+    { "text": "take off my shoes", "ja": "靴を脱ぐ" },
+    { "text": "get gas", "ja": "ガソリンを入れる" },
+    { "text": "order takeout", "ja": "テイクアウトを頼む" },
+    { "text": "make dinner", "ja": "夕食を作る" },
+    { "text": "check social media", "ja": "SNS を見る" },
+    { "text": "browse the internet", "ja": "ネットを見る" },
+    { "text": "put on music", "ja": "音楽をかける" },
+    { "text": "turn on the heater", "ja": "暖房をつける" },
+    { "text": "walk the dog", "ja": "犬を散歩させる" },
+    { "text": "go for a walk", "ja": "散歩に行く" },
+    { "text": "go for a run", "ja": "走りに行く" },
+    { "text": "talk to my family", "ja": "家族と話す" },
+    { "text": "take a shower", "ja": "シャワーを浴びる" },
+    { "text": "dry my hair", "ja": "髪を乾かす" },
+    { "text": "watch a TV show", "ja": "テレビ番組を見る" },
+    { "text": "get ready for tomorrow", "ja": "明日の準備をする" },
+    { "text": "set an alarm", "ja": "アラームをかける" },
+    { "text": "charge my phone", "ja": "携帯を充電する" },
+    { "text": "go to bed", "ja": "寝る" }
+  ],
+  "pieces": [
+    {
+      "id": "p01", "no": 1, "kind": "medium", "text": "I can", "display": "I can 〜", "ja": "〜できる・〜してあげる",
+      "note_ja": "できることを伝えるときにも、相手に何かしてあげるときにも使います。",
+      "example": { "text": "I can show you.", "ja": "見せてあげるよ" },
+      "combos": [
+        { "text": "show you", "ja": "見せる" },
+        { "text": "do it for you", "ja": "あなたのためにやる" },
+        { "text": "ask her", "ja": "彼女に聞く" },
+        { "text": "make another one", "ja": "もう1つ作る" },
+        { "text": "share it with you", "ja": "あなたに共有する" },
+        { "text": "drop by", "ja": "立ち寄る" }
+      ],
+      "variants": [
+        { "text": "You can", "ja": "〜できるよ", "combos": [
+          { "text": "book online", "ja": "ネットで予約する" },
+          { "text": "get it", "ja": "もらう" },
+          { "text": "eat it", "ja": "食べる" },
+          { "text": "download it", "ja": "ダウンロードする" },
+          { "text": "park here", "ja": "ここに駐車する" }
+        ] },
+        { "text": "Can I", "ja": "〜してもいい?", "question": true, "combos": [
+          { "text": "try", "ja": "やってみる" },
+          { "text": "have some", "ja": "少し食べる" },
+          { "text": "borrow it", "ja": "借りる" },
+          { "text": "open the box", "ja": "箱を開ける" },
+          { "text": "take a look", "ja": "見てみる" }
+        ] },
+        { "text": "Can you", "ja": "〜してもらえない?", "question": true, "combos": [
+          { "text": "come with me", "ja": "ついてくる" },
+          { "text": "call me", "ja": "私に電話する" },
+          { "text": "let him know", "ja": "彼に知らせる" }
+        ] }
+      ]
+    },
+    {
+      "id": "p02", "no": 2, "kind": "medium", "text": "I got to", "display": "I got to 〜", "ja": "〜できた(機会があって)",
+      "note_ja": "機会に恵まれて「〜できた」と言うときの形です。能力でできた場合は I was able to 〜。",
+      "example": { "text": "I got to see him.", "ja": "彼に会えたんだ" },
+      "combos": [
+        { "text": "see him", "ja": "彼に会う" },
+        { "text": "talk to her", "ja": "彼女と話す" },
+        { "text": "try new things", "ja": "新しいことを試す" },
+        { "text": "visit the US", "ja": "アメリカを訪れる" },
+        { "text": "meet new people", "ja": "新しい人と出会う" }
+      ],
+      "variants": [
+        { "text": "I was able to", "ja": "〜できた(能力)", "combos": [
+          { "text": "read it", "ja": "読む" },
+          { "text": "book a ticket", "ja": "チケットを予約する" },
+          { "text": "get there", "ja": "そこに着く" },
+          { "text": "pass the test", "ja": "テストに合格する" },
+          { "text": "solve the problem", "ja": "問題を解決する" }
+        ] }
+      ]
+    },
+    {
+      "id": "p03", "no": 3, "kind": "medium", "text": "I could", "display": "I could 〜", "ja": "〜できなくはない・〜するのもいいかも",
+      "note_ja": "can よりも控えめです。提案にも使えます。",
+      "example": { "text": "I could go there.", "ja": "行けなくはないよ" },
+      "combos": [
+        { "text": "go there", "ja": "そこに行く" },
+        { "text": "do it", "ja": "それをする" },
+        { "text": "ask her", "ja": "彼女に聞く" },
+        { "text": "have another one", "ja": "もう1つ食べる" },
+        { "text": "reschedule it", "ja": "予定を組み直す" },
+        { "text": "take the subway", "ja": "地下鉄に乗る" },
+        { "text": "watch a movie", "ja": "映画を見る" }
+      ],
+      "variants": [
+        { "text": "I couldn't", "ja": "〜できなかった", "combos": [
+          { "text": "find it", "ja": "見つける" },
+          { "text": "hear it", "ja": "聞こえる" },
+          { "text": "see it", "ja": "見える" },
+          { "text": "sleep much", "ja": "よく寝る" }
+        ] }
+      ]
+    },
+    {
+      "id": "p04", "no": 4, "kind": "medium", "text": "I should", "display": "I should 〜", "ja": "〜したほうがいい",
+      "note_ja": "自分にも相手にも使えます。It should 〜 なら「〜するはず」。",
+      "example": { "text": "I should write it down.", "ja": "書き留めておいたほうがいいな" },
+      "combos": [
+        { "text": "write it down", "ja": "書き留める" },
+        { "text": "buy a new one", "ja": "新しいものを買う" },
+        { "text": "take a screenshot", "ja": "スクショする" },
+        { "text": "bring a jacket", "ja": "上着を持ってくる" },
+        { "text": "clean my room", "ja": "部屋を掃除する" }
+      ],
+      "variants": [
+        { "text": "We should", "ja": "〜しようよ", "combos": [
+          { "text": "do it", "ja": "それをする" },
+          { "text": "apply for it", "ja": "応募する" },
+          { "text": "book a ticket", "ja": "チケットを取る" },
+          { "text": "take a look", "ja": "見てみる" },
+          { "text": "look it up", "ja": "調べる" }
+        ] },
+        { "text": "Maybe we should", "ja": "たぶん〜したほうがいい", "combos": [
+          { "text": "let her know", "ja": "彼女に知らせる" },
+          { "text": "wait here", "ja": "ここで待つ" },
+          { "text": "throw it away", "ja": "捨てる" },
+          { "text": "double-check", "ja": "再確認する" },
+          { "text": "invite him", "ja": "彼を誘う" }
+        ] },
+        { "text": "It should", "ja": "〜するはず", "combos": [
+          { "text": "have spoons", "ja": "スプーンが入っている" },
+          { "text": "finish by 5", "ja": "5 時までに終わる" },
+          { "text": "start at 8", "ja": "8 時に始まる" },
+          { "text": "come in an hour", "ja": "1 時間後に来る" },
+          { "text": "stop raining soon", "ja": "もうすぐ雨がやむ" }
+        ] }
+      ]
+    },
+    {
+      "id": "p05", "no": 5, "kind": "medium", "text": "I'll", "display": "I'll 〜", "ja": "〜しておくね・〜しよっと",
+      "note_ja": "その場で決めたことに使います。It will 〜 なら「〜だろう」。",
+      "example": { "text": "I'll let you know.", "ja": "知らせておくね" },
+      "combos": [
+        { "text": "let you know", "ja": "あなたに知らせる" },
+        { "text": "try it", "ja": "試してみる" },
+        { "text": "make some tea", "ja": "お茶を入れる" },
+        { "text": "book a table", "ja": "席を予約する" },
+        { "text": "check the weather", "ja": "天気を確認する" }
+      ],
+      "variants": [
+        { "text": "It will", "ja": "〜だろう", "combos": [
+          { "text": "close at 6", "ja": "6 時に閉まる" },
+          { "text": "come in 5 minutes", "ja": "5 分後に来る" },
+          { "text": "clear up soon", "ja": "もうすぐ晴れる" },
+          { "text": "be OK", "ja": "大丈夫だ" },
+          { "text": "be fun", "ja": "楽しい" }
+        ] }
+      ]
+    },
+    {
+      "id": "p06", "no": 6, "kind": "medium", "text": "I would", "display": "I would 〜", "ja": "私だったら〜する・〜だろう",
+      "note_ja": "仮の話や、丁寧な申し出に使います。",
+      "example": { "text": "I would bring a jacket.", "ja": "私だったら上着を持っていくな" },
+      "combos": [
+        { "text": "bring a jacket", "ja": "上着を持っていく" },
+        { "text": "cut it in half", "ja": "半分に切る" },
+        { "text": "get changed", "ja": "着替える" },
+        { "text": "try again", "ja": "もう 1 回やってみる" }
+      ],
+      "variants": [
+        { "text": "She would", "ja": "彼女は〜するだろう", "combos": [
+          { "text": "say yes", "ja": "はいと言う" },
+          { "text": "say no", "ja": "いいえと言う" },
+          { "text": "laugh", "ja": "笑う" },
+          { "text": "be upset", "ja": "怒る" },
+          { "text": "be sad", "ja": "悲しむ" }
+        ] },
+        { "text": "That would be", "ja": "それは〜だね", "combos": [
+          { "text": "nice", "ja": "いいね" },
+          { "text": "great", "ja": "すごくいい" },
+          { "text": "amazing", "ja": "最高" },
+          { "text": "awesome", "ja": "最高" }
+        ] },
+        { "text": "Would you like", "ja": "〜はいかがですか?", "question": true, "combos": [
+          { "text": "a drink", "ja": "飲み物" },
+          { "text": "some chocolate", "ja": "チョコレート" },
+          { "text": "another one", "ja": "もう 1 つ" },
+          { "text": "anything else", "ja": "他に何か" },
+          { "text": "a receipt", "ja": "レシート" }
+        ] }
+      ]
+    },
+    {
+      "id": "p07", "no": 7, "kind": "medium", "text": "I'm", "display": "I'm 〜ing", "ja": "〜している・〜する予定",
+      "note_ja": "今していること、続けていること、予定の 3 つに使えます。",
+      "example": { "text": "I'm waiting for the bus.", "ja": "バスを待ってるところ" },
+      "combos": [
+        { "text": "waiting for the bus", "ja": "バスを待つ" },
+        { "text": "watching TV", "ja": "テレビを見る" },
+        { "text": "trying to sleep", "ja": "寝ようとする" },
+        { "text": "looking at the website", "ja": "サイトを見る" },
+        { "text": "making dinner", "ja": "夕食を作る" },
+        { "text": "having dinner", "ja": "夕食を食べる" },
+        { "text": "learning English", "ja": "英語を勉強する" },
+        { "text": "taking classes", "ja": "授業を受ける" },
+        { "text": "using this app", "ja": "このアプリを使う" },
+        { "text": "growing plants", "ja": "植物を育てる" },
+        { "text": "working on this project", "ja": "この仕事に取り組む" },
+        { "text": "going there tomorrow", "ja": "明日そこに行く" },
+        { "text": "taking the train tomorrow", "ja": "明日電車で行く" },
+        { "text": "ordering a pizza tonight", "ja": "今夜ピザを注文する" },
+        { "text": "playing baseball on Sunday", "ja": "日曜日に野球をする" },
+        { "text": "seeing her on the weekend", "ja": "週末に彼女と会う" }
+      ]
+    },
+    {
+      "id": "p08", "no": 8, "kind": "medium", "text": "I have to", "display": "I have to 〜", "ja": "〜しなきゃ",
+      "note_ja": "don't have to は「しなくてもいい」で、禁止ではありません。",
+      "example": { "text": "I have to email her.", "ja": "彼女にメールしなきゃ" },
+      "combos": [
+        { "text": "email her", "ja": "彼女にメールを送る" },
+        { "text": "do the laundry", "ja": "洗濯をする" },
+        { "text": "hang clothes", "ja": "服を干す" },
+        { "text": "wipe the table", "ja": "机を拭く" },
+        { "text": "walk my dog", "ja": "犬の散歩をする" }
+      ],
+      "variants": [
+        { "text": "I don't have to", "ja": "〜しなくてもいい", "combos": [
+          { "text": "put on makeup", "ja": "化粧をする" },
+          { "text": "do the dishes", "ja": "お皿を洗う" },
+          { "text": "pick it up", "ja": "取りに行く" },
+          { "text": "remember everything", "ja": "全部覚える" },
+          { "text": "attend the meeting", "ja": "会議に出席する" }
+        ] },
+        { "text": "You don't have to", "ja": "〜しなくていいよ", "combos": [
+          { "text": "heat it up", "ja": "温める" },
+          { "text": "wash it", "ja": "洗う" },
+          { "text": "tell her", "ja": "彼女に伝える" },
+          { "text": "finish it", "ja": "全部食べる" },
+          { "text": "put anything on it", "ja": "何かをかける" }
+        ] }
+      ]
+    },
+    {
+      "id": "p09", "no": 9, "kind": "medium", "text": "I might", "display": "I might 〜", "ja": "〜するかも・〜しようかな",
+      "note_ja": "I might have to 〜 で「〜しなきゃいけないかも」と重ねられます。",
+      "example": { "text": "I might read a book.", "ja": "本でも読もうかな" },
+      "combos": [
+        { "text": "have some tissues", "ja": "ティッシュを持っている" },
+        { "text": "eat it later", "ja": "後で食べる" },
+        { "text": "come home early today", "ja": "今日は早く帰る" },
+        { "text": "read a book", "ja": "本を読む" },
+        { "text": "order it", "ja": "それを注文する" },
+        { "text": "do it again", "ja": "もう 1 回やる" },
+        { "text": "stay home", "ja": "家にいる" },
+        { "text": "watch a movie", "ja": "映画を見る" }
+      ],
+      "variants": [
+        { "text": "I might have to", "ja": "〜しなきゃいけないかも", "combos": [
+          { "text": "work late tonight", "ja": "今夜遅くまで働く" },
+          { "text": "cancel", "ja": "キャンセルする" },
+          { "text": "book online", "ja": "ネットで予約する" },
+          { "text": "put it in the fridge", "ja": "冷蔵庫に入れる" }
+        ] }
+      ]
+    },
+    {
+      "id": "p10", "no": 10, "kind": "medium", "text": "There is", "display": "There is/are 〜", "ja": "〜がある・〜がいる",
+      "note_ja": "後ろが複数なら There are。There should be / There might be とも重ねられます。",
+      "example": { "text": "There is someone inside.", "ja": "中に誰かいるよ" },
+      "combos": [
+        { "text": "someone inside", "ja": "中に誰か" },
+        { "text": "a container in the fridge", "ja": "冷蔵庫にタッパー" },
+        { "text": "mosquitoes outside", "ja": "外に蚊" },
+        { "text": "files on the desk", "ja": "デスクの上にファイル" },
+        { "text": "many people today", "ja": "今日はたくさんの人" }
+      ],
+      "variants": [
+        { "text": "Is there", "ja": "〜ある?", "question": true, "combos": [
+          { "text": "a bus stop nearby", "ja": "近くにバス停" },
+          { "text": "Wi-Fi here", "ja": "ここに Wi-Fi" },
+          { "text": "room in the car", "ja": "車にスペース" },
+          { "text": "any good restaurants around here", "ja": "この辺においしい店" }
+        ] }
+      ]
+    },
+    {
+      "id": "p11", "no": 11, "kind": "medium", "text": "Let me", "display": "Let me 〜", "ja": "〜させて・〜するね",
+      "note_ja": "自分がこれからすることを、やわらかく伝えます。",
+      "example": { "text": "Let me check.", "ja": "確認するね" },
+      "combos": [
+        { "text": "call you back later", "ja": "あとで電話をかけ直す" },
+        { "text": "check", "ja": "確認する" },
+        { "text": "take a look", "ja": "見る" },
+        { "text": "ask her", "ja": "彼女に聞く" },
+        { "text": "think about it", "ja": "それについて考える" },
+        { "text": "double-check", "ja": "再確認する" }
+      ],
+      "variants": [
+        { "text": "I'll let you know", "ja": "〜を知らせるね", "combos": [
+          { "text": "the schedule", "ja": "予定" },
+          { "text": "the date", "ja": "日にち" },
+          { "text": "the time", "ja": "時間" },
+          { "text": "the price", "ja": "料金" },
+          { "text": "the details", "ja": "詳細" },
+          { "text": "the results", "ja": "結果" }
+        ] }
+      ]
+    },
+    {
+      "id": "p12", "no": 12, "kind": "medium", "text": "I forgot to", "display": "I forgot to 〜", "ja": "〜し忘れた",
+      "note_ja": "Don't forget to 〜 なら「〜し忘れないでね」。",
+      "example": { "text": "I forgot to charge my phone.", "ja": "携帯を充電し忘れた" },
+      "combos": [
+        { "text": "charge my phone", "ja": "携帯を充電する" },
+        { "text": "withdraw money", "ja": "お金を引き出す" },
+        { "text": "bring a water bottle", "ja": "水筒を持ってくる" },
+        { "text": "return the book", "ja": "本を返す" },
+        { "text": "take a photo", "ja": "写真を撮る" },
+        { "text": "buy milk", "ja": "牛乳を買う" }
+      ],
+      "variants": [
+        { "text": "Don't forget to", "ja": "〜し忘れないでね", "combos": [
+          { "text": "lock the front door", "ja": "玄関の鍵をかける" },
+          { "text": "wash your hands", "ja": "手を洗う" },
+          { "text": "do your homework", "ja": "宿題をする" },
+          { "text": "brush your teeth", "ja": "歯を磨く" },
+          { "text": "take notes", "ja": "メモをする" },
+          { "text": "water the flowers", "ja": "花に水をやる" }
+        ] }
+      ]
+    },
+    {
+      "id": "p13", "no": 13, "kind": "medium", "text": "I decided to", "display": "I decided to 〜", "ja": "〜することにした",
+      "note_ja": "否定は I decided not to 〜。",
+      "example": { "text": "I decided to study French.", "ja": "フランス語を勉強することにした" },
+      "combos": [
+        { "text": "study French", "ja": "フランス語を勉強する" },
+        { "text": "sign up for the course", "ja": "そのコースに申し込む" },
+        { "text": "sell my car", "ja": "車を売る" },
+        { "text": "change my job", "ja": "転職する" },
+        { "text": "go on a diet", "ja": "ダイエットをする" }
+      ]
+    },
+    {
+      "id": "p14", "no": 14, "kind": "medium", "text": "I ended up", "display": "I ended up 〜ing", "ja": "結局〜した",
+      "note_ja": "思っていたのと違う結果になったときに使います。",
+      "example": { "text": "I ended up staying home.", "ja": "結局、家にいた" },
+      "combos": [
+        { "text": "staying home", "ja": "家にいる" },
+        { "text": "using it", "ja": "それを使う" },
+        { "text": "buying the shoes", "ja": "その靴を買う" },
+        { "text": "taking the train", "ja": "電車に乗る" },
+        { "text": "eating it", "ja": "それを食べる" },
+        { "text": "making it on time", "ja": "時間に間に合う" }
+      ],
+      "variants": [
+        { "text": "I ended up not", "ja": "結局〜しなかった", "combos": [
+          { "text": "calling him", "ja": "彼に電話をする" },
+          { "text": "taking a nap", "ja": "昼寝をする" },
+          { "text": "ordering it", "ja": "注文する" },
+          { "text": "throwing it away", "ja": "捨てる" },
+          { "text": "applying for the job", "ja": "仕事に応募する" }
+        ] }
+      ]
+    },
+    {
+      "id": "p15", "no": 15, "kind": "medium", "text": "I tend to", "display": "I tend to 〜", "ja": "〜しがち・ついつい〜しちゃう",
+      "note_ja": "主語が I 以外なら tends to。",
+      "example": { "text": "I tend to buy too much.", "ja": "つい買いすぎちゃう" },
+      "combos": [
+        { "text": "buy too much", "ja": "買いすぎる" },
+        { "text": "drink too much", "ja": "飲みすぎる" },
+        { "text": "forget", "ja": "忘れる" },
+        { "text": "procrastinate", "ja": "先延ばしにする" },
+        { "text": "stay up late", "ja": "夜更かしする" },
+        { "text": "forget things", "ja": "物を忘れる" }
+      ]
+    },
+    {
+      "id": "p16", "no": 16, "kind": "medium", "text": "I used to", "display": "I used to 〜", "ja": "前は〜してた",
+      "note_ja": "今はもうしていないことに使います。There used to be 〜 で「前は〜があった」。",
+      "example": { "text": "I used to live there.", "ja": "前はそこに住んでたんだ" },
+      "combos": [
+        { "text": "live there", "ja": "そこに住む" },
+        { "text": "travel a lot", "ja": "たくさん旅行に行く" },
+        { "text": "play the piano", "ja": "ピアノを弾く" },
+        { "text": "park here", "ja": "ここに駐車する" },
+        { "text": "collect these cards", "ja": "このカードを集める" }
+      ],
+      "variants": [
+        { "text": "They used to", "ja": "あそこは前は〜してた", "combos": [
+          { "text": "close at 7 pm", "ja": "7 時に閉まる" },
+          { "text": "sell alcohol too", "ja": "お酒も売る" },
+          { "text": "have a lunch special", "ja": "ランチセットがある" },
+          { "text": "be popular", "ja": "人気だ" },
+          { "text": "be quiet on Sundays", "ja": "日曜日は静かだ" }
+        ] },
+        { "text": "There used to be", "ja": "前は〜があった", "combos": [
+          { "text": "a dentist here", "ja": "ここに歯医者" },
+          { "text": "a 100 yen shop here", "ja": "ここに 100 円ショップ" },
+          { "text": "a parking lot", "ja": "駐車場" }
+        ] }
+      ]
+    },
+    {
+      "id": "p17", "no": 17, "kind": "medium", "text": "I feel like", "display": "I feel like 〜ing", "ja": "〜したい気分",
+      "note_ja": "後ろに名詞を置けば「〜の気分」。否定は I don't feel like 〜ing。",
+      "example": { "text": "I feel like going for a walk.", "ja": "散歩に行きたい気分" },
+      "combos": [
+        { "text": "going for a walk", "ja": "散歩に行く" },
+        { "text": "baking cookies", "ja": "クッキーを焼く" },
+        { "text": "watching a movie", "ja": "映画を見る" },
+        { "text": "going shopping", "ja": "買い物に行く" },
+        { "text": "going to the beach", "ja": "海に行く" },
+        { "text": "a burger", "ja": "ハンバーガー" },
+        { "text": "noodles", "ja": "麺類" },
+        { "text": "something warm", "ja": "何か温かいもの" }
+      ],
+      "variants": [
+        { "text": "I don't feel like", "ja": "〜する気分じゃない", "combos": [
+          { "text": "cooking", "ja": "料理をする" },
+          { "text": "going to bed", "ja": "寝る" },
+          { "text": "going out", "ja": "出かける" },
+          { "text": "cleaning", "ja": "掃除をする" },
+          { "text": "replying to the emails", "ja": "メールに返信する" }
+        ] }
+      ]
+    },
+    {
+      "id": "p18", "no": 18, "kind": "medium", "text": "I'm excited to", "display": "I'm excited to/for 〜", "ja": "〜するのが楽しみ",
+      "note_ja": "後ろが動詞なら to、名詞なら for。",
+      "example": { "text": "I'm excited to see you.", "ja": "会えるのが楽しみ" },
+      "combos": [
+        { "text": "see you", "ja": "あなたに会う" },
+        { "text": "talk to you", "ja": "あなたと話す" },
+        { "text": "learn new things", "ja": "新しいことを学ぶ" },
+        { "text": "join the team", "ja": "チームに入る" }
+      ],
+      "variants": [
+        { "text": "I'm excited for", "ja": "〜が楽しみ", "combos": [
+          { "text": "the event", "ja": "イベント" },
+          { "text": "the wedding", "ja": "結婚式" },
+          { "text": "the trip", "ja": "旅行" },
+          { "text": "the movie", "ja": "映画" },
+          { "text": "Sunday", "ja": "日曜日" }
+        ] }
+      ]
+    },
+    {
+      "id": "p19", "no": 19, "kind": "medium", "text": "I'm ready to", "display": "I'm ready to/for 〜", "ja": "もう〜できる・〜の準備ができた",
+      "note_ja": "後ろが動詞なら to、名詞なら for。",
+      "example": { "text": "I'm ready to go.", "ja": "もう行けるよ" },
+      "combos": [
+        { "text": "go", "ja": "行く" },
+        { "text": "go out", "ja": "出かける" },
+        { "text": "go to bed", "ja": "寝る" },
+        { "text": "eat", "ja": "食べる" },
+        { "text": "leave", "ja": "出発する" }
+      ],
+      "variants": [
+        { "text": "I'm ready for", "ja": "〜の準備ができた", "combos": [
+          { "text": "tomorrow", "ja": "明日" },
+          { "text": "the trip", "ja": "旅行" },
+          { "text": "the weekend", "ja": "週末" },
+          { "text": "the interview", "ja": "面接" }
+        ] }
+      ]
+    },
+    {
+      "id": "p20", "no": 20, "kind": "medium", "text": "I'm used to", "display": "I'm used to 〜ing", "ja": "〜に慣れている",
+      "note_ja": "「慣れる(これから)」なら get used to 〜。",
+      "example": { "text": "I'm used to waking up early.", "ja": "早起きには慣れてるよ" },
+      "combos": [
+        { "text": "waking up early", "ja": "早く起きる" },
+        { "text": "travelling", "ja": "旅行する" },
+        { "text": "using it", "ja": "それを使う" },
+        { "text": "wearing heels", "ja": "ヒールを履く" },
+        { "text": "looking after children", "ja": "子どもの世話をする" },
+        { "text": "long drives", "ja": "長時間の運転" }
+      ]
+    },
+    {
+      "id": "p21", "no": 21, "kind": "medium", "text": "I'm gonna", "display": "I'm gonna 〜", "ja": "〜するつもり",
+      "note_ja": "過去形の I was gonna 〜 は「〜するつもりだった(実際はしなかった)」。",
+      "example": { "text": "I'm gonna call them.", "ja": "彼らに電話するつもり" },
+      "combos": [
+        { "text": "call them", "ja": "彼らに電話する" },
+        { "text": "cook dinner", "ja": "夕食を作る" },
+        { "text": "go hiking", "ja": "ハイキングに行く" },
+        { "text": "save money", "ja": "貯金する" }
+      ],
+      "variants": [
+        { "text": "I was gonna", "ja": "〜するつもりだった", "combos": [
+          { "text": "email you", "ja": "メールを送る" },
+          { "text": "do that", "ja": "そうする" },
+          { "text": "eat lunch", "ja": "昼食を食べる" },
+          { "text": "watch a movie", "ja": "映画を見る" },
+          { "text": "leave a message", "ja": "伝言を残す" }
+        ] }
+      ]
+    },
+    {
+      "id": "p22", "no": 22, "kind": "medium", "text": "I'm supposed to", "display": "I'm supposed to 〜", "ja": "〜することになっている",
+      "note_ja": "ルールや約束から「そうするはず」。過去形は「本当は〜するはずだった」。",
+      "example": { "text": "I'm supposed to be at the airport by 6:30.", "ja": "6 時半までに空港に着くことになってる" },
+      "combos": [
+        { "text": "take out the garbage on Tuesdays", "ja": "火曜日にごみを出す" },
+        { "text": "be at the airport by 6:30", "ja": "6 時半までに空港に着く" },
+        { "text": "come by 7", "ja": "7 時までに来る" },
+        { "text": "use this machine", "ja": "この機械を使う" },
+        { "text": "water the flowers every day", "ja": "毎日花に水をやる" }
+      ],
+      "variants": [
+        { "text": "I was supposed to", "ja": "本当は〜するはずだった", "combos": [
+          { "text": "get there by 2", "ja": "2 時までに着く" },
+          { "text": "buy milk", "ja": "牛乳を買う" },
+          { "text": "pay the bills", "ja": "請求書を払う" },
+          { "text": "call her", "ja": "彼女に電話する" },
+          { "text": "submit it", "ja": "提出する" },
+          { "text": "take medicine", "ja": "薬を飲む" }
+        ] }
+      ]
+    },
+    {
+      "id": "p23", "no": 23, "kind": "medium", "text": "I'm about to", "display": "I'm about to 〜", "ja": "今ちょうど〜するところ",
+      "note_ja": "直前であることを伝えます。I was about to 〜 なら「〜するところだった」。",
+      "example": { "text": "I'm about to leave.", "ja": "今ちょうど出るところ" },
+      "combos": [
+        { "text": "leave", "ja": "出発する" },
+        { "text": "upload it", "ja": "投稿する" },
+        { "text": "go to bed", "ja": "寝る" },
+        { "text": "have lunch", "ja": "昼食を食べる" },
+        { "text": "take a shower", "ja": "シャワーを浴びる" },
+        { "text": "do some exercise", "ja": "運動をする" },
+        { "text": "finish work", "ja": "仕事を終える" }
+      ],
+      "variants": [
+        { "text": "I was about to", "ja": "〜するところだった", "combos": [
+          { "text": "call you", "ja": "電話する" },
+          { "text": "tell you", "ja": "伝える" },
+          { "text": "go for a walk", "ja": "散歩に行く" },
+          { "text": "text you", "ja": "メッセージを送る" },
+          { "text": "do the dishes", "ja": "お皿を洗う" }
+        ] }
+      ]
+    },
+    {
+      "id": "p24", "no": 24, "kind": "medium", "text": "I almost", "display": "I almost 〜", "ja": "〜してしまうところだった",
+      "note_ja": "後ろは過去形。自分の意思とは関係なく起こりそうになったことに使います。",
+      "example": { "text": "I almost forgot my keys.", "ja": "鍵を忘れるところだった" },
+      "combos": [
+        { "text": "forgot my keys", "ja": "鍵を忘れる" },
+        { "text": "fell over", "ja": "転ぶ" },
+        { "text": "fell asleep", "ja": "寝る" },
+        { "text": "cried", "ja": "泣く" },
+        { "text": "deleted the file", "ja": "ファイルを消す" },
+        { "text": "spilled the milk", "ja": "牛乳をこぼす" },
+        { "text": "slipped", "ja": "滑る" },
+        { "text": "missed the train", "ja": "電車を逃す" }
+      ]
+    },
+    {
+      "id": "p25", "no": 25, "kind": "medium", "text": "I'll be able to", "display": "I'll be able to 〜", "ja": "〜できるだろう",
+      "note_ja": "can は他の助動詞と重ねられないので、be able to を使います。",
+      "example": { "text": "I'll be able to take your call.", "ja": "電話に出られるよ" },
+      "combos": [
+        { "text": "take your call", "ja": "電話に出る" },
+        { "text": "attend the meeting", "ja": "会議に参加する" },
+        { "text": "stay overnight", "ja": "泊まる" },
+        { "text": "do it on my own", "ja": "自分でやる" }
+      ],
+      "variants": [
+        { "text": "I might be able to", "ja": "〜できるかも", "combos": [
+          { "text": "change the booking", "ja": "予約を変更する" },
+          { "text": "help you", "ja": "手伝う" },
+          { "text": "drop by", "ja": "立ち寄る" },
+          { "text": "give you a ride", "ja": "車で送る" },
+          { "text": "get there in time", "ja": "間に合う" }
+        ] }
+      ]
+    },
+    {
+      "id": "p26", "no": 26, "kind": "medium", "text": "I've", "display": "I've 〜 before", "ja": "〜したことがある",
+      "note_ja": "経験を言う形です。否定は I've never 〜、疑問は Have you 〜?",
+      "example": { "text": "I've heard of it before.", "ja": "それ、聞いたことあるよ" },
+      "combos": [
+        { "text": "heard of it", "ja": "聞く" },
+        { "text": "watched it", "ja": "見る" },
+        { "text": "made it", "ja": "作る" },
+        { "text": "had it", "ja": "食べる" },
+        { "text": "been there", "ja": "そこに行く" },
+        { "text": "been to Japan", "ja": "日本に行く" }
+      ],
+      "variants": [
+        { "text": "I've never", "ja": "〜したことがない", "combos": [
+          { "text": "thought about it", "ja": "それについて考える" },
+          { "text": "talked to her", "ja": "彼女と話す" },
+          { "text": "played basketball", "ja": "バスケをする" }
+        ] },
+        { "text": "Have you", "ja": "〜したことある?", "question": true, "combos": [
+          { "text": "met him", "ja": "彼に会う" },
+          { "text": "tried it", "ja": "試す" },
+          { "text": "done yoga", "ja": "ヨガをする" },
+          { "text": "seen a panda", "ja": "パンダを見る" },
+          { "text": "used it", "ja": "それを使う" }
+        ] }
+      ]
+    },
+    {
+      "id": "p27", "no": 27, "kind": "medium", "text": "I've been", "display": "I've been 〜ing", "ja": "ずっと〜している",
+      "note_ja": "続けていることに使います。期間は for 〜、始まりは since 〜。",
+      "example": { "text": "I've been practicing the guitar lately.", "ja": "最近ギターの練習をしてるんだ" },
+      "combos": [
+        { "text": "practicing the guitar lately", "ja": "ギターの練習をする" },
+        { "text": "looking for it", "ja": "それを探す" },
+        { "text": "thinking about it", "ja": "それについて考える" },
+        { "text": "trying to fix this", "ja": "これを直そうとする" },
+        { "text": "learning English for 10 years", "ja": "10 年英語を勉強する" },
+        { "text": "waiting for so long", "ja": "ずっと待つ" }
+      ],
+      "variants": [
+        { "text": "I haven't been", "ja": "ずっと〜してない", "combos": [
+          { "text": "going out lately", "ja": "出かける" },
+          { "text": "reading the news lately", "ja": "ニュースを読む" },
+          { "text": "checking social media lately", "ja": "SNS を見る" },
+          { "text": "exercising lately", "ja": "運動する" },
+          { "text": "wearing this watch lately", "ja": "この時計をつける" }
+        ] }
+      ]
+    },
+    {
+      "id": "p28", "no": 28, "kind": "medium", "text": "I've", "display": "I've 〜 already / I haven't 〜 yet", "ja": "もう〜した・まだ〜してない",
+      "note_ja": "already は「もう」、yet は「まだ」。疑問文は Have you 〜 yet?",
+      "example": { "text": "I haven't finished it yet.", "ja": "まだ終わらせてないよ" },
+      "combos": [
+        { "text": "done it already", "ja": "もうやった" },
+        { "text": "watched it already", "ja": "もう見た" },
+        { "text": "made it already", "ja": "もう作った" },
+        { "text": "read it already", "ja": "もう読んだ" },
+        { "text": "asked her already", "ja": "もう彼女に聞いた" }
+      ],
+      "variants": [
+        { "text": "I haven't", "ja": "まだ〜してない", "suffix": "yet", "combos": [
+          { "text": "finished it", "ja": "終わらせる" },
+          { "text": "washed it", "ja": "洗う" },
+          { "text": "cleaned it", "ja": "掃除する" },
+          { "text": "opened it", "ja": "開ける" },
+          { "text": "told you", "ja": "あなたに伝える" }
+        ] },
+        { "text": "Have you", "ja": "もう〜した?", "question": true, "suffix": "already", "combos": [
+          { "text": "had lunch", "ja": "昼食を食べる" },
+          { "text": "used it", "ja": "使う" },
+          { "text": "checked it", "ja": "確認する" },
+          { "text": "submitted it", "ja": "提出する" },
+          { "text": "taken a shower", "ja": "シャワーを浴びる" }
+        ] }
+      ]
+    },
+    {
+      "id": "p29", "no": 29, "kind": "medium", "text": "I should have", "display": "I should have 〜", "ja": "〜すればよかった",
+      "note_ja": "過去を後悔するときの形。I should've と縮めることが多いです。",
+      "example": { "text": "I should have asked her.", "ja": "彼女に聞けばよかった" },
+      "combos": [
+        { "text": "asked her", "ja": "彼女に聞く" },
+        { "text": "read the instructions", "ja": "説明書を読む" },
+        { "text": "taken the elevator", "ja": "エレベーターに乗る" },
+        { "text": "eaten breakfast", "ja": "朝食を食べる" },
+        { "text": "bought it", "ja": "買う" },
+        { "text": "left earlier", "ja": "もっと早く出る" }
+      ],
+      "variants": [
+        { "text": "I could have", "ja": "〜できたのに", "combos": [
+          { "text": "told you", "ja": "伝える" },
+          { "text": "done it", "ja": "そうする" },
+          { "text": "fixed it", "ja": "直す" },
+          { "text": "made it", "ja": "都合がつく" },
+          { "text": "gone there", "ja": "そこに行く" }
+        ] },
+        { "text": "I would have", "ja": "〜したのに", "combos": [
+          { "text": "called you", "ja": "あなたに電話する" },
+          { "text": "checked it", "ja": "確認する" },
+          { "text": "brought it", "ja": "持ってくる" },
+          { "text": "dressed up", "ja": "おしゃれする" },
+          { "text": "gone back", "ja": "戻る" }
+        ] },
+        { "text": "I might have", "ja": "〜したかも", "combos": [
+          { "text": "thrown it away", "ja": "捨てる" },
+          { "text": "forgotten it", "ja": "忘れる" },
+          { "text": "twisted my ankle", "ja": "足首をひねる" },
+          { "text": "seen it before", "ja": "前に見たことがある" }
+        ] }
+      ]
+    },
+    {
+      "id": "p30", "no": 30, "kind": "medium", "text": "It takes", "display": "It takes 時間 to 〜", "ja": "〜するのに…かかる",
+      "note_ja": "過去は It took。for me を足すと「自分の場合は」。",
+      "example": { "text": "It takes 5 minutes to walk there.", "ja": "歩いて行くと 5 分かかるよ" },
+      "combos": [
+        { "text": "walk there", "ja": "歩いてそこに行く" },
+        { "text": "make it", "ja": "作る" },
+        { "text": "download it", "ja": "ダウンロードする" },
+        { "text": "turn it on", "ja": "電源を入れる" },
+        { "text": "drive there", "ja": "運転してそこに行く" },
+        { "text": "get there", "ja": "そこに着く" },
+        { "text": "cook rice", "ja": "お米を炊く" }
+      ],
+      "variants": [
+        { "text": "It took me a while to", "ja": "〜するのにしばらくかかった", "combos": [
+          { "text": "fix it", "ja": "直す" },
+          { "text": "finish it", "ja": "終える" },
+          { "text": "get there", "ja": "そこに着く" },
+          { "text": "realize", "ja": "気づく" },
+          { "text": "get used to it", "ja": "慣れる" }
+        ] }
+      ]
+    },
+    {
+      "id": "p31", "no": 31, "kind": "medium", "text": "It reminds me of", "display": "It reminds me of 〜", "ja": "(それを見ると)〜を思い出す",
+      "note_ja": "主語はモノや人。日本語と感覚が違うので、そのまま覚えます。",
+      "example": { "text": "She reminds me of my grandma.", "ja": "彼女を見ると、おばあちゃんを思い出す" },
+      "combos": [
+        { "text": "my grandma", "ja": "おばあちゃん" },
+        { "text": "him", "ja": "彼" },
+        { "text": "my childhood", "ja": "子どもの頃" },
+        { "text": "last time", "ja": "前回" },
+        { "text": "Japan", "ja": "日本" },
+        { "text": "home", "ja": "地元" }
+      ]
+    },
+    {
+      "id": "p32", "no": 32, "kind": "medium", "text": "It makes me", "display": "It makes me 〜", "ja": "私を〜な気持ちにする",
+      "note_ja": "感情を動かされたときの表現。It makes A B で「A を B にする」。",
+      "example": { "text": "It makes me hungry.", "ja": "それを見るとお腹がすくんだよね" },
+      "combos": [
+        { "text": "hungry", "ja": "お腹がすく" },
+        { "text": "tired", "ja": "疲れる" },
+        { "text": "sick", "ja": "気持ち悪い" },
+        { "text": "motivated", "ja": "やる気が出る" },
+        { "text": "excited", "ja": "わくわくする" },
+        { "text": "confident", "ja": "自信がある" },
+        { "text": "sleepy", "ja": "眠くなる" },
+        { "text": "calm", "ja": "落ち着く" }
+      ]
+    },
+    {
+      "id": "p33", "no": 33, "kind": "medium", "text": "It looks", "display": "It looks 〜 / It looks like 〜", "ja": "〜に見える・〜みたい",
+      "note_ja": "後ろが形容詞なら looks、名詞なら looks like。sounds / feels / tastes も同じ形です。",
+      "example": { "text": "It looks good.", "ja": "おいしそう" },
+      "combos": [
+        { "text": "good", "ja": "よい・おいしい" },
+        { "text": "busy", "ja": "忙しい" },
+        { "text": "fine", "ja": "大丈夫" },
+        { "text": "sweet", "ja": "甘い" },
+        { "text": "cold", "ja": "寒い" },
+        { "text": "expensive", "ja": "高い" }
+      ],
+      "variants": [
+        { "text": "It looks like a", "ja": "〜みたい", "combos": [
+          { "text": "pancake", "ja": "パンケーキ" },
+          { "text": "cloud", "ja": "雲" },
+          { "text": "tree", "ja": "木" },
+          { "text": "vending machine", "ja": "自動販売機" },
+          { "text": "rock", "ja": "岩" }
+        ] },
+        { "text": "It sounds", "ja": "〜に聞こえる", "combos": [
+          { "text": "good", "ja": "いいね" },
+          { "text": "fun", "ja": "楽しそう" },
+          { "text": "hard", "ja": "大変そう" }
+        ] }
+      ]
+    },
+    {
+      "id": "p34", "no": 34, "kind": "medium", "text": "It must be", "display": "It must be 〜", "ja": "〜に違いない",
+      "note_ja": "確信の強さは must > should > might > could の順です。",
+      "example": { "text": "It must be good.", "ja": "おいしいに違いないね" },
+      "combos": [
+        { "text": "good", "ja": "美味しい" },
+        { "text": "busy", "ja": "混んでいる" },
+        { "text": "nice", "ja": "よい" },
+        { "text": "hard", "ja": "大変" },
+        { "text": "cold outside", "ja": "外は寒い" },
+        { "text": "popular", "ja": "人気がある" }
+      ],
+      "variants": [
+        { "text": "She should be", "ja": "彼女は〜なはず", "combos": [
+          { "text": "OK", "ja": "大丈夫" },
+          { "text": "full", "ja": "お腹がいっぱい" },
+          { "text": "done by now", "ja": "もう終わっている" },
+          { "text": "there", "ja": "そこにいる" },
+          { "text": "upstairs", "ja": "2 階にいる" }
+        ] },
+        { "text": "It might be", "ja": "〜かもしれない", "combos": [
+          { "text": "true", "ja": "本当" },
+          { "text": "fun", "ja": "楽しい" },
+          { "text": "mine", "ja": "私の" },
+          { "text": "in the closet", "ja": "クローゼットの中" },
+          { "text": "a good idea", "ja": "よいアイディア" }
+        ] },
+        { "text": "It could be", "ja": "〜ということもありえる", "combos": [
+          { "text": "right", "ja": "合っている" },
+          { "text": "closed", "ja": "閉まっている" },
+          { "text": "my sister's", "ja": "姉のもの" },
+          { "text": "here", "ja": "ここにある" },
+          { "text": "under the bed", "ja": "ベッドの下にある" }
+        ] }
+      ]
+    }
+  ]
+}
