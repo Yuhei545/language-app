@@ -11,7 +11,7 @@
  *   npm run lessons:audio -- --lang en --prune    文面を直した後に、使われないクリップを消す
  *   npm run lessons:audio -- --preview-voices     ナレーター候補の声を 1 文ずつ作って聴き比べる
  *
- * .env の GEMINI_API_KEY を使う(アプリには渡らない)。無料枠の全モデルが 1 日の上限に当たったら
+ * .env の GEMINI_API_KEY を使う(アプリには渡らない)。全モデルが 1 日あたりの上限に当たったら
  * マニフェストを書いて止まる。翌日そのまま再実行すれば続きから作る。
  */
 import { Mp3Encoder } from '@breezystack/lamejs'
@@ -55,7 +55,7 @@ const PUBLIC_LESSONS = join(ROOT, 'public', 'lessons')
 
 /** 1 回の呼び出しでまとめて作る文の数。多いほど回数を節約できるが、切り分けに失敗しやすい。 */
 const BATCH_SIZE = 6
-/** 呼び出しの間隔。無料枠の 1 分あたりの上限(10 RPM 前後)を超えないように。 */
+/** 呼び出しの間隔。API の 1 分あたりの上限(10 RPM 前後)を超えないように。 */
 const MIN_INTERVAL_MS = 6_500
 /** 分あたりの上限で返ってきた待ち時間がこれ未満なら待って再試行する。 */
 const MAX_WAIT_SEC = 120
@@ -286,6 +286,13 @@ class SynthesisStop extends Error {
   }
 }
 
+class ExitWithCode extends Error {
+  constructor(readonly code: number) {
+    super()
+    this.name = 'ExitWithCode'
+  }
+}
+
 function parseRetryDelaySec(error: unknown): number | null {
   const raw = error instanceof Error && error.cause ? String((error.cause as { message?: unknown }).message ?? error.cause) : ''
   const source = `${raw} ${error instanceof Error ? error.message : ''}`
@@ -356,7 +363,7 @@ class Synthesizer {
             continue
           }
           if (this.modelIndex + 1 < this.models.length) {
-            console.warn(`  ${this.model} は今日の上限です。${this.models[this.modelIndex + 1]} に切り替えます`)
+            console.warn(`  ${this.model} は 1 日の上限です。${this.models[this.modelIndex + 1]} に切り替えます`)
             this.modelIndex += 1
             return { kind: 'model' }
           }
@@ -542,8 +549,9 @@ async function previewVoices(narrator: string | null, models: readonly string[])
   for (const sample of samples) {
     const result = await synthesizer.single(PREVIEW_SENTENCES[sample.lang], sample.lang, sample.voice)
     if ('kind' in result) {
-      console.error(`上限: ${result.message}`)
-      process.exit(2)
+      console.error(`1 日の上限に達しました: ${result.message}`)
+      process.exitCode = 2
+      return
     }
     const path = join(outDir, `${sample.lang}-${sample.voice}.mp3`)
     writeFileSync(path, toMp3(result))
@@ -605,7 +613,7 @@ async function synthesize(args: Args): Promise<void> {
     writeManifest(lang, manifest)
     console.error(`\n${message}(残り ${pending.length - done} クリップ)`)
     printFailedClips()
-    process.exit(2)
+    throw new ExitWithCode(2)
   }
   const recordFailure = (item: Pending, error: unknown) => {
     failedClips.push({
@@ -632,7 +640,7 @@ async function synthesize(args: Args): Promise<void> {
           try {
             const result = await synthesizer.batch(texts, clipLang, voiceName)
             if (result && 'kind' in result) {
-              stop(`無料枠の上限。明日再開してください: ${result.message}`)
+              stop(`1 日の上限に達しました。明日そのまま再実行すれば続きから作れます: ${result.message}`)
             }
             audios = result as SynthesizedAudio[] | null
             if (audios && !audios.every((audio, index) => plausible(audio, texts[index], clipLang))) {
@@ -659,7 +667,7 @@ async function synthesize(args: Args): Promise<void> {
               continue
             }
             if ('kind' in result) {
-              stop(`無料枠の上限。明日再開してください: ${result.message}`)
+              stop(`1 日の上限に達しました。明日そのまま再実行すれば続きから作れます: ${result.message}`)
             }
             saveClip(lang, item, result as SynthesizedAudio, manifest)
             done += 1
@@ -715,6 +723,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
+  if (error instanceof ExitWithCode) {
+    process.exitCode = error.code
+    return
+  }
   console.error(safeMessage(error))
-  process.exit(1)
+  process.exitCode = 1
 })
