@@ -3,6 +3,8 @@ export type Interest = 'travel' | 'friends' | 'content'
 export type MixingLevel = 1 | 2 | 3
 /** 2 語で言うの語数。2 語 → 3 語(主語を足す)→ 4 語(時や場所を足す)。 */
 export type TwoWordLevel = 2 | 3 | 4
+/** 動詞の並び。book は教材の順、frequency は海外ドラマでよく使う順。問題の出る順も変わる。 */
+export type TwoWordOrder = 'book' | 'frequency'
 export type PersonalWordKind = 'place' | 'person' | 'thing' | 'media'
 /** 型を回す・即答の確かめ方。self は答えを見て自分で判定(Gemini を使わない)。 */
 export type PatternCheck = 'auto' | 'record' | 'self'
@@ -37,6 +39,7 @@ export type Settings = {
   parentName: { en: string; ko: string }
   mixingLevel: MixingLevel
   twoWordLevel: TwoWordLevel
+  twoWordOrder: TwoWordOrder
   lessonPauseSeconds: number
   lessonRecording: boolean
   micDeviceId: string | null
@@ -73,6 +76,7 @@ const DEFAULT_SETTINGS: Settings = {
   parentName: { en: '', ko: '' },
   mixingLevel: 1,
   twoWordLevel: 2,
+  twoWordOrder: 'book',
   lessonPauseSeconds: 4,
   lessonRecording: false,
   micDeviceId: null,
@@ -152,6 +156,7 @@ function isSettings(value: unknown): value is Settings {
     && typeof value.parentName.ko === 'string'
     && (value.mixingLevel === 1 || value.mixingLevel === 2 || value.mixingLevel === 3)
     && (value.twoWordLevel === 2 || value.twoWordLevel === 3 || value.twoWordLevel === 4)
+    && (value.twoWordOrder === 'book' || value.twoWordOrder === 'frequency')
     && typeof value.lessonPauseSeconds === 'number'
     && Number.isFinite(value.lessonPauseSeconds)
     && value.lessonPauseSeconds >= 2
@@ -184,6 +189,9 @@ export function getSettings(): Settings {
         twoWordLevel: parsed.twoWordLevel === undefined
           ? DEFAULT_SETTINGS.twoWordLevel
           : parsed.twoWordLevel,
+        twoWordOrder: parsed.twoWordOrder === undefined
+          ? DEFAULT_SETTINGS.twoWordOrder
+          : parsed.twoWordOrder,
         lessonPauseSeconds: pauseSeconds === undefined
           ? DEFAULT_SETTINGS.lessonPauseSeconds
           : typeof pauseSeconds === 'number'

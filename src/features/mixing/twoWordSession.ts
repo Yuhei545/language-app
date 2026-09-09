@@ -1,3 +1,4 @@
+import { bestRank } from '../../content/frequencySchema'
 import {
   questionsOfLevel,
   type TwoWordKind,
@@ -5,6 +6,7 @@ import {
   type TwoWordQuestion,
   type TwoWordSet,
 } from '../../content/twoWordSchema'
+import type { TwoWordOrder } from '../../services/settings'
 
 /**
  * 2 語で言う。日本語のお題を見て、25 動詞から選んで 2 語で言う。
@@ -19,7 +21,12 @@ export const RECENT_TO_AVOID = 24
 export const HISTORY_LIMIT = 30
 
 export type TwoWordRound = { kind: TwoWordKind; questions: TwoWordQuestion[] }
-export type TwoWordSession = { level: TwoWordLevel; rounds: TwoWordRound[] }
+export type TwoWordSession = { level: TwoWordLevel; order: TwoWordOrder; rounds: TwoWordRound[] }
+
+/** その問題の順位。使う動詞のうち、いちばんよく使うものの順位。 */
+export function questionRank(question: TwoWordQuestion): number {
+  return bestRank(question.verbs)
+}
 
 function shuffle<T>(items: readonly T[], random: () => number): T[] {
   const copy = [...items]
@@ -30,15 +37,22 @@ function shuffle<T>(items: readonly T[], random: () => number): T[] {
   return copy
 }
 
-/** 最近出した問題を避けて選ぶ。足りなければ、古く出したものから戻す。 */
+/**
+ * 最近出した問題を避けて選ぶ。足りなければ、古く出したものから戻す。
+ * 頻度順のときは混ぜずに、よく使う動詞の問題から順に出す。
+ */
 function pick(
   pool: readonly TwoWordQuestion[],
   count: number,
   recent: readonly string[],
   random: () => number,
+  order: TwoWordOrder,
 ): TwoWordQuestion[] {
   const recentSet = new Set(recent)
-  const fresh = shuffle(pool.filter((question) => !recentSet.has(question.id)), random)
+  const notRecent = pool.filter((question) => !recentSet.has(question.id))
+  const fresh = order === 'frequency'
+    ? [...notRecent].sort((a, b) => questionRank(a) - questionRank(b) || a.id.localeCompare(b.id))
+    : shuffle(notRecent, random)
   if (fresh.length >= count) {
     return fresh.slice(0, count)
   }
@@ -51,11 +65,14 @@ function pick(
 export function buildTwoWordSession(params: {
   content: TwoWordSet
   level: TwoWordLevel
+  /** 問題を出す順。既定は教材の順(混ぜて出す)。 */
+  order?: TwoWordOrder
   recent?: readonly string[]
   random?: () => number
 }): TwoWordSession {
   const random = params.random ?? Math.random
   const recent = params.recent ?? []
+  const order = params.order ?? 'book'
   const questions = questionsOfLevel(params.content, params.level)
   const basic = questions.filter((question) => question.kind === 'basic')
   const scene = questions.filter((question) => question.kind === 'scene')
@@ -63,7 +80,7 @@ export function buildTwoWordSession(params: {
   // 場面設定(相手の発話に 2 語で返す)があれば、最後の 1 セットをそれにする
   const sceneRounds = scene.length >= SET_SIZE ? 1 : 0
   const basicRounds = SETS_PER_SESSION - sceneRounds
-  const basicPicked = pick(basic, basicRounds * SET_SIZE, recent, random)
+  const basicPicked = pick(basic, basicRounds * SET_SIZE, recent, random, order)
   if (basicPicked.length < basicRounds * SET_SIZE) {
     throw new Error(`${params.level} 語の問題が足りません(${basicPicked.length} 問)`)
   }
@@ -73,9 +90,9 @@ export function buildTwoWordSession(params: {
     rounds.push({ kind: 'basic', questions: basicPicked.slice(index * SET_SIZE, (index + 1) * SET_SIZE) })
   }
   if (sceneRounds === 1) {
-    rounds.push({ kind: 'scene', questions: pick(scene, SET_SIZE, recent, random) })
+    rounds.push({ kind: 'scene', questions: pick(scene, SET_SIZE, recent, random, order) })
   }
-  return { level: params.level, rounds }
+  return { level: params.level, order, rounds }
 }
 
 export type TwoWordResult = {

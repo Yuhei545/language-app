@@ -1,6 +1,7 @@
 import { Toast } from '../../components/Toast'
+import { byFrequency, rankOf } from '../../content/frequencySchema'
 import { VERB_GROUP_LABELS, type TwoWordVerb, type VerbGroup } from '../../content/twoWordSchema'
-import type { TwoWordLevel } from '../../services/settings'
+import type { TwoWordLevel, TwoWordOrder } from '../../services/settings'
 import { SET_SIZE, TARGET_SECONDS_PER_SET } from './twoWordSession'
 import { useTwoWordSession } from './useTwoWordSession'
 
@@ -8,6 +9,11 @@ const LEVELS: { level: TwoWordLevel; label: string; hint: string }[] = [
   { level: 2, label: '2 語', hint: '動詞 + 目的語' },
   { level: 3, label: '3 語', hint: '主語を足す' },
   { level: 4, label: '4 語', hint: '時や場所を足す' },
+]
+
+const ORDERS: { order: TwoWordOrder; label: string }[] = [
+  { order: 'book', label: '教材の順' },
+  { order: 'frequency', label: '頻度順' },
 ]
 
 const GROUP_ORDER: VerbGroup[] = ['action', 'change', 'state', 'emotion', 'transfer', 'thought']
@@ -29,29 +35,84 @@ function AnswerText({ text }: { text: string }) {
   )
 }
 
-function VerbList({ verbs }: { verbs: TwoWordVerb[] }) {
+function VerbChip({ verb, showRank }: { verb: TwoWordVerb; showRank: boolean }) {
+  const rank = rankOf(verb.text)
   return (
-    <div className="space-y-2">
-      {GROUP_ORDER.map((group) => {
-        const members = verbs.filter((verb) => verb.group === group)
-        if (members.length === 0) {
-          return null
-        }
-        return (
-          <div key={group}>
-            <p className="text-[11px] font-bold tracking-wider text-slate-500">{VERB_GROUP_LABELS[group]}</p>
-            <ul className="mt-1 flex flex-wrap gap-1.5">
-              {members.map((verb) => (
-                <li key={verb.text} className="rounded-full bg-white px-2.5 py-1 text-xs shadow-sm">
-                  <span className="font-bold text-slate-900">{verb.text}</span>
-                  <span className="ml-1 text-slate-500">{verb.ja}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      })}
-    </div>
+    <li className="rounded-full bg-white px-2 py-1 text-[11px] leading-4 shadow-sm">
+      {showRank ? (
+        <span className="mr-1 font-bold tabular-nums text-violet-600">{rank === null ? '—' : rank}</span>
+      ) : null}
+      <span className="font-bold text-slate-900">{verb.text}</span>
+      <span className="ml-1 text-slate-500">{verb.ja}</span>
+    </li>
+  )
+}
+
+/**
+ * 使える動詞 25 語。いつでも見えるところに置く(どれを使えるか忘れないため)。
+ * 教材でも問題のページに動詞の一覧が並んでいる。
+ */
+function VerbBoard({
+  verbs,
+  order,
+  onOrder,
+}: {
+  verbs: TwoWordVerb[]
+  order: TwoWordOrder
+  onOrder: (order: TwoWordOrder) => void
+}) {
+  return (
+    <section className="mt-5 rounded-2xl bg-slate-50 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-bold tracking-wider text-slate-600">使える動詞 {verbs.length}</p>
+        <div className="flex rounded-full bg-white p-0.5" aria-label="動詞の並び">
+          {ORDERS.map((item) => (
+            <button
+              key={item.order}
+              type="button"
+              aria-pressed={order === item.order}
+              onClick={() => onOrder(item.order)}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${order === item.order ? 'bg-violet-700 text-white' : 'text-slate-500'}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {order === 'frequency' ? (
+        <>
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {byFrequency(verbs, (verb) => verb.text).map((verb) => (
+              <VerbChip key={verb.text} verb={verb} showRank />
+            ))}
+          </ul>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500">
+            数字は海外ドラマでよく使われる動詞の順位です。「—」は 60 位までに入っていない語。
+            この並びのときは、よく使う動詞の問題から出ます。
+          </p>
+        </>
+      ) : (
+        <div className="mt-2 space-y-2">
+          {GROUP_ORDER.map((group) => {
+            const members = verbs.filter((verb) => verb.group === group)
+            if (members.length === 0) {
+              return null
+            }
+            return (
+              <div key={group}>
+                <p className="text-[10px] font-bold tracking-wider text-slate-500">{VERB_GROUP_LABELS[group]}</p>
+                <ul className="mt-1 flex flex-wrap gap-1.5">
+                  {members.map((verb) => (
+                    <VerbChip key={verb.text} verb={verb} showRank={false} />
+                  ))}
+                </ul>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -68,6 +129,9 @@ export function TwoWordPage({ lang }: { lang: 'en' | 'ko' }) {
   }
 
   const overTarget = session.elapsedMs > TARGET_SECONDS_PER_SET * 1000
+  const board = (
+    <VerbBoard verbs={session.verbs} order={session.order} onOrder={session.setOrder} />
+  )
 
   return (
     <div>
@@ -95,24 +159,16 @@ export function TwoWordPage({ lang }: { lang: 'en' | 'ko' }) {
       </div>
 
       {phase === 'idle' ? (
-        <div className="mt-7 rounded-3xl border border-violet-200 bg-white p-6 shadow-sm">
-          <div className="text-center">
-            <p className="text-6xl" aria-hidden="true">🔤</p>
-            <h2 className="mt-5 text-xl font-bold text-slate-900">2 語で言う</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              日本語のお題を見て、動詞 25 語から選んで声に出します。{SET_SIZE} 問を {TARGET_SECONDS_PER_SET} 秒で。
-              冠詞や三単現の s は気にしません。答えは 1 つではないので、動詞が合っていれば「言えた」です。
-            </p>
-            <p className="mt-2 text-xs font-bold text-violet-700">
-              {LEVELS.find((item) => item.level === session.level)?.label}: {LEVELS.find((item) => item.level === session.level)?.hint}
-            </p>
-          </div>
-          <details className="mt-4 rounded-2xl bg-violet-50 px-4 py-3">
-            <summary className="cursor-pointer text-xs font-bold tracking-wider text-violet-700">使う動詞 25 語</summary>
-            <div className="mt-3">
-              <VerbList verbs={session.verbs} />
-            </div>
-          </details>
+        <div className="mt-7 rounded-3xl border border-violet-200 bg-white p-6 text-center shadow-sm">
+          <p className="text-6xl" aria-hidden="true">🔤</p>
+          <h2 className="mt-5 text-xl font-bold text-slate-900">2 語で言う</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            日本語のお題を見て、動詞 25 語から選んで声に出します。{SET_SIZE} 問を {TARGET_SECONDS_PER_SET} 秒で。
+            冠詞や三単現の s は気にしません。答えは 1 つではないので、動詞が合っていれば「言えた」です。
+          </p>
+          <p className="mt-2 text-xs font-bold text-violet-700">
+            {LEVELS.find((item) => item.level === session.level)?.label}: {LEVELS.find((item) => item.level === session.level)?.hint}
+          </p>
           <button
             type="button"
             onClick={session.start}
@@ -230,16 +286,6 @@ export function TwoWordPage({ lang }: { lang: 'en' | 'ko' }) {
         </div>
       ) : null}
 
-      {phase === 'asking' || phase === 'checking' ? (
-        <button
-          type="button"
-          onClick={session.stop}
-          className="mt-3 w-full text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4"
-        >
-          やめる
-        </button>
-      ) : null}
-
       {phase === 'finished' && summary ? (
         <div className="mt-7 rounded-3xl border border-violet-200 bg-white p-6 text-center shadow-sm">
           <p className="text-5xl" aria-hidden="true">🔤</p>
@@ -280,6 +326,18 @@ export function TwoWordPage({ lang }: { lang: 'en' | 'ko' }) {
             もう一度
           </button>
         </div>
+      ) : null}
+
+      {board}
+
+      {phase === 'asking' || phase === 'checking' ? (
+        <button
+          type="button"
+          onClick={session.stop}
+          className="mt-3 w-full text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4"
+        >
+          やめる
+        </button>
       ) : null}
     </div>
   )

@@ -19,6 +19,7 @@ const defaults = {
   parentName: { en: '', ko: '' },
   mixingLevel: 1,
   twoWordLevel: 2,
+  twoWordOrder: 'book',
   lessonPauseSeconds: 4,
   lessonRecording: false,
   micDeviceId: null,

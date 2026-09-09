@@ -4,6 +4,7 @@ import {
   appendResult,
   bestRoundMs,
   buildTwoWordSession,
+  questionRank,
   readTwoWordStats,
   reachedTarget,
   RECENT_TO_AVOID,
@@ -39,6 +40,24 @@ describe('buildTwoWordSession', () => {
       expect(session.rounds.map((round) => round.kind)).toEqual(['basic', 'basic', 'basic'])
       expect(session.rounds.flatMap((round) => round.questions).every((question) => question.level === level)).toBe(true)
     }
+  })
+
+  it('頻度順にすると、よく使う動詞の問題から順に出る', () => {
+    const session = buildTwoWordSession({ content, level: 2, order: 'frequency', random: seeded(9) })
+    expect(session.order).toBe('frequency')
+    const basic = session.rounds.filter((round) => round.kind === 'basic').flatMap((round) => round.questions)
+    const ranks = basic.map(questionRank)
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
+    // 1 位 have、2 位 get あたりが先に来る
+    expect(ranks[0]).toBeLessThanOrEqual(5)
+  })
+
+  it('教材の順では混ぜて出す(頻度順とは並びが違う)', () => {
+    const byBook = buildTwoWordSession({ content, level: 2, random: seeded(9) })
+    const byRank = buildTwoWordSession({ content, level: 2, order: 'frequency', random: seeded(9) })
+    expect(byBook.order).toBe('book')
+    const ids = (session: typeof byBook) => session.rounds.flatMap((round) => round.questions.map((q) => q.id))
+    expect(ids(byBook)).not.toEqual(ids(byRank))
   })
 
   it('同じ問題は 1 回の中で重ならない', () => {

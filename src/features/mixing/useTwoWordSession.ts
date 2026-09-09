@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { loadTwoWord, type TwoWordQuestion, type TwoWordSet } from '../../content/twoWordSchema'
 import { speak, stopSpeaking, unlockAudio } from '../../services/speech'
-import { getSettings, setSettings, subscribe, type Settings, type TwoWordLevel } from '../../services/settings'
+import {
+  getSettings,
+  setSettings,
+  subscribe,
+  type Settings,
+  type TwoWordLevel,
+  type TwoWordOrder,
+} from '../../services/settings'
 import {
   appendResult,
   bestRoundMs,
@@ -79,6 +86,7 @@ export function useTwoWordSession(lang: 'en' | 'ko') {
       const built = buildTwoWordSession({
         content,
         level: settingsRef.current.twoWordLevel,
+        order: settingsRef.current.twoWordOrder,
         recent: stats.recent,
       })
       stopSpeaking()
@@ -209,11 +217,21 @@ export function useTwoWordSession(lang: 'en' | 'ko') {
     }
   }, [captureError])
 
+  /** 動詞の並びと、問題の出る順。 */
+  const setOrder = useCallback((order: TwoWordOrder) => {
+    try {
+      setSettings({ twoWordOrder: order })
+    } catch (settingsError) {
+      captureError(settingsError)
+    }
+  }, [captureError])
+
   return {
     supported,
     verbs: content?.verbs ?? [],
     phase,
     level: settings.twoWordLevel,
+    order: settings.twoWordOrder,
     session,
     round,
     roundIndex,
@@ -232,6 +250,7 @@ export function useTwoWordSession(lang: 'en' | 'ko') {
     say,
     stop,
     setLevel,
+    setOrder,
     clearError: () => setError(null),
   }
 }
