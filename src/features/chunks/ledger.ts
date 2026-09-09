@@ -19,6 +19,8 @@ export type EncounterMode =
   | 'topic'
   | 'chatgpt'
   | 'replay'
+  /** ピースをつなぐ(ピースにかたまりをはめる・ピースに文をつなぐ)。 */
+  | 'pieces'
 
 export type EncounterEntry = {
   chunkKey: string
