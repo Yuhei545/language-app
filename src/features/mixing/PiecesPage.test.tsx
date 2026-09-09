@@ -102,6 +102,15 @@ describe('PiecesPage', () => {
     expect(screen.queryByText(/あと 3 秒/)).not.toBeNull()
   })
 
+  it('時間切れでも答えを出さず、答えを見る操作を待つ', () => {
+    usePiecesSession.mockReturnValue(session({ phase: 'thinking', secondsLeft: 0 }))
+    render(<PiecesPage lang="en" />)
+
+    expect(screen.queryByText(fitItem.answer)).toBeNull()
+    expect(screen.queryByText('時間です')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: '答えを見る' })).not.toBeNull()
+  })
+
   it('つなぐ: 中の文を先に見せ、答えで言えたを押す', () => {
     const current = session({ phase: 'model', stage: 'link', currentPiece: didntKnow, currentItem: linkItem })
     usePiecesSession.mockReturnValue(current)

@@ -206,11 +206,18 @@ export function usePiecesSession(lang: 'en' | 'ko') {
     }
   }, [captureError, content, phase, stage, summaries])
 
+  /** 残り秒数は声に出す目安。0 になっても答えは表示せず、本人の操作を待つ。 */
+  const startCountdown = useCallback(() => {
+    stopSpeaking()
+    setSecondsLeft(Math.max(1, Math.round(settingsRef.current.lessonPauseSeconds)))
+    setPhase('thinking')
+  }, [])
+
   const beginItems = useCallback(() => {
     if (phase === 'intro') {
-      setPhase('thinking')
+      startCountdown()
     }
-  }, [phase])
+  }, [phase, startCountdown])
 
   const speakText = useCallback(async (text: string) => {
     try {
@@ -228,14 +235,6 @@ export function usePiecesSession(lang: 'en' | 'ko') {
     void speakText(text)
   }, [speakText])
 
-  useEffect(() => {
-    if (phase !== 'thinking' || !currentItem) {
-      return
-    }
-    stopSpeaking()
-    setSecondsLeft(Math.max(1, Math.round(settingsRef.current.lessonPauseSeconds)))
-  }, [currentItem, phase])
-
   const reveal = useCallback(() => {
     if (phase !== 'thinking' || !currentItem) {
       return
@@ -249,18 +248,12 @@ export function usePiecesSession(lang: 'en' | 'ko') {
       return
     }
     const timer = setInterval(() => {
-      setSecondsLeft((current) => current - 1)
+      setSecondsLeft((current) => Math.max(0, current - 1))
     }, 1000)
     return () => {
       clearInterval(timer)
     }
   }, [phase])
-
-  useEffect(() => {
-    if (phase === 'thinking' && secondsLeft <= 0) {
-      reveal()
-    }
-  }, [phase, reveal, secondsLeft])
 
   const finish = useCallback((allAttempts: PieceAttempt[], latest: Map<string, ChunkSummary>) => {
     if (!session) {
@@ -295,7 +288,7 @@ export function usePiecesSession(lang: 'en' | 'ko') {
 
     if (itemIndex + 1 < currentItems.length) {
       setItemIndex(itemIndex + 1)
-      setPhase('thinking')
+      startCountdown()
       return
     }
     if (pieceIndex + 1 < session.pieces.length) {
@@ -305,7 +298,7 @@ export function usePiecesSession(lang: 'en' | 'ko') {
       return
     }
     finish(nextAttempts, updated)
-  }, [attempts, currentItem, currentItems.length, finish, itemIndex, phase, pieceIndex, session, summaries])
+  }, [attempts, currentItem, currentItems.length, finish, itemIndex, phase, pieceIndex, session, startCountdown, summaries])
 
   const stop = useCallback(() => {
     stopSpeaking()

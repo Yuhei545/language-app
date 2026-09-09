@@ -208,8 +208,13 @@ export function PiecesPage({ lang }: { lang: 'en' | 'ko' }) {
             <div className="mt-5 text-center">
               <p className="text-sm font-bold text-slate-600">声に出して言ってください</p>
               <p className="mt-2 text-4xl font-bold tabular-nums text-violet-800" aria-live="polite">
-                あと {Math.max(0, session.secondsLeft)} 秒
+                {session.secondsLeft > 0 ? `あと ${session.secondsLeft} 秒` : '時間です'}
               </p>
+              {session.secondsLeft <= 0 ? (
+                <p className="mt-2 text-sm font-bold text-slate-500">
+                  言えたら「答えを見る」を押してください
+                </p>
+              ) : null}
             </div>
           ) : null}
 

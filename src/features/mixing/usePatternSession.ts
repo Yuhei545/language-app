@@ -325,12 +325,18 @@ export function usePatternSession(lang: 'en' | 'ko') {
       const changingFrame = round[itemIndex + 1]?.frame.id !== round[itemIndex]?.frame.id
       setItemIndex(itemIndex + 1)
       // 1 周目で型が変わるときだけ紹介を挟む。2 周目は知っているので挟まない。
-      setPhase(changingFrame && roundIndex === 0 ? 'intro' : 'thinking')
+      if (changingFrame && roundIndex === 0) {
+        setPhase('intro')
+      } else {
+        setSecondsLeft(Math.max(1, Math.round(settingsRef.current.lessonPauseSeconds)))
+        setPhase('thinking')
+      }
       return
     }
     if (roundIndex + 1 < session.rounds.length) {
       setRoundIndex(roundIndex + 1)
       setItemIndex(0)
+      setSecondsLeft(Math.max(1, Math.round(settingsRef.current.lessonPauseSeconds)))
       setPhase('thinking')
       return
     }
@@ -439,6 +445,7 @@ export function usePatternSession(lang: 'en' | 'ko') {
     if (phase !== 'intro') {
       return
     }
+    setSecondsLeft(Math.max(1, Math.round(settingsRef.current.lessonPauseSeconds)))
     setPhase('thinking')
   }, [phase])
 
