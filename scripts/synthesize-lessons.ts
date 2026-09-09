@@ -4,11 +4,13 @@
  *   npm run lessons:audio -- --lang en            英語の全レッスン(足りないクリップだけ)
  *   npm run lessons:audio -- --lang en --lesson 03-hotel
  *   npm run lessons:audio -- --lang en --dry-run  件数と推定リクエスト数だけ
+ *   npm run lessons:audio -- --lang en --model gemini-2.5-flash-preview-tts  使用モデルを 1 つに固定
+ *   npm run lessons:audio -- --lang en --batch 20  1 回にまとめる文の数(1〜30、既定: 6)
  *   npm run lessons:check                          進み具合
  *   npm run lessons:audio -- --lang en --prune    文面を直した後に、使われないクリップを消す
  *   npm run lessons:audio -- --preview-voices     ナレーター候補の声を 1 文ずつ作って聴き比べる
  *
- * .env の GEMINI_API_KEY を使う(アプリには渡らない)。無料枠の 1 日の上限に当たったら
+ * .env の GEMINI_API_KEY を使う(アプリには渡らない)。無料枠の全モデルが 1 日の上限に当たったら
  * マニフェストを書いて止まる。翌日そのまま再実行すれば続きから作る。
  */
 import { Mp3Encoder } from '@breezystack/lamejs'
@@ -86,10 +88,23 @@ type Args = {
   previewVoices: boolean
   narrator: string | null
   limit: number | null
+  model: string | null
+  batchSize: number
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { lang: null, lesson: null, dryRun: false, status: false, prune: false, previewVoices: false, narrator: null, limit: null }
+  const args: Args = {
+    lang: null,
+    lesson: null,
+    dryRun: false,
+    status: false,
+    prune: false,
+    previewVoices: false,
+    narrator: null,
+    limit: null,
+    model: null,
+    batchSize: BATCH_SIZE,
+  }
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
     const next = () => {
@@ -116,6 +131,16 @@ function parseArgs(argv: string[]): Args {
       case '--preview-voices': args.previewVoices = true; break
       case '--narrator': args.narrator = next(); break
       case '--limit': args.limit = Number(next()); break
+      case '--model': args.model = next(); break
+      case '--batch': {
+        const value = next()
+        const batchSize = Number(value)
+        if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 30) {
+          throw new Error(`--batch は 1 以上 30 以下の整数で指定してください: ${value}`)
+        }
+        args.batchSize = batchSize
+        break
+      }
       default:
         throw new Error(`知らない引数です: ${arg}`)
     }
@@ -263,22 +288,26 @@ function isModelUnavailable(error: unknown): boolean {
 class Synthesizer {
   private lastRequestAt = 0
   private modelIndex = 0
+  private readonly models: readonly string[]
   requests = 0
 
   constructor(
     private readonly client: GoogleGenAI,
     readonly manifest: AudioManifest,
     private readonly limit: number | null,
+    models: readonly string[],
   ) {
-    const known = manifest.models.findIndex((model) => TTS_MODEL_FALLBACKS.includes(model as typeof TTS_MODEL_FALLBACKS[number]))
-    if (known >= 0) {
+    const known = manifest.models.find((model) => models.includes(model))
+    if (known) {
       // 前回使ったモデルを優先する(レッスン間で声の音色が変わらないように)
-      this.modelIndex = TTS_MODEL_FALLBACKS.indexOf(manifest.models[known] as typeof TTS_MODEL_FALLBACKS[number])
+      this.models = [known, ...models.filter((model) => model !== known)]
+    } else {
+      this.models = models
     }
   }
 
   get model(): string {
-    return TTS_MODEL_FALLBACKS[this.modelIndex]
+    return this.models[this.modelIndex]
   }
 
   private async throttle(): Promise<void> {
@@ -293,7 +322,7 @@ class Synthesizer {
     this.requests += 1
   }
 
-  /** 1 回の呼び出し。分あたりの上限は待って再試行、日あたりの上限は止める、モデルが無ければ代替へ。 */
+  /** 1 回の呼び出し。分あたりの上限は待って再試行、日あたりの上限とモデル不在は代替へ。 */
   private async call<T>(run: (model: string) => Promise<T>): Promise<T | ModelSwitch | QuotaStop> {
     for (let attempt = 0; attempt <= MAX_QUOTA_RETRIES; attempt += 1) {
       await this.throttle()
@@ -312,10 +341,15 @@ class Synthesizer {
             await sleep(retrySec * 1000 + 1000)
             continue
           }
+          if (this.modelIndex + 1 < this.models.length) {
+            console.warn(`  ${this.model} は今日の上限です。${this.models[this.modelIndex + 1]} に切り替えます`)
+            this.modelIndex += 1
+            return { kind: 'model' }
+          }
           return { kind: 'quota-day', message: safeMessage(error) }
         }
-        if (isModelUnavailable(error) && this.modelIndex + 1 < TTS_MODEL_FALLBACKS.length) {
-          console.warn(`  モデル ${this.model} が使えません(${safeMessage(error)})。${TTS_MODEL_FALLBACKS[this.modelIndex + 1]} に切り替えます`)
+        if (isModelUnavailable(error) && this.modelIndex + 1 < this.models.length) {
+          console.warn(`  モデル ${this.model} が使えません(${safeMessage(error)})。${this.models[this.modelIndex + 1]} に切り替えます`)
           this.modelIndex += 1
           return { kind: 'model' }
         }
@@ -479,9 +513,9 @@ function prune(lang: Lang): void {
   console.log(`[${lang}] 使われないクリップを ${removed} 件消しました`)
 }
 
-async function previewVoices(narrator: string | null): Promise<void> {
+async function previewVoices(narrator: string | null, models: readonly string[]): Promise<void> {
   const client = createClient(loadApiKey())
-  const synthesizer = new Synthesizer(client, emptyManifest('en', { A: '', B: '', narrator: '' }), null)
+  const synthesizer = new Synthesizer(client, emptyManifest('en', { A: '', B: '', narrator: '' }), null, models)
   const outDir = join(tmpdir(), 'lla-voice-preview')
   mkdirSync(outDir, { recursive: true })
   const samples: Array<{ voice: string; lang: TtsLang }> = [
@@ -525,8 +559,8 @@ async function synthesize(args: Args): Promise<void> {
     const key = `${item.clip.lang}|${item.clip.voice}`
     groups.set(key, [...(groups.get(key) ?? []), item])
   }
-  const requests = [...groups.values()].reduce((sum, items) => sum + Math.ceil(items.length / BATCH_SIZE), 0)
-  console.log(`[${lang}] クリップ ${total} 件。済み ${total - pending.length}(コピー ${copied})、残り ${pending.length}。推定リクエスト ${requests} 回(${BATCH_SIZE} 文ずつ)`)
+  const requests = [...groups.values()].reduce((sum, items) => sum + Math.ceil(items.length / args.batchSize), 0)
+  console.log(`[${lang}] クリップ ${total} 件。済み ${total - pending.length}(コピー ${copied})、残り ${pending.length}。推定リクエスト ${requests} 回(${args.batchSize} 文ずつ)`)
   console.log(`  声: A=${voices.A} B=${voices.B} ナレーター=${voices.narrator}`)
   if (args.dryRun) {
     return
@@ -538,7 +572,8 @@ async function synthesize(args: Args): Promise<void> {
     return
   }
 
-  const synthesizer = new Synthesizer(createClient(loadApiKey()), manifest, args.limit)
+  const models = args.model ? [args.model] : TTS_MODEL_FALLBACKS
+  const synthesizer = new Synthesizer(createClient(loadApiKey()), manifest, args.limit, models)
   let done = 0
   const stop = (message: string) => {
     refreshComplete(lang, lessons, manifest)
@@ -551,8 +586,8 @@ async function synthesize(args: Args): Promise<void> {
     for (const [key, items] of groups) {
       const [clipLang, voice] = key.split('|') as [TtsLang, ClipVoice]
       const voiceName = voices[voice]
-      for (let start = 0; start < items.length; start += BATCH_SIZE) {
-        const batch = items.slice(start, start + BATCH_SIZE)
+      for (let start = 0; start < items.length; start += args.batchSize) {
+        const batch = items.slice(start, start + args.batchSize)
         const texts = batch.map((item) => item.clip.text)
         let audios: SynthesizedAudio[] | null = null
         if (batch.length > 1) {
@@ -602,7 +637,7 @@ async function synthesize(args: Args): Promise<void> {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   if (args.previewVoices) {
-    await previewVoices(args.narrator)
+    await previewVoices(args.narrator, args.model ? [args.model] : TTS_MODEL_FALLBACKS)
     return
   }
   if (args.status) {
