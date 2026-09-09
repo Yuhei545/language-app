@@ -56,6 +56,13 @@ import {
 import { buildDialogueLesson, PROMPT_ITEM_PREFIX, type DialogueLessonStep } from './dialoguePlan'
 import { estimateActionsMs } from './estimate'
 import type { LessonDialogue } from './lessonDialogueSchema'
+import {
+  buildSections,
+  sectionIndexOf,
+  stepAtOffset,
+  stepStartsMs,
+  type RunnableLessonStep,
+} from './navigation'
 import { buildLessonItems } from './material'
 import { planStep, type LessonAction } from './plan'
 import { buildSchedule } from './schedule'
@@ -66,7 +73,6 @@ export type LessonStatus = 'loading' | 'choosing' | 'generating' | 'ready' | 'pr
 export type LessonMode = 'words' | 'dialogue' | 'curriculum'
 export type CurrentLessonAction = 'cue' | 'pause' | 'answer' | null
 export type CurrentLessonSpeaker = 'A' | 'B' | 'you' | null
-type RunnableLessonStep = LessonStep | DialogueLessonStep
 
 export type LessonRecallResult = {
   itemId: string
@@ -267,6 +273,15 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const prefetchRef = useRef<Prefetch | null>(null)
 
   const currentStep = steps[currentIndex] ?? null
+  const sections = useMemo(() => buildSections(steps), [steps])
+  const stepStarts = useMemo(() => stepStartsMs(steps, (step) => (
+    isDialogueStep(step)
+      ? step.actions
+      : planStep(step, {
+          lang,
+          pauseSeconds: settings.lessonPauseSeconds,
+        })
+  )), [lang, settings.lessonPauseSeconds, steps])
 
   const updateElapsed = useCallback(() => {
     if (startedAtRef.current !== null) {
@@ -1114,6 +1129,24 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     }
   }, [cancelActive, currentIndex, status, steps.length, updateElapsed])
 
+  const seekTo = useCallback((index: number) => {
+    if (status !== 'running' || steps.length === 0) {
+      return
+    }
+    const nextIndex = Math.max(0, Math.min(index, steps.length - 1))
+    cancelActive()
+    updateElapsed()
+    actionIndexRef.current = 0
+    setCurrentAction(null)
+    setCurrentSpokenText(null)
+    setCurrentSpeaker(null)
+    setCurrentIndex(nextIndex)
+  }, [cancelActive, status, steps.length, updateElapsed])
+
+  const seekBy = useCallback((deltaMs: number) => {
+    seekTo(stepAtOffset(stepStarts, currentIndex, deltaMs))
+  }, [currentIndex, seekTo, stepStarts])
+
   const stop = useCallback(() => {
     if (status !== 'running') {
       return
@@ -1171,12 +1204,15 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const promptCount = curriculumLesson
     ? curriculumLesson.dialogue.turns.reduce((total, turn) => total + (turn.prompts?.length ?? 0), 0)
     : 0
+  const currentSectionIndex = sectionIndexOf(sections, currentIndex)
 
   return {
     mode,
     status,
     steps,
     currentIndex,
+    sections,
+    currentSectionIndex,
     currentStep,
     currentAction,
     currentSpokenText,
@@ -1210,6 +1246,8 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     start,
     pause,
     resume,
+    seekTo,
+    seekBy,
     skip,
     stop,
     recallResults,

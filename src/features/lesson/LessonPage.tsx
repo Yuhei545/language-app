@@ -9,16 +9,7 @@ import { SELF_REPORT_LABELS, type CurriculumStatus, type SelfReport } from './cu
 import type { DialogueLessonStep } from './dialoguePlan'
 import type { LessonHistoryRouteState } from './LessonHistoryPage'
 import { ScenePicker } from './ScenePicker'
-import type { LessonStage } from './types'
 import { useLesson } from './useLesson'
-
-const STAGE_LABELS: Record<LessonStage, string> = {
-  0: 'はじめて',
-  1: '5秒後',
-  2: '25秒後',
-  3: '2分後',
-  4: '10分後',
-}
 
 const SELF_REPORT_ORDER: SelfReport[] = ['all', 'most', 'half', 'few']
 
@@ -82,6 +73,7 @@ export function LessonPage() {
   const [settings, setSettingsState] = useState<Settings>(getSettings)
   const [pageError, setPageError] = useState<unknown>(null)
   const [listOpen, setListOpen] = useState(false)
+  const [sectionListOpen, setSectionListOpen] = useState(false)
 
   useEffect(() => subscribe(setSettingsState), [])
 
@@ -90,9 +82,7 @@ export function LessonPage() {
     [lesson.steps],
   )
   const warnings = lesson.warnings ?? []
-  const progress = lesson.steps.length === 0
-    ? 0
-    : Math.round((lesson.currentIndex / lesson.steps.length) * 100)
+  const currentSection = lesson.sections[lesson.currentSectionIndex] ?? null
   const dialogueStep = lesson.currentStep && isDialogueStep(lesson.currentStep)
     ? lesson.currentStep
     : null
@@ -337,25 +327,18 @@ export function LessonPage() {
         </div>
       ) : lesson.status === 'running' && lesson.currentStep ? (
         <div className="mt-6">
-          <div className="flex items-center justify-between gap-4 text-xs font-bold text-slate-500">
-            <p>{lesson.currentIndex + 1}/{lesson.steps.length}</p>
-            <p className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-800">
-              {lesson.mode !== 'words'
-                ? lesson.currentStepLabel
-                : lesson.currentStep.stage !== undefined
-                  ? STAGE_LABELS[lesson.currentStep.stage]
-                  : ''}
-            </p>
-          </div>
-          <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200"
-            role="progressbar"
-            aria-label="音声レッスンの進捗"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progress}
-          >
-            <div className="h-full rounded-full bg-indigo-600" style={{ width: `${progress}%` }} />
+          <input
+            type="range"
+            min={0}
+            max={lesson.steps.length - 1}
+            value={lesson.currentIndex}
+            onChange={(event) => lesson.seekTo(Number(event.target.value))}
+            aria-label="レッスンの位置"
+            className="w-full accent-indigo-700"
+          />
+          <div className="mt-2 flex items-start justify-between gap-3 text-xs font-bold text-slate-500">
+            <p className="min-w-0 text-indigo-800">{currentSection?.label ?? ''}</p>
+            <p className="shrink-0 tabular-nums">{lesson.currentIndex + 1}/{lesson.steps.length}</p>
           </div>
 
           <div className="mt-7 rounded-3xl border border-indigo-200 bg-white p-6 text-center shadow-sm">
@@ -390,34 +373,77 @@ export function LessonPage() {
             ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={lesson.paused ? lesson.resume : lesson.pause}
-            className="mt-5 w-full rounded-2xl bg-indigo-700 px-5 py-4 text-base font-bold text-white"
-          >
-            {lesson.paused ? '▶ 再開' : 'Ⅱ 一時停止'}
-          </button>
+          <div className="mt-5 grid grid-cols-[1fr_1.35fr_1fr] gap-2">
+            <button
+              type="button"
+              onClick={() => lesson.seekBy(-30_000)}
+              className="whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-2 py-4 text-xs font-bold text-slate-700"
+            >
+              ‹ 30 秒
+            </button>
+            <button
+              type="button"
+              onClick={lesson.paused ? lesson.resume : lesson.pause}
+              className="whitespace-nowrap rounded-2xl bg-indigo-700 px-2 py-4 text-sm font-bold text-white"
+            >
+              {lesson.paused ? '▶ 再開' : 'Ⅱ 一時停止'}
+            </button>
+            <button
+              type="button"
+              onClick={() => lesson.seekBy(30_000)}
+              className="whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-2 py-4 text-xs font-bold text-slate-700"
+            >
+              30 秒 ›
+            </button>
+          </div>
           {lesson.autoPaused ? (
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900" role="status">
               画面が隠れたので止めました。「▶ 再開」で続きから
             </p>
           ) : null}
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setSectionListOpen((open) => !open)}
+              aria-expanded={sectionListOpen}
+              className="whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700"
+            >
+              目次
+            </button>
             <button
               type="button"
               onClick={lesson.skip}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700"
+              className="whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-2 py-3 text-xs font-bold text-slate-700"
             >
-              スキップ
+              次のステップ
             </button>
             <button
               type="button"
               onClick={lesson.stop}
-              className="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-800"
+              className="whitespace-nowrap rounded-2xl border border-slate-300 bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800"
             >
-              終了
+              やめる
             </button>
           </div>
+          {sectionListOpen ? (
+            <ol className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              {lesson.sections.map((section, index) => (
+                <li key={`${section.index}-${section.label}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      lesson.seekTo(section.index)
+                      setSectionListOpen(false)
+                    }}
+                    aria-current={index === lesson.currentSectionIndex ? 'step' : undefined}
+                    className={`w-full rounded-xl px-3 py-3 text-left text-sm font-bold leading-6 ${index === lesson.currentSectionIndex ? 'bg-indigo-100 text-indigo-950' : 'bg-slate-50 text-slate-700'}`}
+                  >
+                    {section.label}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : null}
         </div>
       ) : lesson.status === 'finished' ? (
         <div className="mt-8 rounded-3xl border border-indigo-200 bg-white p-6 text-center shadow-sm">

@@ -45,6 +45,8 @@ function lessonState(overrides: Record<string, unknown> = {}) {
     reportSelfAssessment: vi.fn(),
     retryAudio: vi.fn(),
     currentIndex: 0,
+    sections: [{ index: 0, label: step.item.cueJa, kind: 'other' as const }],
+    currentSectionIndex: 0,
     currentStep: step,
     currentAction: null,
     estimatedMinutes: 2,
@@ -54,6 +56,8 @@ function lessonState(overrides: Record<string, unknown> = {}) {
     start: vi.fn(),
     pause: vi.fn(),
     resume: vi.fn(),
+    seekTo: vi.fn(),
+    seekBy: vi.fn(),
     skip: vi.fn(),
     stop: vi.fn(),
     recallResults: [],
@@ -98,7 +102,7 @@ describe('LessonPage', () => {
     }))
     renderPage()
 
-    expect(screen.queryByText(step.item.cueJa)).not.toBeNull()
+    expect(screen.queryByRole('heading', { name: step.item.cueJa })).not.toBeNull()
     expect(screen.queryByText(step.item.answer)).toBeNull()
     expect(screen.queryByText('声に出してみましょう')).not.toBeNull()
   })
@@ -112,6 +116,38 @@ describe('LessonPage', () => {
     renderPage()
 
     expect(screen.getByText('画面が隠れたので止めました。「▶ 再開」で続きから')).toBeTruthy()
+  })
+
+  it('実行中は前後30秒・目次・次のステップを表示し、指定位置へ移動できる', () => {
+    const seekBy = vi.fn()
+    const seekTo = vi.fn()
+    useLessonMock.mockReturnValue(lessonState({
+      status: 'running',
+      seekBy,
+      seekTo,
+      sections: [
+        { index: 0, label: '冒頭の会話', kind: 'intro' },
+        { index: 3, label: '会話 1/8  Hi there!', kind: 'line' },
+      ],
+    }))
+    renderPage()
+
+    const backButton = screen.getByRole('button', { name: '‹ 30 秒' })
+    const forwardButton = screen.getByRole('button', { name: '30 秒 ›' })
+    expect(backButton).toBeTruthy()
+    expect(forwardButton).toBeTruthy()
+    expect(screen.getByRole('button', { name: '目次' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '次のステップ' })).toBeTruthy()
+    expect(screen.getByRole('slider', { name: 'レッスンの位置' })).toBeTruthy()
+
+    fireEvent.click(backButton)
+    fireEvent.click(forwardButton)
+    expect(seekBy).toHaveBeenNthCalledWith(1, -30_000)
+    expect(seekBy).toHaveBeenNthCalledWith(2, 30_000)
+
+    fireEvent.click(screen.getByRole('button', { name: '目次' }))
+    fireEvent.click(screen.getByRole('button', { name: '会話 1/8 Hi there!' }))
+    expect(seekTo).toHaveBeenCalledWith(3)
   })
 
   it('同梱レッスンでは「今日のレッスン N/10」と音声の準備、一覧を出す', () => {
