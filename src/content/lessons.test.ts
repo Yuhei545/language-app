@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { NEW_EXPRESSION_RANGE } from '../features/lesson/lessonDialogueSchema'
 import { clipHash, collectClips, collectClipsAt } from './lessonAudio'
@@ -8,8 +8,12 @@ import { lintLesson, MIN_PROMPTS_PER_LESSON } from './lessonSchema'
 
 const LANGS = ['en', 'ko'] as const
 
+/**
+ * 音声ファイルの場所。テストの中では import.meta.url が http になる(Vite が配信する形)ので、
+ * ファイルの場所は作業ディレクトリ(プロジェクトの根)から組み立てる。
+ */
 function clipPath(lang: 'en' | 'ko', lessonId: string, hash: string): string {
-  return fileURLToPath(new URL(`../../public/lessons/${lang}/${lessonId}/${hash}.mp3`, import.meta.url))
+  return join(process.cwd(), 'public', 'lessons', lang, lessonId, `${hash}.mp3`)
 }
 
 for (const lang of LANGS) {
