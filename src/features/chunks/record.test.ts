@@ -34,9 +34,16 @@ describe('recordEncounters', () => {
 })
 
 describe('ledgerError / reportLedgerFailure', () => {
-  it('006 未適用のエラーは実行の案内に変える', () => {
+  it('006 未適用のエラーは実行の案内に変える(Supabase の素のオブジェクトでも)', () => {
     expect(ledgerError(new Error('relation "public.chunk_encounters" does not exist')).message).toBe(LEDGER_MIGRATION_HINT)
+    expect(ledgerError({
+      message: "Could not find the 'chunk_key' column of 'vocab_items' in the schema cache",
+      details: null,
+      hint: null,
+      code: 'PGRST204',
+    }).message).toBe(LEDGER_MIGRATION_HINT)
     expect(ledgerError(new Error('network down')).message).toBe('network down')
+    expect(ledgerError({ message: 'permission denied', code: '42501' }).message).toBe('permission denied (42501)')
   })
 
   it('同じセッションでは 1 回だけ知らせ、console には毎回出す', () => {

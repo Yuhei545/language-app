@@ -1,22 +1,22 @@
 import { insertChunkEncounters } from '../../services/supabase/db'
 import type { Language } from '../../services/supabase/types'
+import { describeError, toError } from '../../utils/errorMessage'
 import type { EncounterEntry } from './ledger'
 
 export const LEDGER_MIGRATION_HINT =
-  '表現の記録を保存できません。Supabase の SQL Editor で supabase/migrations/006_chunks.sql を実行してください。'
+  '表現の台帳(migration 006)がまだありません。Supabase の SQL Editor で supabase/migrations/006_chunks.sql を実行してください。'
   + '練習はこのまま続けられます'
 
-/** 006 未適用のときに出るエラーか。 */
+/** 006 未適用のときに出るエラーか(Supabase のエラーは素のオブジェクトなので message を読む)。 */
 export function isLedgerMissing(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error)
-  return /chunk_encounters|daily_targets|chunk_encounter_summary|chunk_key|schema cache/i.test(message)
+  return /chunk_encounters|daily_targets|chunk_encounter_summary|chunk_key|schema cache/i.test(describeError(error))
 }
 
 export function ledgerError(error: unknown): Error {
   if (isLedgerMissing(error)) {
-    return new Error(LEDGER_MIGRATION_HINT)
+    return new Error(LEDGER_MIGRATION_HINT, { cause: error })
   }
-  return error instanceof Error ? error : new Error(String(error))
+  return toError(error)
 }
 
 /** 出会いをまとめて記録する。空なら何もしない。失敗は投げる(呼び出し側が 1 回だけ知らせる)。 */

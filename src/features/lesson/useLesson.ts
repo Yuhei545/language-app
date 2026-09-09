@@ -37,6 +37,7 @@ import type { EncounterEntry } from '../chunks/ledger'
 import { recordEncounters, reportLedgerFailure } from '../chunks/record'
 import { chunksIn } from '../chunks/registry'
 import { loadChunkContext, type ChunkContext } from '../chunks/targetsStore'
+import { describeError, toError } from '../../utils/errorMessage'
 import { comboKey } from '../mixing/deal'
 import { slotPool } from '../mixing/combinations'
 import {
@@ -82,11 +83,10 @@ export const CURRICULUM_MIGRATION_HINT =
   + '練習はこのまま続けられます'
 
 function curriculumDbError(error: unknown): Error {
-  const message = error instanceof Error ? error.message : String(error)
-  if (/curriculum_id|best_prompt_accuracy|last_prompt_accuracy|schema cache/i.test(message)) {
-    return new Error(CURRICULUM_MIGRATION_HINT)
+  if (/curriculum_id|best_prompt_accuracy|last_prompt_accuracy|schema cache/i.test(describeError(error))) {
+    return new Error(CURRICULUM_MIGRATION_HINT, { cause: error })
   }
-  return error instanceof Error ? error : new Error(String(error))
+  return toError(error)
 }
 
 type ProgressIdentity = {

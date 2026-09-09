@@ -6,9 +6,10 @@ import { retireOutdatedEnglish } from '../services/supabase/retire'
 import { seedBundledVocab } from '../services/supabase/seed'
 import { ledgerError } from '../features/chunks/record'
 import { seedCoreChunks } from '../features/chunks/seedChunks'
+import { describeError } from '../utils/errorMessage'
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '不明なエラーが発生しました'
+  return describeError(error)
 }
 
 export function RequireAuth() {
@@ -71,9 +72,6 @@ export function RequireAuth() {
     Promise.all([
       seedBundledVocab(userId, 'en'),
       seedBundledVocab(userId, 'ko'),
-      // 型・句動詞もカードにする(週 0。台帳と chunk_key で結ぶ)。006 未適用なら実行の案内に変える
-      seedCoreChunks(userId, 'en').catch((error: unknown) => { throw ledgerError(error) }),
-      seedCoreChunks(userId, 'ko').catch((error: unknown) => { throw ledgerError(error) }),
     ])
       // 英語の旧・基礎語(2026-09-05 に実践フレーズへ差し替え)を「知っている」扱いにして復習に出さない
       .then(() => retireOutdatedEnglish(userId))
@@ -82,6 +80,16 @@ export function RequireAuth() {
           setSeedError(`同梱語彙を準備できませんでした: ${errorMessage(error)}`)
         }
       })
+
+    // 型・句動詞もカードにする(週 0。台帳と chunk_key で結ぶ)。006 未適用なら実行の案内を出す(練習は続けられる)
+    Promise.all([
+      seedCoreChunks(userId, 'en'),
+      seedCoreChunks(userId, 'ko'),
+    ]).catch((error: unknown) => {
+      if (active) {
+        setSeedError(`型・句動詞のカードを用意できませんでした: ${ledgerError(error).message}`)
+      }
+    })
 
     return () => {
       active = false

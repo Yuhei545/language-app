@@ -16,6 +16,7 @@ import {
   upsertMixingProgress,
 } from '../../services/supabase/db'
 import type { MixingProgressRow } from '../../services/supabase/types'
+import { describeError, toError } from '../../utils/errorMessage'
 import { recentContexts, WEEK_MS, type EncounterEntry } from '../chunks/ledger'
 import { recordEncounters, reportLedgerFailure } from '../chunks/record'
 import { chunkKeyForFrame, chunkKeyForPhrasal, type Chunk } from '../chunks/registry'
@@ -63,14 +64,14 @@ export const RECENT_COMBOS_TO_AVOID = 3
  * 列が無いだけなので練習そのものは続けられる。
  */
 function migrationError(error: unknown): Error {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = describeError(error)
   if (/schema cache|column .* does not exist|first_try_count|latency_ms_total|speaking_sessions/i.test(message)) {
     return new Error(
       '成績を保存できません。Supabase の SQL Editor で supabase/migrations/004_speaking.sql を実行してください。'
       + '練習はこのまま続けられます',
     )
   }
-  return error instanceof Error ? error : new Error(String(error))
+  return toError(error)
 }
 
 /** 今日の狙いから、型を回すに渡す形を作る。 */
