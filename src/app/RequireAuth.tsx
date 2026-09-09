@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Navigate, Outlet } from 'react-router-dom'
 import { getSession, onAuthStateChange } from '../services/supabase/auth'
@@ -8,16 +8,26 @@ import { ledgerError } from '../features/chunks/record'
 import { seedCoreChunks } from '../features/chunks/seedChunks'
 import { describeError } from '../utils/errorMessage'
 
-function errorMessage(error: unknown): string {
-  return describeError(error)
+/**
+ * ログイン後の下ごしらえ。2 つの仕事は独立していて、片方が落ちてももう片方は進む。
+ * 以前は 1 つのエラー欄を共有していたため、後から落ちた方が先の知らせを上書きしていた。
+ */
+export type SeedTask = 'vocab' | 'chunks'
+
+export const SEED_TASK_LABEL: Record<SeedTask, string> = {
+  vocab: '同梱語彙を準備できませんでした',
+  chunks: '型・句動詞のカードを用意できませんでした',
 }
 
 export function RequireAuth() {
   const [session, setSession] = useState<Session | null>(null)
   const [checking, setChecking] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
-  const [seedError, setSeedError] = useState<string | null>(null)
-  const seededUserId = useRef<string | null>(null)
+  const [seedErrors, setSeedErrors] = useState<Partial<Record<SeedTask, string>>>({})
+  const [dismissed, setDismissed] = useState(false)
+  /** 「もう一度試す」で数を増やし、下ごしらえをやり直す。 */
+  const [attempt, setAttempt] = useState(0)
+  const seededKey = useRef<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -42,7 +52,7 @@ export function RequireAuth() {
       } catch (error) {
         console.error('セッションの確認に失敗しました', error)
         if (active) {
-          setAuthError(errorMessage(error))
+          setAuthError(describeError(error))
         }
       } finally {
         if (active) {
@@ -59,15 +69,27 @@ export function RequireAuth() {
     }
   }, [])
 
+  const userId = session?.user.id
+
   useEffect(() => {
-    const userId = session?.user.id
-    if (!userId || seededUserId.current === userId) {
-      return
+    if (!userId) {
+      return undefined
+    }
+    const key = `${userId}:${attempt}`
+    if (seededKey.current === key) {
+      return undefined
     }
 
     let active = true
-    seededUserId.current = userId
-    setSeedError(null)
+    seededKey.current = key
+    setSeedErrors({})
+    setDismissed(false)
+
+    const fail = (task: SeedTask, message: string) => {
+      if (active) {
+        setSeedErrors((previous) => ({ ...previous, [task]: message }))
+      }
+    }
 
     Promise.all([
       seedBundledVocab(userId, 'en'),
@@ -76,9 +98,8 @@ export function RequireAuth() {
       // 英語の旧・基礎語(2026-09-05 に実践フレーズへ差し替え)を「知っている」扱いにして復習に出さない
       .then(() => retireOutdatedEnglish(userId))
       .catch((error: unknown) => {
-        if (active) {
-          setSeedError(`同梱語彙を準備できませんでした: ${errorMessage(error)}`)
-        }
+        console.error('同梱語彙の準備に失敗しました', error)
+        fail('vocab', describeError(error))
       })
 
     // 型・句動詞もカードにする(週 0。台帳と chunk_key で結ぶ)。006 未適用なら実行の案内を出す(練習は続けられる)
@@ -86,15 +107,18 @@ export function RequireAuth() {
       seedCoreChunks(userId, 'en'),
       seedCoreChunks(userId, 'ko'),
     ]).catch((error: unknown) => {
-      if (active) {
-        setSeedError(`型・句動詞のカードを用意できませんでした: ${ledgerError(error).message}`)
-      }
+      console.error('型・句動詞のカードの用意に失敗しました', error)
+      fail('chunks', ledgerError(error).message)
     })
 
     return () => {
       active = false
     }
-  }, [session?.user.id])
+  }, [attempt, userId])
+
+  const retry = useCallback(() => {
+    setAttempt((previous) => previous + 1)
+  }, [])
 
   if (checking) {
     return (
@@ -119,11 +143,43 @@ export function RequireAuth() {
     return <Navigate to="/login" replace />
   }
 
+  const failures = (Object.keys(SEED_TASK_LABEL) as SeedTask[])
+    .flatMap((task) => {
+      const message = seedErrors[task]
+      return message ? [{ task, message }] : []
+    })
+
   return (
     <>
-      {seedError ? (
-        <div className="fixed inset-x-3 top-3 z-50 mx-auto max-w-[448px] rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white shadow-lg" role="alert">
-          {seedError}
+      {failures.length > 0 && !dismissed ? (
+        <div
+          className="fixed inset-x-3 top-3 z-50 mx-auto max-w-[448px] rounded-xl bg-red-700 px-4 py-3 text-sm text-white shadow-lg"
+          role="alert"
+        >
+          <ul className="space-y-2">
+            {failures.map(({ task, message }) => (
+              <li key={task}>
+                <p className="font-bold">{SEED_TASK_LABEL[task]}</p>
+                <p className="mt-0.5 text-xs leading-5 text-red-50">{message}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={retry}
+              className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-800"
+            >
+              もう一度試す
+            </button>
+            <button
+              type="button"
+              onClick={() => setDismissed(true)}
+              className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-white"
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       ) : null}
       <Outlet />
