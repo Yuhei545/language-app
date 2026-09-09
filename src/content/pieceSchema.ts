@@ -26,13 +26,16 @@ export type PieceCombo = {
   uses?: string[]
 }
 
+/** 文の終わり。省略すると「.」。 */
+export type PieceEnd = '?' | '!'
+
 /** 同じピースの言い換え(You can 〜、Can I 〜? など)。 */
 export type PieceVariant = {
   text: string
   ja: string
-  /** 疑問文として組み立てる。 */
-  question?: boolean
-  /** 文の末尾に足す語(yet、already など)。 */
+  /** 文の終わりの記号(疑問なら ?)。 */
+  end?: PieceEnd
+  /** 文の末尾に足す語(yet、already、before など)。 */
   suffix?: string
   combos: PieceCombo[]
 }
@@ -48,6 +51,10 @@ export type Piece = {
   ja: string
   note_ja: string
   example: { text: string; ja: string }
+  /** 文の終わりの記号(Did I tell you 〜? など)。 */
+  end?: PieceEnd
+  /** 文の末尾に足す語(I've 〜 before の before)。 */
+  suffix?: string
   combos: PieceCombo[]
   variants: PieceVariant[]
 }
@@ -61,6 +68,16 @@ export type PieceSet = {
 }
 
 export const PIECE_ID_PATTERN = /^p\d{2}$/
+
+function readEnd(record: UnknownRecord, label: string, path: string): PieceEnd | undefined {
+  if (record.end === undefined) {
+    return undefined
+  }
+  if (record.end !== '?' && record.end !== '!') {
+    fail(label, `${path}.end`, 'は ? か ! である必要があります')
+  }
+  return record.end
+}
 
 function validateCombo(value: unknown, label: string, path: string): PieceCombo {
   const record = requireRecord(value, label, path)
@@ -87,11 +104,9 @@ function validateVariant(value: unknown, label: string, path: string): PieceVari
     combos: requireArray(record, 'combos', label, path)
       .map((combo, index) => validateCombo(combo, label, `${path}.combos[${index}]`)),
   }
-  if (record.question !== undefined) {
-    if (typeof record.question !== 'boolean') {
-      fail(label, `${path}.question`, 'は boolean である必要があります')
-    }
-    variant.question = record.question
+  const end = readEnd(record, label, path)
+  if (end) {
+    variant.end = end
   }
   if (record.suffix !== undefined) {
     variant.suffix = requireNonEmptyString(record, 'suffix', label, path)
@@ -132,6 +147,13 @@ function validatePiece(value: unknown, label: string, index: number, kind: Piece
       : requireArray(record, 'variants', label, path)
         .map((variant, variantIndex) => validateVariant(variant, label, `${path}.variants[${variantIndex}]`)),
   }
+  const end = readEnd(record, label, path)
+  if (end) {
+    piece.end = end
+  }
+  if (record.suffix !== undefined) {
+    piece.suffix = requireNonEmptyString(record, 'suffix', label, path)
+  }
   if (piece.combos.length === 0) {
     fail(label, `${path}.combos`, 'が空です')
   }
@@ -161,20 +183,21 @@ function validateFile(json: unknown, label: string, kind: PieceKind): { small: S
   return { small, pieces }
 }
 
-/** 文の終わりの記号。疑問なら ?、それ以外は .(すでに記号があればそのまま)。 */
-function punctuate(sentence: string, question: boolean): string {
+/** 文の終わりの記号を付ける(すでに記号があればそのまま)。 */
+function punctuate(sentence: string, end: PieceEnd | undefined): string {
   const trimmed = sentence.trim()
   if (/[.!?]$/.test(trimmed)) {
     return trimmed
   }
-  return `${trimmed}${question ? '?' : '.'}`
+  return `${trimmed}${end ?? '.'}`
 }
 
-/** ピース + かたまりで 1 文にする。variant を渡すとその言い換えで組む。 */
+/** ピース + かたまりで 1 文にする。variant を渡すとその言い換えで組む(末尾の語と記号も言い換え側のもの)。 */
 export function buildSentence(piece: Piece, combo: PieceCombo, variant?: PieceVariant): string {
   const head = variant ? variant.text : piece.text
-  const tail = variant?.suffix ? ` ${variant.suffix}` : ''
-  return punctuate(`${head} ${combo.text}${tail}`, variant?.question === true)
+  const suffix = variant ? variant.suffix : piece.suffix
+  const end = variant ? variant.end : piece.end
+  return punctuate(`${head} ${combo.text}${suffix ? ` ${suffix}` : ''}`, end)
 }
 
 /** そのピースで作れる文をすべて(本体 + 言い換え)。 */

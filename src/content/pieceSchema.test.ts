@@ -63,6 +63,28 @@ describe('buildSentence', () => {
   })
 })
 
+describe('ピース本体の末尾の語と記号', () => {
+  it("I've 〜 before は before を末尾に付ける", () => {
+    const piece = pieceById('p26')!
+    expect(buildSentence(piece, piece.combos[0])).toBe("I've heard of it before.")
+    const haveYou = piece.variants.find((variant) => variant.text === 'Have you')!
+    expect(buildSentence(piece, haveYou.combos[0], haveYou)).toBe('Have you met him before?')
+  })
+
+  it('疑問のラージピースは ? で、驚きは ! で終わる', () => {
+    const piece = pieceById('p46')!
+    expect(buildSentence(piece, piece.combos[0])).toBe('Did I tell you I got to meet Lauren in Tokyo?')
+    const believe = pieceById('p52')!
+    expect(buildSentence(believe, believe.combos[0])).toBe("I can't believe I'm going to the US!")
+  })
+
+  it('There is と There are を分けている', () => {
+    for (const sentence of sentencesOf(pieceById('p10')!)) {
+      expect(sentence.text, sentence.text).not.toMatch(/^(There is|Is there) (mosquitoes|files|many|people|any)/)
+    }
+  })
+})
+
 describe('ラージピースは文をつなぐ', () => {
   it('ミディアムで作った文を後ろに置く', () => {
     const piece = pieceById('p45')!

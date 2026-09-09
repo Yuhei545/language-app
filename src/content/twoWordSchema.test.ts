@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadTwoWord, questionsOfLevel, stripOptional, wordCount } from './twoWordSchema'
+import { loadTwoWord, questionsOfLevel, stripOptional, verbsInAnswer, wordCount } from './twoWordSchema'
 
 const set = loadTwoWord()
 
@@ -44,6 +44,28 @@ describe('2 語トレの読み込み', () => {
     for (const question of questionsOfLevel(set, 4)) {
       expect(wordCount(question.answers[0]), `${question.id}`).toBeGreaterThanOrEqual(3)
     }
+  })
+})
+
+describe('動詞は 25 語の中から', () => {
+  it('どの解答例も 25 動詞のどれかを使い、その動詞が verbs に書いてある', () => {
+    const known = set.verbs.map((verb) => verb.text)
+    for (const question of set.questions) {
+      for (const answer of question.answers) {
+        const used = verbsInAnswer(answer, known)
+        expect(used.length, `${question.id}: 「${answer}」に 25 動詞がありません`).toBeGreaterThan(0)
+        expect(
+          used.some((verb) => question.verbs.includes(verb)),
+          `${question.id}: 「${answer}」の動詞が verbs にありません`,
+        ).toBe(true)
+      }
+    }
+  })
+
+  it('活用形を見分ける', () => {
+    expect(verbsInAnswer('My teacher brought lunch (at) noon', ['bring', 'take'])).toEqual(['bring'])
+    expect(verbsInAnswer('She tries natto', ['try'])).toEqual(['try'])
+    expect(verbsInAnswer('keep (the) change', ['keep', 'get'])).toEqual(['keep'])
   })
 })
 

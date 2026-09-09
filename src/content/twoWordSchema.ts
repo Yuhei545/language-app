@@ -33,6 +33,8 @@ export type TwoWordQuestion = {
   /** 何語で言うか。 */
   level: TwoWordLevel
   kind: TwoWordKind
+  /** 解答例で使う動詞(原形)。25 語のどれか。 */
+  verbs: string[]
   /** お題(日本語)。場面設定では指示文。 */
   ja: string
   /** 場面設定のとき、相手の発話。 */
@@ -89,10 +91,20 @@ function validateQuestion(value: unknown, label: string, index: number): TwoWord
   if (answers.length === 0) {
     fail(label, `${path}.answers`, 'が空です')
   }
+  const verbs = requireArray(record, 'verbs', label, path).map((verb, verbIndex) => {
+    if (typeof verb !== 'string' || verb.trim().length === 0) {
+      fail(label, `${path}.verbs[${verbIndex}]`, 'が空です')
+    }
+    return verb
+  })
+  if (verbs.length === 0) {
+    fail(label, `${path}.verbs`, 'が空です')
+  }
   const question: TwoWordQuestion = {
     id,
     level,
     kind,
+    verbs,
     ja: requireNonEmptyString(record, 'ja', label, path),
     answers,
   }
@@ -109,9 +121,36 @@ export function validateTwoWord(json: unknown, label: string): TwoWordSet {
     fail(label, 'version', 'は1である必要があります')
   }
   const verbs = requireArray(record, 'verbs', label, 'root').map((value, index) => validateVerb(value, label, index))
+  const known = new Set(verbs.map((verb) => verb.text))
   const questions = requireArray(record, 'questions', label, 'root')
     .map((value, index) => validateQuestion(value, label, index))
+  for (const question of questions) {
+    for (const verb of question.verbs) {
+      if (!known.has(verb)) {
+        fail(label, `questions(${question.id}).verbs`, `に 25 動詞の外の語があります: ${verb}`)
+      }
+    }
+  }
   return { version: 1, verbs, questions }
+}
+
+/** 25 動詞の過去形と、s の付き方が規則と違う三単現。解答例の中の動詞を探すのに使う。 */
+const PAST: Record<string, string> = {
+  go: 'went', come: 'came', get: 'got', take: 'took', bring: 'brought', make: 'made', have: 'had', know: 'knew',
+  see: 'saw', tell: 'told', ask: 'asked', give: 'gave', want: 'wanted', need: 'needed', keep: 'kept', leave: 'left',
+  find: 'found', use: 'used', try: 'tried', put: 'put', open: 'opened', clean: 'cleaned', break: 'broke',
+  drink: 'drank', work: 'worked',
+}
+const THIRD: Record<string, string> = { go: 'goes', have: 'has', try: 'tries' }
+
+export function verbForms(verb: string): string[] {
+  return [verb, THIRD[verb] ?? `${verb}s`, PAST[verb] ?? `${verb}ed`]
+}
+
+/** 解答例の中で使われている動詞(原形)。括弧の中は見ない。 */
+export function verbsInAnswer(answer: string, verbs: readonly string[]): string[] {
+  const tokens = stripOptional(answer).toLowerCase().split(' ')
+  return verbs.filter((verb) => verbForms(verb).some((form) => tokens.includes(form)))
 }
 
 /** 括弧の中(冠詞・三単現など)を外した形。答え合わせの表示に使う。 */
