@@ -8,6 +8,7 @@ export const DEFAULT_TTS_MODEL = 'gemini-2.5-flash-preview-tts'
 export const TTS_MODEL_FALLBACKS = ['gemini-2.5-flash-preview-tts', 'gemini-3.1-flash-tts-preview'] as const
 export const TTS_SAMPLE_RATE = 24_000
 
+// TtsLang 型を定義するためだけに残す。音声合成 API には送信しない。
 export const LANGUAGE_CODES = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP' } as const
 
 export type TtsLang = keyof typeof LANGUAGE_CODES
@@ -49,7 +50,6 @@ async function resolveClient(opts: TtsRequestOptions): Promise<GoogleGenAI> {
 
 async function request(
   text: string,
-  lang: TtsLang,
   voiceName: string,
   model: string,
   opts: TtsRequestOptions,
@@ -62,7 +62,8 @@ async function request(
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
-          languageCode: LANGUAGE_CODES[lang],
+          // languageCode を付けると短い日本語で finishReason OTHER になり、音声が返らないことがある（2026-09 実測）。
+          // モデルは本文から言語を判別するため、指定しない。
           voiceConfig: { prebuiltVoiceConfig: { voiceName } },
         },
         abortSignal: opts.signal,
@@ -83,7 +84,7 @@ export function synthesizeSpeech(
   params: { text: string; lang: TtsLang; voiceName: string; model?: string },
   opts: TtsRequestOptions = {},
 ): Promise<SynthesizedAudio> {
-  return request(params.text, params.lang, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
+  return request(params.text, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
 }
 
 /** まとめて合成するときの台本。文の間に約 1 秒の無音を入れさせ、指示文は読ませない。 */
@@ -111,7 +112,7 @@ export async function synthesizeBatch(
     return [await synthesizeSpeech({ ...params, text: texts[0] }, opts)]
   }
 
-  const audio = await request(buildBatchScript(texts), params.lang, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
+  const audio = await request(buildBatchScript(texts), params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
   const segments = splitBySilence(audio.samples, audio.sampleRate, texts.length, opts.splitOptions)
   if (!segments) {
     console.warn('まとめて作った音声を文の数に切り分けられなかったので、1 文ずつ作り直します', { count: texts.length })
