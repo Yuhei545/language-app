@@ -397,6 +397,11 @@ export function LessonPage() {
           >
             {lesson.paused ? '▶ 再開' : 'Ⅱ 一時停止'}
           </button>
+          {lesson.autoPaused ? (
+            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900" role="status">
+              画面が隠れたので止めました。「▶ 再開」で続きから
+            </p>
+          ) : null}
           <div className="mt-3 grid grid-cols-2 gap-3">
             <button
               type="button"

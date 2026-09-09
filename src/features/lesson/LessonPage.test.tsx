@@ -50,6 +50,7 @@ function lessonState(overrides: Record<string, unknown> = {}) {
     estimatedMinutes: 2,
     elapsedMs: 0,
     paused: false,
+    autoPaused: false,
     start: vi.fn(),
     pause: vi.fn(),
     resume: vi.fn(),
@@ -100,6 +101,17 @@ describe('LessonPage', () => {
     expect(screen.queryByText(step.item.cueJa)).not.toBeNull()
     expect(screen.queryByText(step.item.answer)).toBeNull()
     expect(screen.queryByText('声に出してみましょう')).not.toBeNull()
+  })
+
+  it('画面が隠れて自動停止したときは再開の案内を表示する', () => {
+    useLessonMock.mockReturnValue(lessonState({
+      status: 'running',
+      paused: true,
+      autoPaused: true,
+    }))
+    renderPage()
+
+    expect(screen.getByText('画面が隠れたので止めました。「▶ 再開」で続きから')).toBeTruthy()
   })
 
   it('同梱レッスンでは「今日のレッスン N/10」と音声の準備、一覧を出す', () => {

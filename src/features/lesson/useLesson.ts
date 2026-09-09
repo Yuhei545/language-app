@@ -10,7 +10,9 @@ import {
   prefetchSpeech,
   speak,
   stopSpeaking,
+  unlockAudio,
 } from '../../services/speech'
+import { AudioSuspendedError } from '../../services/speech/audioPlayer'
 import { findBundledClip, prefetchBundledClips } from '../../services/speech/bundledAudio'
 import { getSettings, subscribe, type Settings } from '../../services/settings'
 import { getSession } from '../../services/supabase/auth'
@@ -229,6 +231,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
   const [upcomingPrepEvents, setUpcomingPrepEvents] = useState<PrepEventRow[]>([])
   const [elapsedMs, setElapsedMs] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [autoPaused, setAutoPaused] = useState(false)
   const [recallResults, setRecallResults] = useState<LessonRecallResult[]>([])
   const [error, setError] = useState<unknown>(null)
   const [warnings, setWarnings] = useState<string[]>([])
@@ -653,7 +656,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
               })
               consecutiveSpeechFailuresRef.current = 0
             } catch (speechError) {
-              if (strict) {
+              if (strict || speechError instanceof AudioSuspendedError) {
                 throw speechError
               }
               consecutiveSpeechFailuresRef.current += 1
@@ -959,6 +962,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     setPassed(null)
     setError(null)
     setPaused(false)
+    setAutoPaused(false)
     startedAtRef.current = Date.now()
     setStatus('running')
   }, [lang])
@@ -967,6 +971,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     if (status !== 'ready' && status !== 'finished') {
       return
     }
+    unlockAudio()
 
     if (mode === 'curriculum') {
       const lesson = curriculumLesson
@@ -1062,10 +1067,34 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     if (status !== 'running' || !paused) {
       return
     }
+    unlockAudio()
     generationRef.current += 1
     setError(null)
+    setAutoPaused(false)
     setPaused(false)
   }, [paused, status])
+
+  useEffect(() => {
+    if (status !== 'running' || paused) {
+      return undefined
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        return
+      }
+      cancelActive()
+      updateElapsed()
+      setCurrentAction(null)
+      setCurrentSpokenText(null)
+      setCurrentSpeaker(null)
+      setAutoPaused(true)
+      setPaused(true)
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [cancelActive, paused, status, updateElapsed])
 
   const skip = useCallback(() => {
     if (status !== 'running') {
@@ -1160,6 +1189,7 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
     estimatedMinutes,
     elapsedMs,
     paused,
+    autoPaused,
     curriculum,
     curriculumLesson,
     currentCurriculumStatus,
