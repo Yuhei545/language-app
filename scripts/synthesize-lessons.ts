@@ -430,13 +430,20 @@ function voicesFor(lang: Lang, narrator: string | null, existing: AudioManifest 
   return hasClips ? existing.voices : { ...defaults, ...(narrator ? {} : { narrator: existing.voices.narrator }) }
 }
 
-function collectPending(lang: Lang, lessons: BundledLesson[], manifest: AudioManifest): { pending: Pending[]; total: number; copied: number } {
+function collectPending(
+  lang: Lang,
+  lessons: BundledLesson[],
+  manifest: AudioManifest,
+  options: { write: boolean },
+): { pending: Pending[]; total: number; copied: number } {
   const pending: Pending[] = []
   let total = 0
   let copied = 0
   for (const lesson of lessons) {
     const entry = manifest.lessons[lesson.id] ?? { complete: false, clips: {} }
-    manifest.lessons[lesson.id] = entry
+    if (options.write) {
+      manifest.lessons[lesson.id] = entry
+    }
     for (const clip of collectClips(lesson, lang)) {
       total += 1
       const hash = clipHash(clip)
@@ -449,9 +456,12 @@ function collectPending(lang: Lang, lessons: BundledLesson[], manifest: AudioMan
         otherId !== lesson.id && other.clips[hash] && existsSync(clipPath(lang, otherId, hash))
       ))
       if (elsewhere) {
-        mkdirSync(dirname(path), { recursive: true })
-        copyFileSync(clipPath(lang, elsewhere[0], hash), path)
-        entry.clips[hash] = { ms: elsewhere[1].clips[hash].ms }
+        // dry-run と status は件数確認だけなので、ファイルとマニフェストを変更しない
+        if (options.write) {
+          mkdirSync(dirname(path), { recursive: true })
+          copyFileSync(clipPath(lang, elsewhere[0], hash), path)
+          entry.clips[hash] = { ms: elsewhere[1].clips[hash].ms }
+        }
         copied += 1
         continue
       }
@@ -575,7 +585,7 @@ async function synthesize(args: Args): Promise<void> {
   const manifest = existing ?? emptyManifest(lang, voices)
   manifest.voices = voices
 
-  const { pending, total, copied } = collectPending(lang, lessons, manifest)
+  const { pending, total, copied } = collectPending(lang, lessons, manifest, { write: !args.dryRun && !args.status })
   // 1 本ずつ完成させるため、レッスンの順を優先し、その中で声ごとにまとめる
   const groups = new Map<string, Map<string, Pending[]>>()
   for (const item of pending) {
@@ -587,7 +597,11 @@ async function synthesize(args: Args): Promise<void> {
   const requests = [...groups.values()].reduce((sum, lessonGroups) => (
     sum + [...lessonGroups.values()].reduce((lessonSum, items) => lessonSum + Math.ceil(items.length / args.batchSize), 0)
   ), 0)
-  console.log(`[${lang}] クリップ ${total} 件。済み ${total - pending.length}(コピー ${copied})、残り ${pending.length}。推定リクエスト ${requests} 回(${args.batchSize} 文ずつ)`)
+  const completed = total - pending.length - copied
+  const progress = args.dryRun
+    ? `済み ${completed}、コピーできる ${copied} 件(実行時にコピー)`
+    : `済み ${completed + copied}(コピー ${copied})`
+  console.log(`[${lang}] クリップ ${total} 件。${progress}、残り ${pending.length}。推定リクエスト ${requests} 回(${args.batchSize} 文ずつ)`)
   console.log(`  声: A=${voices.A} B=${voices.B} ナレーター=${voices.narrator}`)
   if (args.dryRun) {
     return
