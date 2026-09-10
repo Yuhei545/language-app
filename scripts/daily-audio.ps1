@@ -3,6 +3,7 @@
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $ProjectRoot
@@ -29,7 +30,7 @@ function Write-Log {
     Add-Content -LiteralPath $LogPath -Value ("[{0}] {1}" -f $timestamp, $Message) -Encoding UTF8
 }
 
-function Invoke-LoggedCommand {
+function Invoke-LoggedCommandResult {
     param(
         [Parameter(Mandatory = $true)]
         [string]$FilePath,
@@ -39,10 +40,43 @@ function Invoke-LoggedCommand {
     )
 
     Write-Log ("実行: {0} {1}" -f $FilePath, ($ArgumentList -join ' '))
-    & $FilePath @ArgumentList 2>&1 | ForEach-Object {
-        Add-Content -LiteralPath $LogPath -Value $_.ToString() -Encoding UTF8
+
+    $originalErrorActionPreference = $ErrorActionPreference
+    try {
+        # Windows PowerShell 5.1 では、stderr の各行が NativeCommandError になるため、
+        # ネイティブコマンドの実行中だけ終了例外にしない。
+        $ErrorActionPreference = 'Continue'
+        $commandOutput = @(& $FilePath @ArgumentList 2>&1)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $originalErrorActionPreference
     }
-    return $LASTEXITCODE
+
+    [string[]]$outputLines = @(
+        foreach ($outputLine in $commandOutput) {
+            $line = $outputLine.ToString()
+            Add-Content -LiteralPath $LogPath -Value $line -Encoding UTF8
+            $line
+        }
+    )
+
+    return [PSCustomObject]@{
+        ExitCode = [int]$exitCode
+        OutputLines = $outputLines
+    }
+}
+
+function Invoke-LoggedCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList
+    )
+
+    $result = Invoke-LoggedCommandResult -FilePath $FilePath -ArgumentList $ArgumentList
+    return $result.ExitCode
 }
 
 try {
@@ -100,11 +134,9 @@ try {
         Write-Log ("韓国語の音声生成 終了コード: {0}" -f $koExitCode)
 
         Write-Log '英語を実行するか判定するため npm run lessons:check を実行します'
-        $koStatusLines = @(& npm.cmd run lessons:check 2>&1)
-        $koStatusExitCode = $LASTEXITCODE
-        foreach ($statusLine in $koStatusLines) {
-            Add-Content -LiteralPath $LogPath -Value $statusLine.ToString() -Encoding UTF8
-        }
+        $koStatusResult = Invoke-LoggedCommandResult -FilePath 'npm.cmd' -ArgumentList @('run', 'lessons:check')
+        $koStatusLines = @($koStatusResult.OutputLines)
+        $koStatusExitCode = $koStatusResult.ExitCode
         Write-Log ("npm run lessons:check 終了コード: {0}" -f $koStatusExitCode)
 
         $koRemaining = 0
@@ -155,11 +187,9 @@ try {
             $commitSubject = "音声: 自動生成 {0}" -f $Today.ToString('yyyy-MM-dd')
 
             Write-Log '件数確認のため npm run lessons:check を実行します'
-            $statusLines = @(& npm.cmd run lessons:check 2>&1)
-            $statusExitCode = $LASTEXITCODE
-            foreach ($statusLine in $statusLines) {
-                Add-Content -LiteralPath $LogPath -Value $statusLine.ToString() -Encoding UTF8
-            }
+            $statusResult = Invoke-LoggedCommandResult -FilePath 'npm.cmd' -ArgumentList @('run', 'lessons:check')
+            $statusLines = @($statusResult.OutputLines)
+            $statusExitCode = $statusResult.ExitCode
             Write-Log ("npm run lessons:check 終了コード: {0}" -f $statusExitCode)
 
             if ($statusExitCode -eq 0) {
