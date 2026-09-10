@@ -576,12 +576,17 @@ async function synthesize(args: Args): Promise<void> {
   manifest.voices = voices
 
   const { pending, total, copied } = collectPending(lang, lessons, manifest)
-  const groups = new Map<string, Pending[]>()
+  // 1 本ずつ完成させるため、レッスンの順を優先し、その中で声ごとにまとめる
+  const groups = new Map<string, Map<string, Pending[]>>()
   for (const item of pending) {
+    const lessonGroups = groups.get(item.lesson.id) ?? new Map<string, Pending[]>()
     const key = `${item.clip.lang}|${item.clip.voice}`
-    groups.set(key, [...(groups.get(key) ?? []), item])
+    lessonGroups.set(key, [...(lessonGroups.get(key) ?? []), item])
+    groups.set(item.lesson.id, lessonGroups)
   }
-  const requests = [...groups.values()].reduce((sum, items) => sum + Math.ceil(items.length / args.batchSize), 0)
+  const requests = [...groups.values()].reduce((sum, lessonGroups) => (
+    sum + [...lessonGroups.values()].reduce((lessonSum, items) => lessonSum + Math.ceil(items.length / args.batchSize), 0)
+  ), 0)
   console.log(`[${lang}] クリップ ${total} 件。済み ${total - pending.length}(コピー ${copied})、残り ${pending.length}。推定リクエスト ${requests} 回(${args.batchSize} 文ずつ)`)
   console.log(`  声: A=${voices.A} B=${voices.B} ナレーター=${voices.narrator}`)
   if (args.dryRun) {
@@ -629,60 +634,62 @@ async function synthesize(args: Args): Promise<void> {
   }
 
   try {
-    for (const [key, items] of groups) {
-      const [clipLang, voice] = key.split('|') as [TtsLang, ClipVoice]
-      const voiceName = voices[voice]
-      for (let start = 0; start < items.length; start += args.batchSize) {
-        const batch = items.slice(start, start + args.batchSize)
-        const texts = batch.map((item) => item.clip.text)
-        let audios: SynthesizedAudio[] | null = null
-        if (batch.length > 1) {
-          try {
-            const result = await synthesizer.batch(texts, clipLang, voiceName)
-            if (result && 'kind' in result) {
-              stop(`1 日の上限に達しました。明日そのまま再実行すれば続きから作れます: ${result.message}`)
-            }
-            audios = result as SynthesizedAudio[] | null
-            if (audios && !audios.every((audio, index) => plausible(audio, texts[index], clipLang))) {
-              console.warn('  切り分けた長さが不自然なので、1 文ずつ作り直します')
-              audios = null
-            }
-          } catch (error) {
-            if (error instanceof SynthesisStop) {
-              throw error
-            }
-            console.warn(`  まとめた音声の合成に失敗したので、1 文ずつ作り直します: ${safeMessage(error)}`)
-          }
-        }
-        if (!audios) {
-          for (const item of batch) {
-            let result: SynthesizedAudio | QuotaStop
+    for (const lessonGroups of groups.values()) {
+      for (const [key, items] of lessonGroups) {
+        const [clipLang, voice] = key.split('|') as [TtsLang, ClipVoice]
+        const voiceName = voices[voice]
+        for (let start = 0; start < items.length; start += args.batchSize) {
+          const batch = items.slice(start, start + args.batchSize)
+          const texts = batch.map((item) => item.clip.text)
+          let audios: SynthesizedAudio[] | null = null
+          if (batch.length > 1) {
             try {
-              result = await synthesizer.single(item.clip.text, clipLang, voiceName)
+              const result = await synthesizer.batch(texts, clipLang, voiceName)
+              if (result && 'kind' in result) {
+                stop(`1 日の上限に達しました。明日そのまま再実行すれば続きから作れます: ${result.message}`)
+              }
+              audios = result as SynthesizedAudio[] | null
+              if (audios && !audios.every((audio, index) => plausible(audio, texts[index], clipLang))) {
+                console.warn('  切り分けた長さが不自然なので、1 文ずつ作り直します')
+                audios = null
+              }
             } catch (error) {
               if (error instanceof SynthesisStop) {
                 throw error
               }
-              recordFailure(item, error)
-              continue
+              console.warn(`  まとめた音声の合成に失敗したので、1 文ずつ作り直します: ${safeMessage(error)}`)
             }
-            if ('kind' in result) {
-              stop(`1 日の上限に達しました。明日そのまま再実行すれば続きから作れます: ${result.message}`)
-            }
-            saveClip(lang, item, result as SynthesizedAudio, manifest)
-            done += 1
-            consecutiveFailures = 0
           }
-        } else {
-          consecutiveFailures = 0
-          batch.forEach((item, index) => {
-            saveClip(lang, item, audios[index], manifest)
-            done += 1
-          })
+          if (!audios) {
+            for (const item of batch) {
+              let result: SynthesizedAudio | QuotaStop
+              try {
+                result = await synthesizer.single(item.clip.text, clipLang, voiceName)
+              } catch (error) {
+                if (error instanceof SynthesisStop) {
+                  throw error
+                }
+                recordFailure(item, error)
+                continue
+              }
+              if ('kind' in result) {
+                stop(`1 日の上限に達しました。明日そのまま再実行すれば続きから作れます: ${result.message}`)
+              }
+              saveClip(lang, item, result as SynthesizedAudio, manifest)
+              done += 1
+              consecutiveFailures = 0
+            }
+          } else {
+            consecutiveFailures = 0
+            batch.forEach((item, index) => {
+              saveClip(lang, item, audios[index], manifest)
+              done += 1
+            })
+          }
+          refreshComplete(lang, lessons, manifest)
+          writeManifest(lang, manifest)
+          console.log(`  ${done}/${pending.length} ${clipLang}/${voice} ${batch[0].lesson.id} …(${synthesizer.requests} 回目)`)
         }
-        refreshComplete(lang, lessons, manifest)
-        writeManifest(lang, manifest)
-        console.log(`  ${done}/${pending.length} ${clipLang}/${voice} ${batch[0].lesson.id} …(${synthesizer.requests} 回目)`)
       }
     }
   } catch (error) {
