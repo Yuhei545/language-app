@@ -5,6 +5,7 @@
  *   npm run lessons:audio -- --lang en --lesson 03-hotel
  *   npm run lessons:audio -- --lang en --dry-run  件数と推定リクエスト数だけ
  *   npm run lessons:audio -- --lang en --model gemini-2.5-flash-preview-tts  使用モデルを 1 つに固定
+ *   --max-per-model 80  1 実行でモデルごとに 80 回まで(練習用に 20 回残す)
  *   npm run lessons:audio -- --lang en --batch 20  1 回にまとめる文の数(1〜30、既定: 6)
  *   npm run lessons:audio -- --lang en --batch 1 --interval 1000  リクエストの間隔(ミリ秒、既定 6500)
  *   npm run lessons:check                          進み具合
@@ -89,6 +90,7 @@ type Args = {
   previewVoices: boolean
   narrator: string | null
   limit: number | null
+  maxPerModel: number | null
   model: string | null
   batchSize: number
   intervalMs: number
@@ -104,6 +106,7 @@ function parseArgs(argv: string[]): Args {
     previewVoices: false,
     narrator: null,
     limit: null,
+    maxPerModel: null,
     model: null,
     batchSize: BATCH_SIZE,
     intervalMs: MIN_INTERVAL_MS,
@@ -134,6 +137,15 @@ function parseArgs(argv: string[]): Args {
       case '--preview-voices': args.previewVoices = true; break
       case '--narrator': args.narrator = next(); break
       case '--limit': args.limit = Number(next()); break
+      case '--max-per-model': {
+        const value = next()
+        const maxPerModel = Number(value)
+        if (!Number.isInteger(maxPerModel) || maxPerModel < 1) {
+          throw new Error(`--max-per-model は 1 以上の整数で指定してください: ${value}`)
+        }
+        args.maxPerModel = maxPerModel
+        break
+      }
       case '--model': args.model = next(); break
       case '--interval': {
         const value = next()
@@ -280,7 +292,7 @@ type QuotaStop = { kind: 'quota-day'; message: string }
 type ModelSwitch = { kind: 'model' }
 
 class SynthesisStop extends Error {
-  constructor(readonly remaining: number, message: string) {
+  constructor(readonly exitCode: 0 | 2, message: string) {
     super(message)
     this.name = 'SynthesisStop'
   }
@@ -309,12 +321,14 @@ class Synthesizer {
   private lastRequestAt = 0
   private modelIndex = 0
   private readonly models: readonly string[]
+  private readonly successfulRequestsByModel = new Map<string, number>()
   requests = 0
 
   constructor(
     private readonly client: GoogleGenAI,
     readonly manifest: AudioManifest,
     private readonly limit: number | null,
+    private readonly maxPerModel: number | null,
     models: readonly string[],
     private readonly minIntervalMs: number = MIN_INTERVAL_MS,
   ) {
@@ -331,13 +345,29 @@ class Synthesizer {
     return this.models[this.modelIndex]
   }
 
+  private switchModelAtLimit(): ModelSwitch | null {
+    if (this.maxPerModel === null) {
+      return null
+    }
+    const successfulRequests = this.successfulRequestsByModel.get(this.model) ?? 0
+    if (successfulRequests < this.maxPerModel) {
+      return null
+    }
+    if (this.modelIndex + 1 < this.models.length) {
+      console.warn(`  ${this.model} は --max-per-model ${this.maxPerModel} 回に達しました。${this.models[this.modelIndex + 1]} に切り替えます`)
+      this.modelIndex += 1
+      return { kind: 'model' }
+    }
+    throw new SynthesisStop(0, `--max-per-model ${this.maxPerModel} 回に達したので止めます`)
+  }
+
   private async throttle(): Promise<void> {
     const wait = this.lastRequestAt + this.minIntervalMs - Date.now()
     if (wait > 0) {
       await sleep(wait)
     }
     if (this.limit !== null && this.requests >= this.limit) {
-      throw new SynthesisStop(-1, `--limit ${this.limit} 回に達したので止めます`)
+      throw new SynthesisStop(2, `--limit ${this.limit} 回に達したので止めます`)
     }
     this.lastRequestAt = Date.now()
     this.requests += 1
@@ -346,9 +376,15 @@ class Synthesizer {
   /** 1 回の呼び出し。分あたりの上限は待って再試行、日あたりの上限とモデル不在は代替へ。 */
   private async call<T>(run: (model: string) => Promise<T>): Promise<T | ModelSwitch | QuotaStop> {
     for (let attempt = 0; attempt <= MAX_QUOTA_RETRIES; attempt += 1) {
+      // Gemini の日次上限を自動生成で使い切らず、練習中の読み上げ用の枠を残す。
+      const modelSwitch = this.switchModelAtLimit()
+      if (modelSwitch) {
+        return modelSwitch
+      }
       await this.throttle()
       try {
         const result = await run(this.model)
+        this.successfulRequestsByModel.set(this.model, (this.successfulRequestsByModel.get(this.model) ?? 0) + 1)
         if (!this.manifest.models.includes(this.model)) {
           this.manifest.models.push(this.model)
         }
@@ -546,7 +582,7 @@ function prune(lang: Lang): void {
 
 async function previewVoices(narrator: string | null, models: readonly string[]): Promise<void> {
   const client = createClient(loadApiKey())
-  const synthesizer = new Synthesizer(client, emptyManifest('en', { A: '', B: '', narrator: '' }), null, models)
+  const synthesizer = new Synthesizer(client, emptyManifest('en', { A: '', B: '', narrator: '' }), null, null, models)
   const outDir = join(tmpdir(), 'lla-voice-preview')
   mkdirSync(outDir, { recursive: true })
   const samples: Array<{ voice: string; lang: TtsLang }> = [
@@ -614,7 +650,7 @@ async function synthesize(args: Args): Promise<void> {
   }
 
   const models = args.model ? [args.model] : TTS_MODEL_FALLBACKS
-  const synthesizer = new Synthesizer(createClient(loadApiKey()), manifest, args.limit, models, args.intervalMs)
+  const synthesizer = new Synthesizer(createClient(loadApiKey()), manifest, args.limit, args.maxPerModel, models, args.intervalMs)
   let done = 0
   let consecutiveFailures = 0
   const failedClips: FailedClip[] = []
@@ -627,12 +663,12 @@ async function synthesize(args: Args): Promise<void> {
       console.error(`  ${failed.lang}/${failed.voice} ${JSON.stringify(failed.text)}: ${failed.message}`)
     }
   }
-  const stop = (message: string): never => {
+  const stop = (message: string, exitCode: 0 | 2 = 2): never => {
     refreshComplete(lang, lessons, manifest)
     writeManifest(lang, manifest)
     console.error(`\n${message}(残り ${pending.length - done} クリップ)`)
     printFailedClips()
-    throw new ExitWithCode(2)
+    throw new ExitWithCode(exitCode)
   }
   const recordFailure = (item: Pending, error: unknown) => {
     failedClips.push({
@@ -708,7 +744,7 @@ async function synthesize(args: Args): Promise<void> {
     }
   } catch (error) {
     if (error instanceof SynthesisStop) {
-      stop(error.message)
+      stop(error.message, error.exitCode)
     }
     refreshComplete(lang, lessons, manifest)
     writeManifest(lang, manifest)

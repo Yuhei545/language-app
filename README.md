@@ -200,6 +200,12 @@ SVGだけの代替構成ではなく、iOS用を含むPNGが用意済みです�
 5. できたレッスンからコミットして push します(マニフェストで `complete` になったレッスンだけがアプリに出ます)
 6. 会話の文面を直したら `npm run lessons:audio -- --lang en --prune` で使われないクリップを消してから作り直します
 
+### 毎日自動で続きを作る
+
+`scripts/daily-audio.ps1` を Windows のタスクスケジューラから毎日実行し、続きの生成・コミット・push を自動化します。
+実行ログは `logs/daily-audio-YYYYMMDD.log` に追記されます。
+止めるにはタスクスケジューラで `LanguageAppDailyAudio` を無効化するか、そのタスクを削除します。
+
 ## 8. 既知の制約
 
 v1には次の機能がありません。
