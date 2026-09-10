@@ -50,14 +50,32 @@ describe('speak: 同梱の音声と Gemini の失敗', () => {
   const getBundledAudio = vi.fn(async () => new ArrayBuffer(8))
   const findBundledClip = vi.fn()
   const synthesizeSpeech = vi.fn()
+  let audioPlaybackSupported = true
+  let settings: {
+    ttsProvider: 'browser' | 'gemini'
+    geminiApiKey: string
+    geminiTtsModel: string
+    geminiVoice: { en: string; ko: string }
+    geminiVoiceB: { en: string; ko: string }
+    geminiVoiceJa: string
+  }
 
   beforeEach(() => {
     playAudio.mockClear()
     getBundledAudio.mockClear()
     findBundledClip.mockReset()
     synthesizeSpeech.mockReset()
+    audioPlaybackSupported = true
+    settings = {
+      ttsProvider: 'gemini',
+      geminiApiKey: 'key',
+      geminiTtsModel: 'm',
+      geminiVoice: { en: 'Kore', ko: 'Aoede' },
+      geminiVoiceB: { en: 'Puck', ko: 'Charon' },
+      geminiVoiceJa: 'Zephyr',
+    }
     vi.doMock('./audioPlayer', () => ({
-      isAudioPlaybackSupported: () => true,
+      isAudioPlaybackSupported: () => audioPlaybackSupported,
       playAudio,
       playWav: playAudio,
       stopPlayback: vi.fn(),
@@ -65,16 +83,7 @@ describe('speak: 同梱の音声と Gemini の失敗', () => {
     }))
     vi.doMock('./bundledAudio', () => ({ findBundledClip, getBundledAudio }))
     vi.doMock('../gemini/tts', () => ({ synthesizeSpeech, synthesizeBatch: vi.fn() }))
-    vi.doMock('../settings', () => ({
-      getSettings: () => ({
-        ttsProvider: 'gemini',
-        geminiApiKey: 'key',
-        geminiTtsModel: 'm',
-        geminiVoice: { en: 'Kore', ko: 'Aoede' },
-        geminiVoiceB: { en: 'Puck', ko: 'Charon' },
-        geminiVoiceJa: 'Zephyr',
-      }),
-    }))
+    vi.doMock('../settings', () => ({ getSettings: () => settings }))
     stubSpeechSynthesis([voice('en-US'), voice('ja-JP')])
   })
 
@@ -101,22 +110,50 @@ describe('speak: 同梱の音声と Gemini の失敗', () => {
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled()
   })
 
-  it('Gemini で読めないとき、onGeminiFailure が throw なら投げ、既定なら内蔵音声に切り替える', async () => {
+  it('Gemini で読めないときは失敗を投げ、内蔵音声に切り替えない', async () => {
     findBundledClip.mockReturnValue(null)
     synthesizeSpeech.mockRejectedValue(new Error('quota'))
-    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { speak, getLastGeminiTtsFallback } = await import('./tts')
+    const { speak } = await import('./tts')
 
-    await expect(speak('hello', { lang: 'ja', onGeminiFailure: 'throw' })).rejects.toThrow('quota')
+    await expect(speak('hello', { lang: 'ja' })).rejects.toThrow('quota')
+    expect(synthesizeSpeech).toHaveBeenCalledTimes(1)
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled()
+  })
 
-    const fallback = speak('hello', { lang: 'en' })
+  it('内蔵音声を選んでいるときは speakWithBrowser で読み上げる', async () => {
+    settings.ttsProvider = 'browser'
+    settings.geminiApiKey = ''
+    findBundledClip.mockReturnValue(null)
+    const { speak, stopSpeaking } = await import('./tts')
+
+    const reading = speak('hello', { lang: 'en' })
     // 内蔵音声は onend を待つので、読み上げを始めたことだけを確かめる
     await vi.waitFor(() => expect(window.speechSynthesis.speak).toHaveBeenCalledTimes(1))
-    expect(getLastGeminiTtsFallback()).toBe('quota')
-    ;(await import('./tts')).stopSpeaking()
-    await fallback
-    consoleWarn.mockRestore()
+    expect(synthesizeSpeech).not.toHaveBeenCalled()
+    stopSpeaking()
+    await reading
+  })
+
+  it('Gemini を選んでいて API キーが空なら分かりやすいエラーを投げる', async () => {
+    settings.geminiApiKey = '  '
+    findBundledClip.mockReturnValue(null)
+    const { speak } = await import('./tts')
+
+    await expect(speak('hello', { lang: 'en' }))
+      .rejects.toThrow('Gemini の API キーが設定されていません。設定画面で入れてください')
+    expect(synthesizeSpeech).not.toHaveBeenCalled()
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled()
+  })
+
+  it('Gemini を選んでいて音声を再生できない端末では分かりやすいエラーを投げる', async () => {
+    audioPlaybackSupported = false
+    findBundledClip.mockReturnValue(null)
+    const { speak } = await import('./tts')
+
+    await expect(speak('hello', { lang: 'en' }))
+      .rejects.toThrow('この端末では音声の再生が使えません')
+    expect(synthesizeSpeech).not.toHaveBeenCalled()
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled()
   })
 
   it('日本語も Gemini で合成する(ナレーターの声)', async () => {

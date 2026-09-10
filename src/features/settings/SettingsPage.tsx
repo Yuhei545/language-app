@@ -369,7 +369,7 @@ export function SettingsPage() {
                     <span className="mt-0.5 block text-xs leading-5 text-slate-500">
                       英語・韓国語と、日本語のナレーションを Gemini で読み上げます。作った音声はこの端末に保存し、同じ文は 2 度と作りません。
                       同梱の会話レッスンは事前に作った音声を使うので Gemini を呼びません。
-                      カードなどで上限に達したら内蔵の声に自動で戻ります(会話レッスンは止めて知らせます)。
+                      読めないときは止めて理由を知らせます(内蔵の声には戻りません)。
                     </span>
                   </span>
                 </label>

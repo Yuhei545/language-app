@@ -8,7 +8,7 @@ export type TwoWordOrder = 'book' | 'frequency'
 export type PersonalWordKind = 'place' | 'person' | 'thing' | 'media'
 /** 型を回す・即答の確かめ方。self は答えを見て自分で判定(Gemini を使わない)。 */
 export type PatternCheck = 'auto' | 'record' | 'self'
-/** 読み上げの声。gemini は Gemini TTS(自然な声、作った音声は端末に保存)。上限時は内蔵に自動で戻る。 */
+/** 読み上げの声。gemini は Gemini TTS(自然な声、作った音声は端末に保存)。読めないときは止めて知らせる(内蔵には戻らない)。 */
 export type TtsProvider = 'browser' | 'gemini'
 export type VoicePair = { en: string; ko: string }
 

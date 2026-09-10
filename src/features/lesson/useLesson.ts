@@ -667,7 +667,6 @@ export function useLesson(lang: 'en' | 'ko', initialDialogue?: LessonDialogueRow
                 voiceURI: action.lang === 'ja' ? settingsRef.current.ttsVoiceJa ?? undefined : targetVoice,
                 pitch: isFallbackB ? 0.9 : undefined,
                 speaker: action.lang === 'ja' ? 'narrator' : (action.voice === 'B' ? 'B' : 'A'),
-                onGeminiFailure: strict ? 'throw' : 'browser',
               })
               consecutiveSpeechFailuresRef.current = 0
             } catch (speechError) {

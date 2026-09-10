@@ -18,11 +18,6 @@ export type SpeakOptions = {
   pitch?: number
   /** 会話の話者。Gemini の声のとき A/B で声を分ける。省略時は A(日本語はナレーター)。 */
   speaker?: TtsSpeaker
-  /**
-   * Gemini の声で読めなかったとき。'browser' は内蔵音声に切り替えて続ける(既定)、
-   * 'throw' は失敗を投げる(会話レッスンのように、機械的な声で続けたくないとき)。
-   */
-  onGeminiFailure?: 'browser' | 'throw'
 }
 
 const browserLanguages: Record<TtsLanguage, string> = {
@@ -177,12 +172,6 @@ function clipVoiceFor(lang: TtsLanguage, speaker: TtsSpeaker | undefined): ClipV
 
 // ---- Gemini の声 --------------------------------------------------------------
 
-/** 最後に内蔵音声へ切り替わった理由。設定画面などで見せる。 */
-let lastGeminiFallback: string | null = null
-export function getLastGeminiTtsFallback(): string | null {
-  return lastGeminiFallback
-}
-
 /** 同じ文を同時に 2 回作らないための、進行中の合成。 */
 const inFlight = new Map<string, Promise<ArrayBuffer>>()
 
@@ -207,15 +196,6 @@ function cacheKeyFor(text: string, lang: TtsLanguage, voice: string): string {
 
 function toWav(audio: SynthesizedAudio): ArrayBuffer {
   return encodeWavBuffer(audio.samples, audio.sampleRate)
-}
-
-function usesGeminiVoice(): boolean {
-  const settings = getSettings()
-  return (
-    settings.ttsProvider === 'gemini'
-    && settings.geminiApiKey.trim() !== ''
-    && isAudioPlaybackSupported()
-  )
 }
 
 async function getOrSynthesize(text: string, lang: TtsLanguage, voice: string): Promise<ArrayBuffer> {
@@ -246,8 +226,8 @@ async function getOrSynthesize(text: string, lang: TtsLanguage, voice: string): 
  * 読み上げ。
  * 1. 同梱の音声(事前に合成したレッスンの文)があればそれを再生する。失敗は投げる。
  * 2. 無ければ、設定が Gemini の声なら キャッシュ → 合成 → 再生。日本語のナレーションも Gemini で読む。
- *    読めなかったときは onGeminiFailure に従う(既定は内蔵音声に切り替えて続ける)。
- * 3. それ以外は内蔵音声。
+ *    読めなかったときは失敗を投げて止め、内蔵音声には切り替えない。
+ * 3. 設定で内蔵音声を選んでいる場合だけ、内蔵音声で読む。
  */
 export async function speak(text: string, opts: SpeakOptions): Promise<void> {
   const bundled = findBundledClip(text, opts.lang, clipVoiceFor(opts.lang, opts.speaker))
@@ -258,22 +238,20 @@ export async function speak(text: string, opts: SpeakOptions): Promise<void> {
     return
   }
 
-  if (usesGeminiVoice()) {
-    try {
-      const wav = await getOrSynthesize(text, opts.lang, geminiVoiceFor(opts.lang, opts.speaker ?? 'A'))
-      stopSpeaking()
-      await playAudio(wav, { rate: opts.rate })
-      lastGeminiFallback = null
-      return
-    } catch (error) {
-      if (opts.onGeminiFailure === 'throw') {
-        throw error
-      }
-      lastGeminiFallback = error instanceof Error ? error.message : String(error)
-      console.warn('Gemini の声で読めなかったので、内蔵音声に切り替えます', error)
-    }
+  const settings = getSettings()
+  if (settings.ttsProvider === 'browser') {
+    return speakWithBrowser(text, opts)
   }
-  return speakWithBrowser(text, opts)
+  if (settings.geminiApiKey.trim() === '') {
+    throw new Error('Gemini の API キーが設定されていません。設定画面で入れてください')
+  }
+  if (!isAudioPlaybackSupported()) {
+    throw new Error('この端末では音声の再生が使えません')
+  }
+
+  const wav = await getOrSynthesize(text, opts.lang, geminiVoiceFor(opts.lang, opts.speaker ?? 'A'))
+  stopSpeaking()
+  await playAudio(wav, { rate: opts.rate })
 }
 
 /** 設定画面の試聴用。保存前の声で読む。 */

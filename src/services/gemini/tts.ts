@@ -104,12 +104,70 @@ async function request(
   }
 }
 
+function errorStatus(error: unknown): number | undefined {
+  let current = error
+  const visited = new Set<unknown>()
+  while (typeof current === 'object' && current !== null && !visited.has(current)) {
+    visited.add(current)
+    const candidate = current as { status?: unknown; statusCode?: unknown; code?: unknown; cause?: unknown }
+    const status = candidate.status ?? candidate.statusCode ?? candidate.code
+    if (typeof status === 'number') {
+      return status
+    }
+    if (typeof status === 'string' && /^\d+$/.test(status)) {
+      return Number(status)
+    }
+    current = candidate.cause
+  }
+  return undefined
+}
+
+function shouldTryAnotherModel(error: GeminiError): boolean {
+  if (error.kind === 'parse') {
+    return true
+  }
+  if (error.kind === 'quota' || error.kind === 'network') {
+    return false
+  }
+
+  const status = errorStatus(error)
+  const message = error.message.toLowerCase()
+  return (
+    (status === 400 && (message.includes('should only be used for tts') || message.includes('generate text')))
+    || status === 404
+    || message.includes('not found')
+    || message.includes('not_found')
+  )
+}
+
 /** 1 文を合成する。 */
-export function synthesizeSpeech(
+export async function synthesizeSpeech(
   params: { text: string; lang: TtsLang; voiceName: string; model?: string },
   opts: TtsRequestOptions = {},
 ): Promise<SynthesizedAudio> {
-  return request(params.text, params.voiceName, params.model ?? DEFAULT_TTS_MODEL, opts)
+  const firstModel = params.model ?? DEFAULT_TTS_MODEL
+  const models = [firstModel, ...TTS_MODEL_FALLBACKS.filter((model) => model !== firstModel)]
+  let lastError: GeminiError | null = null
+
+  for (const model of models) {
+    try {
+      const audio = await request(params.text, params.voiceName, model, opts)
+      if (model !== firstModel) {
+        console.warn(`${firstModel} で失敗したため ${model} で作りました`)
+      }
+      return audio
+    } catch (error) {
+      const geminiError = toGeminiError(error)
+      lastError = geminiError
+      if (!shouldTryAnotherModel(geminiError)) {
+        throw geminiError
+      }
+    }
+  }
+
+  // 2026-09 の実測で、2.5 TTS は短文を音声ではなくテキストとして生成し HTTP 400 になり、
+  // 同じ短文を 3.1 TTS に送ると音声が返った。対象の失敗だけ、利用可能な TTS モデルへ切り替える。
+  throw lastError ?? new GeminiError('音声を生成できませんでした', undefined, 'unknown')
 }
 
 /** まとめて合成するときの台本。文の間に約 1 秒の無音を入れさせ、指示文は読ませない。 */
