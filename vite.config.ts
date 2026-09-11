@@ -63,7 +63,7 @@ export default defineConfig({
     watch: {
       // テストファイルや TypeScript の中間ファイルの変更でページ全体を再読み込みしない
       // (レッスンや会話の途中で状態が消える原因になっていた)
-      ignored: ['**/*.test.ts', '**/*.test.tsx', '**/*.tsbuildinfo', '**/node_modules/.tmp/**'],
+      ignored: ['**/*.test.ts', '**/*.test.tsx', '**/*.tsbuildinfo', '**/node_modules/.tmp/**', '**/logs/**'],
     },
   },
   test: {

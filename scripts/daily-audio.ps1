@@ -15,7 +15,9 @@ if (-not (Test-Path -LiteralPath $LogDirectory)) {
 
 $Today = Get-Date
 $LogPath = Join-Path $LogDirectory ("daily-audio-{0}.log" -f $Today.ToString('yyyyMMdd'))
-$LockPath = Join-Path $LogDirectory 'daily-audio.lock'
+# Vite の監視が排他ロック中のファイルを開くと EBUSY になるため、プロジェクトの外に置く。
+$LockDirectory = if ($env:TEMP) { $env:TEMP } else { [System.IO.Path]::GetTempPath() }
+$LockPath = Join-Path $LockDirectory 'language-app-daily-audio.lock'
 $LockStream = $null
 $ShouldRun = $true
 $ScriptExitCode = 0
